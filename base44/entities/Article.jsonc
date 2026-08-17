@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "excerpt": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "AI Insights",
+        "Case Study",
+        "News",
+        "Tutorial",
+        "Opinion"
+      ],
+      "default": "AI Insights"
+    },
+    "cover_image": {
+      "type": "string",
+      "format": "file_url"
+    },
+    "published": {
+      "type": "boolean",
+      "default": true
+    },
+    "order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "title",
+    "excerpt"
+  ],
+  "name": "Article"
+}

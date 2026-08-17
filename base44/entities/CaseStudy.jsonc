@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "company": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "metric": {
+      "type": "string"
+    },
+    "metricLabel": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "size": {
+      "type": "string",
+      "enum": [
+        "large",
+        "small"
+      ],
+      "default": "small"
+    },
+    "order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "company",
+    "metric",
+    "metricLabel",
+    "description"
+  ],
+  "name": "CaseStudy"
+}

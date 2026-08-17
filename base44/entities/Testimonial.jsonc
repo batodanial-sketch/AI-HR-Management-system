@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "quote": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "metric": {
+      "type": "string"
+    },
+    "metricLabel": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "quote",
+    "author",
+    "company"
+  ],
+  "name": "Testimonial"
+}
