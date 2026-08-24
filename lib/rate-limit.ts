@@ -1,13 +1,22 @@
 import "server-only";
+import type { LicenseTier } from "./license-format";
 
 /**
- * Rate limiting for the AI surface.
+ * Rate limiting for the AI surface — tier-aware.
  *
- * A fixed-window, in-memory limiter keyed by IP (via `x-forwarded-for`) with a
- * per-feature budget. In-memory is intentional: the AI proxy routes run in a
- * single Node process, and a Redis-backed limiter would add an external
- * dependency. Enterprise buyers behind a load balancer can raise the limits
- * via env vars.
+ * A fixed-window, in-memory limiter keyed by org + IP (via `x-forwarded-for`)
+ * with a per-tier budget:
+ *   TRIAL: 30 req/min
+ *   PRO: 120 req/min
+ *   ENTERPRISE: 600 req/min
+ *
+ * In-memory is intentional: the AI proxy routes run in a single Node process,
+ * and a Redis-backed limiter would add an external dependency. Enterprise
+ * buyers behind a load balancer can raise the limits via env vars.
+ *
+ * Tier limits are enforced via `limitForTier()` + `checkRateLimit(key, limit)`.
+ * The proxy (`lib/ai-proxy.ts`) resolves the instance license tier and passes
+ * the appropriate limit, falling back to `DEFAULT_LIMIT` when unlicensed.
  */
 
 interface Window {
@@ -19,6 +28,18 @@ const buckets = new Map<string, Window>();
 
 const DEFAULT_LIMIT = Number(process.env.AI_RATE_LIMIT ?? "60");
 const WINDOW_MS = Number(process.env.AI_RATE_WINDOW_MS ?? "60000");
+
+// Tier-aware budgets — per requirements (req/min).
+export const TIER_LIMITS: Record<LicenseTier, number> = {
+  TRIAL: Number(process.env.AI_RATE_LIMIT_TRIAL ?? "30"),
+  PRO: Number(process.env.AI_RATE_LIMIT_PRO ?? "120"),
+  ENTERPRISE: Number(process.env.AI_RATE_LIMIT_ENTERPRISE ?? "600"),
+};
+
+export function limitForTier(tier: LicenseTier | null | undefined): number {
+  if (!tier) return DEFAULT_LIMIT;
+  return TIER_LIMITS[tier] ?? DEFAULT_LIMIT;
+}
 
 // MEMORY-DoS GUARD: cap the number of live buckets. Without this, an attacker
 // can trivially send requests from many distinct (spoofed) IPs and force a
@@ -37,9 +58,18 @@ export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   resetAt: number;
+  limit: number;
 }
 
-export function checkRateLimit(key: string): RateLimitResult {
+/**
+ * Fixed-window check with optional custom limit (tier-aware).
+ * If `customLimit` is omitted, falls back to DEFAULT_LIMIT.
+ */
+export function checkRateLimit(
+  key: string,
+  customLimit?: number,
+): RateLimitResult {
+  const limit = customLimit ?? DEFAULT_LIMIT;
   const now = Date.now();
   const bucket = buckets.get(key);
 
@@ -53,18 +83,19 @@ export function checkRateLimit(key: string): RateLimitResult {
     }
     const resetAt = now + WINDOW_MS;
     buckets.set(key, { count: 1, resetAt });
-    return { allowed: true, remaining: DEFAULT_LIMIT - 1, resetAt };
+    return { allowed: true, remaining: limit - 1, resetAt, limit };
   }
 
-  if (bucket.count >= DEFAULT_LIMIT) {
-    return { allowed: false, remaining: 0, resetAt: bucket.resetAt };
+  if (bucket.count >= limit) {
+    return { allowed: false, remaining: 0, resetAt: bucket.resetAt, limit };
   }
 
   bucket.count += 1;
   return {
     allowed: true,
-    remaining: DEFAULT_LIMIT - bucket.count,
+    remaining: limit - bucket.count,
     resetAt: bucket.resetAt,
+    limit,
   };
 }
 
@@ -77,6 +108,22 @@ export function clientKey(request: Request): string {
     return "local";
   }
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+}
+
+/**
+ * Builds an org-scoped rate-limit key: `org:<orgId>:<ip>` when orgId is known,
+ * otherwise falls back to the IP-only key. This gives per-tenant isolation while
+ * preserving the trusted-proxy guard.
+ */
+export function orgScopedKey(
+  request: Request,
+  organizationId?: string | null,
+): string {
+  const ipKey = clientKey(request);
+  if (organizationId) {
+    return `org:${organizationId}:${ipKey}`;
+  }
+  return ipKey;
 }
 
 // Opportunistic cleanup to bound memory (drop stale windows).

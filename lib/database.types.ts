@@ -284,6 +284,209 @@ export interface Database {
         Relationships: [];
       };
 
+      ai_usage_logs: {
+        Row: {
+          id: string;
+          organization_id: string;
+          model: string;
+          feature: string;
+          prompt_tokens: number;
+          completion_tokens: number;
+          cost_usd: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string | null;
+          organization_id?: string | null;
+          model?: string | null;
+          feature?: string | null;
+          prompt_tokens?: number | null;
+          completion_tokens?: number | null;
+          cost_usd?: number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string | null;
+          organization_id?: string | null;
+          model?: string | null;
+          feature?: string | null;
+          prompt_tokens?: number | null;
+          completion_tokens?: number | null;
+          cost_usd?: number | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+
+      organization_configs: {
+        Row: {
+          organization_id: string;
+          dashboard_layout_json: Json;
+          dynamic_schema_json: Json;
+          copilot_rules_json: Json;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          organization_id?: string | null;
+          dashboard_layout_json?: Json | null;
+          dynamic_schema_json?: Json | null;
+          copilot_rules_json?: Json | null;
+          updated_at?: string | null;
+          updated_by?: string | null;
+        };
+        Update: {
+          organization_id?: string | null;
+          dashboard_layout_json?: Json | null;
+          dynamic_schema_json?: Json | null;
+          copilot_rules_json?: Json | null;
+          updated_at?: string | null;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+
+      workflow_templates: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          description: string | null;
+          steps_json: Json;
+          trigger_type: string;
+          schedule_cron: string | null;
+          schedule_time: string | null;
+          target_roles: Json;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string | null;
+          organization_id?: string | null;
+          title?: string | null;
+          description?: string | null;
+          steps_json?: Json | null;
+          trigger_type?: string | null;
+          schedule_cron?: string | null;
+          schedule_time?: string | null;
+          target_roles?: Json | null;
+          is_active?: boolean | null;
+          created_by?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string | null;
+          organization_id?: string | null;
+          title?: string | null;
+          description?: string | null;
+          steps_json?: Json | null;
+          trigger_type?: string | null;
+          schedule_cron?: string | null;
+          schedule_time?: string | null;
+          target_roles?: Json | null;
+          is_active?: boolean | null;
+          created_by?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+
+      daily_employee_tasks: {
+        Row: {
+          id: string;
+          organization_id: string;
+          employee_id: string;
+          workflow_template_id: string | null;
+          task_date: string;
+          status: string;
+          payload_json: Json;
+          due_time: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string | null;
+          organization_id?: string | null;
+          employee_id?: string | null;
+          workflow_template_id?: string | null;
+          task_date?: string | null;
+          status?: string | null;
+          payload_json?: Json | null;
+          due_time?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string | null;
+          organization_id?: string | null;
+          employee_id?: string | null;
+          workflow_template_id?: string | null;
+          task_date?: string | null;
+          status?: string | null;
+          payload_json?: Json | null;
+          due_time?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+
+      workflow_executions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          workflow_id: string | null;
+          workflow_template_id: string | null;
+          task_id: string | null;
+          executed_at: string;
+          status: string;
+          error_log: string | null;
+          execution_payload: Json;
+          result_json: Json;
+          duration_ms: number | null;
+          triggered_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string | null;
+          organization_id?: string | null;
+          workflow_id?: string | null;
+          workflow_template_id?: string | null;
+          task_id?: string | null;
+          executed_at?: string | null;
+          status?: string | null;
+          error_log?: string | null;
+          execution_payload?: Json | null;
+          result_json?: Json | null;
+          duration_ms?: number | null;
+          triggered_by?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string | null;
+          organization_id?: string | null;
+          workflow_id?: string | null;
+          workflow_template_id?: string | null;
+          task_id?: string | null;
+          executed_at?: string | null;
+          status?: string | null;
+          error_log?: string | null;
+          execution_payload?: Json | null;
+          result_json?: Json | null;
+          duration_ms?: number | null;
+          triggered_by?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+
       api_credentials: {
         Row: {
           id: string;
