@@ -209,3 +209,35 @@ export async function startTrial(): Promise<LicenseState> {
   });
   return state;
 }
+
+/**
+ * Enterprise guard — verifies a cryptographically valid FLUX-ENT license.
+ *
+ * Used by the Dynamic Enterprise Studio & Admin Copilot to strictly gate
+ * dashboard layout, dynamic schema, and copilot rules behind a verified
+ * Enterprise key. The verification re-uses `verifyLicenseKey` which checks
+ * Ed25519 signature against embedded public key (offline, no phone-home).
+ *
+ * Returns the verified LicenseState when tier === ENTERPRISE, otherwise throws
+ * with code ENTITLEMENT_REQUIRED (403).
+ */
+export async function requireEnterpriseTier(): Promise<LicenseState> {
+  const state = await getLicenseState();
+  if (!state) {
+    throw new Error("ENTITLEMENT_REQUIRED: No active license. FLUX-ENT key required.");
+  }
+  if (state.tier !== "ENTERPRISE") {
+    throw new Error(
+      `ENTITLEMENT_REQUIRED: Enterprise license required. Current tier: ${state.tier}. Please activate a FLUX-ENT key.`,
+    );
+  }
+  return state;
+}
+
+export function isEnterpriseTier(state: LicenseState | null): boolean {
+  return state?.tier === "ENTERPRISE";
+}
+
+export function isProOrEnterpriseTier(state: LicenseState | null): boolean {
+  return state?.tier === "PRO" || state?.tier === "ENTERPRISE";
+}

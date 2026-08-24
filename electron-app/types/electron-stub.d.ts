@@ -3,6 +3,8 @@
  * src/*.ts in CI/local without downloading the Electron binary. It declares the
  * exact API surface the desktop shell uses. At build time the real `electron`
  * package (and its bundled types) is resolved instead.
+ *
+ * Epic B: extended with updater IPC event forwarding, version/channel, progress.
  */
 
 declare module "electron" {
@@ -37,6 +39,7 @@ declare module "electron" {
     hide(): void;
     focus(): void;
     isVisible(): boolean;
+    isDestroyed(): boolean;
     once(event: "ready-to-show", listener: () => void): void;
     on(event: "closed", listener: () => void): void;
     loadURL(url: string): Promise<void>;
@@ -63,6 +66,7 @@ declare module "electron" {
   export interface WebContents {
     setWindowOpenHandler(handler: (details: { url: string }) => { action: "deny" | "allow" }): void;
     on(event: "will-navigate", listener: (event: { preventDefault(): void }, url: string) => void): void;
+    send(channel: string, ...args: unknown[]): void;
   }
 
   export class Tray {
@@ -90,6 +94,7 @@ declare module "electron" {
     isPackaged: boolean;
     whenReady(): Promise<void>;
     quit(): void;
+    getVersion(): string;
     on(event: "activate" | "window-all-closed", listener: () => void): void;
   };
   export const dialog: {
@@ -102,6 +107,8 @@ declare module "electron" {
   };
   export const ipcRenderer: {
     invoke(channel: string, ...args: unknown[]): Promise<unknown>;
+    on(channel: string, listener: (event: unknown, ...args: unknown[]) => void): void;
+    removeListener(channel: string, listener: (event: unknown, ...args: unknown[]) => void): void;
   };
   export const contextBridge: {
     exposeInMainWorld(key: string, api: unknown): void;
@@ -123,14 +130,30 @@ declare module "electron" {
 }
 
 declare module "electron-updater" {
+  export interface UpdateInfo {
+    version: string;
+    releaseNotes?: string | string[] | null;
+    releaseName?: string | null;
+    releaseDate?: string | null;
+  }
+
+  export interface ProgressInfo {
+    bytesPerSecond: number;
+    percent: number;
+    transferred: number;
+    total: number;
+  }
+
   export const autoUpdater: {
     autoDownload: boolean;
     autoInstallOnAppQuit: boolean;
     on(event: "error", listener: (error: Error) => void): void;
-    on(event: "update-available", listener: (info: { version: string }) => void): void;
-    on(event: "update-not-available", listener: () => void): void;
-    on(event: "update-downloaded", listener: (info: { version: string }) => void): void;
+    on(event: "update-available", listener: (info: UpdateInfo) => void): void;
+    on(event: "update-not-available", listener: (info: UpdateInfo) => void): void;
+    on(event: "update-downloaded", listener: (info: UpdateInfo) => void): void;
+    on(event: "download-progress", listener: (progress: ProgressInfo) => void): void;
     checkForUpdatesAndNotify(): Promise<unknown>;
+    checkForUpdates(): Promise<{ updateInfo: UpdateInfo } | null>;
     quitAndInstall(isSilent: boolean, isForceRunAfter: boolean): void;
   };
 }

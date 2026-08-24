@@ -411,6 +411,92 @@ async def scrape_linkedin(payload: dict[str, Any]):
     return _accepted(job.id, "scrape_linkedin")
 
 
+# ── Admin Infrastructure Copilot (Enterprise Studio) ───────────────────────
+@router.post("/admin-copilot/parse")
+async def admin_copilot_parse(payload: dict[str, Any]):
+    """
+    Parses natural language admin commands into safe JSON patches against
+    organization_configs. RCE-safe: no shell, only JSON validation.
+
+    Input: { prompt: str, current_config?: dict }
+    Output: { ok: true, patch: { dashboardLayout?, dynamicSchema? }, message, parsed }
+    """
+    try:
+        prompt = str(payload.get("prompt", "")).strip()
+        if not prompt:
+            raise HTTPException(status_code=422, detail="prompt is required.")
+        if len(prompt) > 2000:
+            raise HTTPException(status_code=422, detail="prompt too long (max 2000).")
+
+        current_config = payload.get("current_config")
+        if current_config is not None and not isinstance(current_config, dict):
+            current_config = None
+
+        # Try deterministic parser first (always works offline)
+        from python_engine.admin_copilot_parser import (
+            parse_admin_command_deterministic,
+            parse_with_llm,
+        )
+
+        deterministic_result = parse_admin_command_deterministic(prompt, current_config)
+
+        # Try LLM if configured for better understanding (best-effort)
+        llm_result = None
+        try:
+            # Lazy import to avoid circular dependency — server.py owns the AI client
+            # We attempt to get provider via bridge.config if available
+            from bridge.providers import make_provider
+
+            provider = make_provider()
+            # Only attempt LLM if API key is present (provider will have model)
+            if provider and hasattr(provider, "model"):
+                import asyncio
+
+                # Run LLM parse with timeout to avoid blocking
+                try:
+                    llm_result = await asyncio.wait_for(
+                        parse_with_llm(prompt, provider), timeout=8.0
+                    )
+                except asyncio.TimeoutError:
+                    llm_result = None
+        except Exception:
+            llm_result = None
+
+        # Prefer LLM result if it parsed successfully, otherwise deterministic
+        final_result = None
+        if llm_result and isinstance(llm_result, dict) and llm_result.get("parsed"):
+            final_result = llm_result
+        else:
+            final_result = deterministic_result
+
+        # Validate output structure — RCE-safe: only allow specific keys and types
+        if not isinstance(final_result, dict):
+            raise HTTPException(status_code=500, detail="Invalid parser output.")
+
+        # Ensure message exists
+        if "message" not in final_result:
+            final_result["message"] = "Parsed admin command."
+
+        return _ok(
+            {
+                "ok": True,
+                "patch": {
+                    "dashboardLayout": final_result.get("dashboardLayout"),
+                    "dynamicSchema": final_result.get("dynamicSchema"),
+                    "copilotRules": final_result.get("copilotRules"),
+                },
+                "message": final_result.get("message", ""),
+                "parsed": bool(final_result.get("parsed", False)),
+                "source": "llm" if llm_result and llm_result.get("parsed") else "deterministic",
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("admin copilot parse failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.get("/health")
 async def engine_health() -> dict[str, Any]:
     """Reports which engine modules are importable."""
@@ -423,7 +509,7 @@ async def engine_health() -> dict[str, Any]:
         "pdf_payslip_builder", "cert_pdf_generator", "performance_summarizer",
         "compliance_checker", "skill_ontology_mapper", "topic_modeler",
         "workflow_runner", "career_path_generator", "fx_rate_fetcher",
-        "linkedin_scraper", "scraper", "vector_store",
+        "linkedin_scraper", "scraper", "vector_store", "admin_copilot_parser",
     ]
     status = {}
     for name in modules:

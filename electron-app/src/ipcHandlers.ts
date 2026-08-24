@@ -5,18 +5,28 @@
  * `contract.ts` and validates its inputs defensively (no trust in renderer
  * arguments). File reads are restricted to paths previously selected through
  * the native dialog, with an extension allow-list.
+ *
+ * Epic B: adds updater IPC handlers (getVersion, getChannel, checkForUpdates,
+ * quitAndInstall) that forward to updater.ts and autoUpdater.
  */
 
 import {
   BrowserWindow,
   Notification,
+  app,
   dialog,
   ipcMain,
   type OpenDialogOptions,
 } from "electron";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { autoUpdater } from "electron-updater";
 import { IPC } from "./contract";
+import {
+  checkForUpdatesManually,
+  getAppVersion,
+  getUpdateChannel,
+} from "./updater";
 
 const selectedPaths = new Set<string>();
 const allowedExtensions = new Set<string>([".txt", ".md", ".csv", ".json"]);
@@ -98,4 +108,43 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null): void
     const text = await fs.readFile(filePath, "utf8");
     return text.slice(0, TEXT_MAX_LENGTH);
   });
+
+  // ── Updater IPC (Epic B) ────────────────────────────────────────────────
+
+  ipcMain.handle(IPC.updaterGetVersion, () => {
+    try {
+      return getAppVersion();
+    } catch {
+      return app.getVersion();
+    }
+  });
+
+  ipcMain.handle(IPC.updaterGetChannel, () => {
+    try {
+      return getUpdateChannel();
+    } catch {
+      return process.env.FLUXENTIQ_UPDATE_CHANNEL?.trim() || "latest";
+    }
+  });
+
+  ipcMain.handle(IPC.updaterCheck, async () => {
+    try {
+      const result = await checkForUpdatesManually(getWindow);
+      return result;
+    } catch (err) {
+      return {
+        checking: false,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  });
+
+  ipcMain.handle(IPC.updaterQuitAndInstall, () => {
+    try {
+      setImmediate(() => autoUpdater.quitAndInstall(false, true));
+    } catch (err) {
+      console.error("[ipc] quitAndInstall failed:", err instanceof Error ? err.message : String(err));
+    }
+  });
 }
+

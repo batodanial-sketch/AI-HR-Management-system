@@ -17,6 +17,10 @@ Run it with:
 
 The Next.js application proxies ``/api/ai/*`` and ``/api/workflows/*`` to this
 process (see ``AI_BRIDGE_URL``), keeping the browser/E2E contract intact.
+
+Token echo: every AI endpoint now returns X-Prompt-Tokens, X-Completion-Tokens,
+X-Model, X-Feature, X-Cost-Usd headers so the Next.js proxy can accurately meter
+streaming and non-streaming calls (Epic A).
 """
 
 from __future__ import annotations
@@ -48,11 +52,13 @@ from bridge.supabase_client import SupabaseClient, SupabaseError
 from bridge.tools import make_executor
 from bridge.usage import make_recorder
 from bridge.workflow_engine import make_engine
+from bridge.workflow_processor import make_processor as make_workflow_batch_processor
 from bridge.engine_routes import router as engine_router
 from bridge.jobs import default_registry
 from bridge.logging import setup_json_logging
 from bridge.rate_limit import SlidingWindowRateLimiter
 from bridge.security import is_public_path, verify_bridge_secret
+from bridge.cost import estimate_cost
 
 # Structured JSON logging across every bridge module.
 setup_json_logging()
@@ -64,6 +70,7 @@ logger = logging.getLogger("fluxentiq.bridge")
 ai: AiClient | None = None
 supabase: SupabaseClient | None = None
 workflow_engine = None
+workflow_batch_processor = None
 tool_executor = None
 usage_recorder = None
 jobs = default_registry
@@ -73,7 +80,7 @@ _started_at = time.time()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    global ai, supabase, workflow_engine, tool_executor, usage_recorder, rate_limiter
+    global ai, supabase, workflow_engine, workflow_batch_processor, tool_executor, usage_recorder, rate_limiter
 
     try:
         provider = make_provider()
@@ -103,6 +110,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         )
 
     workflow_engine = make_engine(supabase)
+    workflow_batch_processor = make_workflow_batch_processor(supabase, ai)
     tool_executor = make_executor(supabase)
     usage_recorder = make_recorder(supabase)
     rate_limiter = SlidingWindowRateLimiter(
@@ -114,6 +122,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         settings.rate_limit_per_window,
         settings.rate_limit_window_seconds,
     )
+    logger.info("workflow batch processor ready — ai digest + scoring + anomaly detection")
     yield
 
     if ai:
@@ -149,6 +158,7 @@ async def bridge_auth_middleware(request: Request, call_next):
     CORS preflight (OPTIONS) is allowed through so the CORS middleware can
     answer it. Everything else must present the shared secret.
     """
+
     path = request.url.path
     if request.method == "OPTIONS" or is_public_path(path):
         return await call_next(request)
@@ -195,22 +205,66 @@ def _require_ai() -> AiClient:
     return ai
 
 
+def _org_id_from_request(request: Request | None, context: dict[str, Any] | None = None) -> str | None:
+    """Resolves organization_id from header or copilot context."""
+    if request is not None:
+        header_org = request.headers.get("x-organization-id")
+        if header_org:
+            return header_org.strip() or None
+    if context is not None:
+        ctx_org = context.get("organization_id")
+        if ctx_org:
+            return str(ctx_org).strip() or None
+    return None
+
+
 async def _meter(
     feature: str,
     model: str,
     organization_id: str | None = None,
     prompt_tokens: int = 0,
     completion_tokens: int = 0,
-) -> None:
-    """Records AI usage (tokens + cost) after a successful call (best-effort)."""
+) -> float:
+    """Records AI usage (tokens + cost) after a successful call (best-effort). Returns cost."""
     if usage_recorder is not None:
-        await usage_recorder.record(
+        cost = await usage_recorder.record(
             feature=feature,
             model=model,
             organization_id=organization_id,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
         )
+        return cost
+    # Fallback when no recorder — still compute cost for header echo
+    return estimate_cost(model, prompt_tokens, completion_tokens)
+
+
+def _token_headers(
+    feature: str,
+    model: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    cost_usd: float | None = None,
+) -> dict[str, str]:
+    """Builds the token echo headers for the Next.js proxy."""
+    if usage_recorder is not None and hasattr(usage_recorder, "token_headers"):
+        return usage_recorder.token_headers(
+            feature=feature,
+            model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            cost_usd=cost_usd,
+        )
+    # Fallback
+    if cost_usd is None:
+        cost_usd = estimate_cost(model, prompt_tokens, completion_tokens)
+    return {
+        "X-Prompt-Tokens": str(prompt_tokens),
+        "X-Completion-Tokens": str(completion_tokens),
+        "X-Model": model,
+        "X-Feature": feature,
+        "X-Cost-Usd": f"{cost_usd:.8f}",
+    }
 
 
 @app.get("/health")
@@ -271,9 +325,13 @@ async def test_ai():
 
 
 @app.post("/api/ai/evaluate-candidate")
-async def evaluate_candidate(request: CandidateEvaluationRequest):
+async def evaluate_candidate(
+    http_request: Request,
+    request: CandidateEvaluationRequest,
+):
     """Streams a Groq candidate screening (deltas → structured evaluation)."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request)
 
     async def event_stream() -> AsyncIterator[str]:
         try:
@@ -282,13 +340,18 @@ async def evaluate_candidate(request: CandidateEvaluationRequest):
             yield _sse("[DONE]")
             pt, ct = client.last_usage()
             await _meter(
-                "candidate_evaluation", client.model,
-                prompt_tokens=pt, completion_tokens=ct,
+                "candidate_evaluation",
+                client.model,
+                organization_id=org_id,
+                prompt_tokens=pt,
+                completion_tokens=ct,
             )
         except GroqError as exc:
             logger.error("candidate evaluation failed: %s", exc)
             yield _sse({"type": "error", "message": str(exc)})
 
+    # Streaming: include model + feature headers at start (tokens unknown until end,
+    # but bridge still meters via _meter and Next.js proxy reads model header).
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
@@ -296,14 +359,20 @@ async def evaluate_candidate(request: CandidateEvaluationRequest):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+            "X-Model": client.model,
+            "X-Feature": "candidate_evaluation",
         },
     )
 
 
 @app.post("/api/ai/copilot")
-async def copilot(request: CopilotRequest):
+async def copilot(
+    http_request: Request,
+    request: CopilotRequest,
+):
     """Streams a Copilot reply (deltas → text + action cards + tool execution)."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request, request.context)
 
     async def event_stream() -> AsyncIterator[str]:
         try:
@@ -312,20 +381,24 @@ async def copilot(request: CopilotRequest):
                 if event.get("type") == "done":
                     # Execute any tool calls and emit their results.
                     result = event.get("result") or {}
-                    organization_id = request.context.get("organization_id")
+                    organization_id = request.context.get("organization_id") or org_id
                     for call in result.get("tool_calls", []):
                         from bridge.models import ToolCall
 
                         tool_result = await tool_executor.execute(
                             ToolCall(**call), organization_id
                         )
-                        yield _sse({"type": "tool_result", "result": tool_result.model_dump()})
+                        yield _sse(
+                            {"type": "tool_result", "result": tool_result.model_dump()}
+                        )
             yield _sse("[DONE]")
             pt, ct = client.last_usage()
             await _meter(
-                "copilot", client.model,
-                organization_id=request.context.get("organization_id"),
-                prompt_tokens=pt, completion_tokens=ct,
+                "copilot",
+                client.model,
+                organization_id=org_id or request.context.get("organization_id"),
+                prompt_tokens=pt,
+                completion_tokens=ct,
             )
         except GroqError as exc:
             logger.error("copilot failed: %s", exc)
@@ -338,17 +411,21 @@ async def copilot(request: CopilotRequest):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+            "X-Model": client.model,
+            "X-Feature": "copilot",
         },
     )
 
 
 @app.post("/api/ai/parse-resume")
 async def parse_resume(
+    http_request: Request,
     file: UploadFile | None = File(default=None),
     text: str | None = Form(default=None),
 ):
     """Parses a resume (file upload or pasted text) into structured fields."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request)
     raw_text = text or ""
     if file is not None:
         raw_text = await _extract_resume_text(file)
@@ -360,60 +437,91 @@ async def parse_resume(
     except GroqError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     pt, ct = client.last_usage()
-    await _meter("resume_parse", client.model, prompt_tokens=pt, completion_tokens=ct)
-    return JSONResponse(result.model_dump())
+    cost = await _meter(
+        "resume_parse", client.model, organization_id=org_id, prompt_tokens=pt, completion_tokens=ct
+    )
+    headers = _token_headers("resume_parse", client.model, pt, ct, cost)
+    return JSONResponse(result.model_dump(), headers=headers)
 
 
 @app.post("/api/ai/rank-candidates")
-async def rank_candidates(request: RankCandidatesRequest):
+async def rank_candidates(
+    http_request: Request,
+    request: RankCandidatesRequest,
+):
     """Ranks candidates against a job description."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request)
     try:
         result = await client.rank_candidates(request)
     except GroqError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     pt, ct = client.last_usage()
-    await _meter("candidate_ranking", client.model, prompt_tokens=pt, completion_tokens=ct)
-    return JSONResponse(result.model_dump())
+    cost = await _meter(
+        "candidate_ranking", client.model, organization_id=org_id, prompt_tokens=pt, completion_tokens=ct
+    )
+    headers = _token_headers("candidate_ranking", client.model, pt, ct, cost)
+    return JSONResponse(result.model_dump(), headers=headers)
 
 
 @app.post("/api/ai/interview-report")
-async def interview_report(request: InterviewReportRequest):
+async def interview_report(
+    http_request: Request,
+    request: InterviewReportRequest,
+):
     """Generates a structured post-interview report."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request)
     try:
         result = await client.generate_interview_report(request)
     except GroqError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     pt, ct = client.last_usage()
-    await _meter("interview_report", client.model, prompt_tokens=pt, completion_tokens=ct)
-    return JSONResponse(result.model_dump())
+    cost = await _meter(
+        "interview_report", client.model, organization_id=org_id, prompt_tokens=pt, completion_tokens=ct
+    )
+    headers = _token_headers("interview_report", client.model, pt, ct, cost)
+    return JSONResponse(result.model_dump(), headers=headers)
 
 
 @app.post("/api/ai/insights")
-async def insights(request: InsightsRequest):
+async def insights(
+    http_request: Request,
+    request: InsightsRequest,
+):
     """Surfaces people-analytics insights and anomalies."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request)
     try:
         result = await client.generate_insights(request)
     except GroqError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     pt, ct = client.last_usage()
-    await _meter("insights", client.model, prompt_tokens=pt, completion_tokens=ct)
-    return JSONResponse(result.model_dump())
+    cost = await _meter(
+        "insights", client.model, organization_id=org_id, prompt_tokens=pt, completion_tokens=ct
+    )
+    headers = _token_headers("insights", client.model, pt, ct, cost)
+    return JSONResponse(result.model_dump(), headers=headers)
 
 
 @app.post("/api/ai/evaluate-pto")
-async def evaluate_pto(request: PtoEvaluationRequest):
+async def evaluate_pto(
+    http_request: Request,
+    request: PtoEvaluationRequest,
+):
     """Automated leave decision (non-streaming JSON)."""
     client = _require_ai()
+    org_id = _org_id_from_request(http_request)
     try:
         result = await client.evaluate_pto(request)
     except GroqError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     pt, ct = client.last_usage()
-    await _meter("pto_evaluation", client.model, prompt_tokens=pt, completion_tokens=ct)
-    return JSONResponse(result.model_dump())
+    cost = await _meter(
+        "pto_evaluation", client.model, organization_id=org_id, prompt_tokens=pt, completion_tokens=ct
+    )
+    headers = _token_headers("pto_evaluation", client.model, pt, ct, cost)
+    return JSONResponse(result.model_dump(), headers=headers)
 
 
 @app.post("/api/workflows/trigger")
@@ -424,6 +532,107 @@ async def trigger_workflow(request: WorkflowTriggerRequest):
     except SupabaseError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return JSONResponse(result.model_dump())
+
+
+@app.post("/api/workflows/process-batch")
+async def process_workflow_batch(http_request: Request):
+    """
+    Async batch processor for daily employee workflows — handles compute-heavy tasks:
+    - Daily AI task digest summarization
+    - Automated performance scoring
+    - Anomaly detection
+
+    Protected by BRIDGE_SECRET_KEY (via middleware) + tenant header X-Organization-Id.
+    Org-isolated RLS enforced via Supabase client when configured.
+    """
+    # Organization isolation via header
+    org_id = http_request.headers.get("x-organization-id")
+    if not org_id:
+        # Try to get from JSON body as fallback
+        try:
+            body = await http_request.json()
+            org_id = body.get("organization_id") or body.get("organizationId")
+        except Exception:
+            org_id = None
+
+    if not org_id:
+        raise HTTPException(status_code=422, detail="X-Organization-Id header or organization_id in body is required.")
+
+    try:
+        # Parse body
+        payload = await http_request.json()
+    except Exception:
+        payload = {}
+
+    tasks = payload.get("tasks") or []
+    if not isinstance(tasks, list):
+        tasks = []
+
+    # Limit batch size for high-throughput safety
+    if len(tasks) > 500:
+        raise HTTPException(status_code=422, detail="Batch too large (max 500 tasks).")
+
+    options = payload.get("options") or {}
+
+    if workflow_batch_processor is None:
+        raise HTTPException(status_code=503, detail="Workflow batch processor not ready.")
+
+    try:
+        result = await workflow_batch_processor.process_batch(
+            organization_id=str(org_id),
+            tasks=tasks,
+            options=options if isinstance(options, dict) else {},
+        )
+
+        # Meter the batch processing (best-effort)
+        if usage_recorder is not None:
+            # Estimate tokens for AI digests if any
+            total_prompt = sum(d.get("prompt_tokens", 0) for d in result.get("digests", []))
+            total_completion = sum(d.get("completion_tokens", 0) for d in result.get("digests", []))
+            model = "openai/gpt-oss-120b"
+            if result.get("digests"):
+                first = result["digests"][0]
+                model = first.get("model", model)
+            await usage_recorder.record(
+                feature="insights",
+                model=model,
+                organization_id=str(org_id),
+                prompt_tokens=total_prompt,
+                completion_tokens=total_completion,
+            )
+
+        # Build token echo headers for Next.js proxy
+        total_prompt_tokens = sum(d.get("prompt_tokens", 0) for d in result.get("digests", []))
+        total_completion_tokens = sum(d.get("completion_tokens", 0) for d in result.get("digests", []))
+        cost = estimate_cost("openai/gpt-oss-120b", total_prompt_tokens, total_completion_tokens)
+
+        headers = {
+            "X-Prompt-Tokens": str(total_prompt_tokens),
+            "X-Completion-Tokens": str(total_completion_tokens),
+            "X-Model": "openai/gpt-oss-120b",
+            "X-Feature": "workflow_batch",
+            "X-Cost-Usd": f"{cost:.8f}",
+            "X-Organization-Id": str(org_id),
+        }
+
+        return JSONResponse(
+            {
+                "ok": True,
+                "organization_id": org_id,
+                "processed": result.get("processed", 0),
+                "failed": result.get("failed", 0),
+                "total": result.get("total", 0),
+                "digests": result.get("digests", []),
+                "anomalies": result.get("anomalies", []),
+            },
+            headers=headers,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("workflow batch processing failed")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 async def _extract_resume_text(file: UploadFile) -> str:
