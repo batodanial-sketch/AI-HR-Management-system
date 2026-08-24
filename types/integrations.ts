@@ -1,0 +1,1 @@
+export type SlackMessage={channel:string;text:string};export type TwilioMessage={to:string;body:string}

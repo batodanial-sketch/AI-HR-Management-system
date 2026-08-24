@@ -1,0 +1,182 @@
+/**
+ * Fluxentiq — Design Tokens (Metropolis dual-theme palette)
+ * ---------------------------------------------------------------------------
+ * Canonical design-token source. Two layers:
+ *
+ *  1. Tailwind-bound HSL triplets — consumed by tailwind.config.ts via
+ *     `hsl(var(--...))`, which preserves alpha modifiers (bg-primary/15, etc.).
+ *
+ *  2. Semantic aliases — the literal brand token names (--bg-base,
+ *     --accent-primary, --border-subtle, --radius-card, --3d-*, …) so the
+ *     reference utility classes (.saas-*, .glass) and the 3D scene can use
+ *     them verbatim.
+ *
+ * THEME MODEL
+ *   :root  = LIGHT (Metropolis light, brand violet preserved)
+ *   .dark  = DARK  (the original dark-first identity)
+ *
+ * The `<html>` element carries `.dark` by default (dark-first); the FOUC-guard
+ * script in app/layout.tsx removes it when the stored preference is "light".
+ * Both scopes define the FULL token set so semantic aliases, glass surfaces,
+ * shadows and 3D material params flip together.
+ *
+ * Brand violet (both themes): accent #7C5CFF (hover #8F73FF dark / #6D4DFF light)
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Tailwind-bound HSL channels (LIGHT) ─────────────────────────────── */
+  --background: 210 40% 98%;        /* #F8FAFC */
+  --foreground: 227 78% 4%;         /* #020510 (near-black text) */
+
+  --card: 0 0% 100%;                /* #FFFFFF */
+  --card-foreground: 227 78% 4%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 227 78% 4%;
+
+  --primary: 252 100% 68%;          /* #7C5CFF */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 210 40% 96%;         /* #F1F5F9 */
+  --secondary-foreground: 227 78% 4%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;  /* #64748B */
+
+  --accent: 252 100% 96%;           /* #EDE9FE violet-100 active nav tint */
+  --accent-foreground: 262 83% 58%; /* #7C3AED */
+
+  --destructive: 0 74% 42%;         /* #B91C1C */
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 72% 29%;           /* #15803D */
+  --success-foreground: 0 0% 100%;
+
+  --warning: 26 90% 37%;            /* #B45309 */
+  --warning-foreground: 0 0% 100%;
+
+  --border: 214 32% 91%;            /* #E2E8F0 */
+  --input: 212 27% 84%;             /* #CBD5E1 */
+  --ring: 252 100% 68%;
+
+  /* Radii */
+  --radius: 14px;
+  --radius-button: 10px;
+
+  /* ── Semantic aliases (LIGHT) ────────────────────────────────────────── */
+  --bg-base: #F8FAFC;
+  --bg-sidebar: #F8FAFC;
+  --bg-topbar: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-elevated-2: #F1F5F9;
+
+  --border-subtle: #E2E8F0;
+  --border-default: #CBD5E1;
+  --border-strong: #94A3B8;
+
+  --text-primary: #020510;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+
+  --accent-primary: #7C5CFF;
+  --accent-primary-hover: #6D4DFF;
+
+  --status-success: #15803D;
+  --status-warning: #B45309;
+  --status-error: #B91C1C;
+
+  --radius-card: 14px;
+
+  /* Glass surfaces (LIGHT) */
+  --card-surface: hsl(0 0% 100% / 0.72);
+  --card-surface-solid: #FFFFFF;
+
+  /* Elevation (LIGHT — soft slate shadows) */
+  --shadow-sm: 0 1px 2px 0 rgba(2, 6, 23, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(2, 6, 23, 0.10), 0 2px 4px -2px rgba(2, 6, 23, 0.06);
+  --shadow-lg: 0 12px 32px -8px rgba(2, 6, 23, 0.12);
+  --shadow-xl: 0 24px 56px -12px rgba(2, 6, 23, 0.16);
+
+  /* 3D material params (LIGHT) */
+  --3d-roughness: 0.2;
+  --3d-transmission: 0.9;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* ── Tailwind-bound HSL channels (DARK) ──────────────────────────────── */
+  --background: 227 78% 4%;         /* #020510 */
+  --foreground: 220 30% 96%;        /* #F2F4F8 */
+
+  --card: 233 57% 5%;               /* #060816 */
+  --card-foreground: 220 30% 96%;
+
+  --popover: 221 44% 7%;            /* #0A0F1A */
+  --popover-foreground: 220 30% 96%;
+
+  --primary: 252 100% 68%;          /* #7C5CFF */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 221 44% 7%;
+  --secondary-foreground: 220 30% 96%;
+
+  --muted: 221 44% 7%;
+  --muted-foreground: 220 15% 66%;  /* #9AA3B5 */
+
+  --accent: 252 60% 18%;
+  --accent-foreground: 252 90% 85%;
+
+  --destructive: 9 61% 47%;         /* #C0432E */
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 69% 58%;           /* #4ADE80 */
+  --success-foreground: 142 69% 8%;
+
+  --warning: 38 61% 47%;            /* #C08A2E */
+  --warning-foreground: 38 61% 10%;
+
+  --border: 220 33% 18%;            /* #1E283C */
+  --input: 220 27% 22%;             /* #283246 */
+  --ring: 252 100% 68%;
+
+  /* ── Semantic aliases (DARK) ─────────────────────────────────────────── */
+  --bg-base: #020510;
+  --bg-sidebar: #020510;
+  --bg-topbar: #050811;
+  --bg-elevated: #060816;
+  --bg-elevated-2: #0A0F1A;
+
+  --border-subtle: #1E283C;
+  --border-default: #283246;
+  --border-strong: #323C50;
+
+  --text-primary: #F2F4F8;
+  --text-secondary: #9AA3B5;
+  --text-muted: #5B6478;
+
+  --accent-primary: #7C5CFF;
+  --accent-primary-hover: #8F73FF;
+
+  --status-success: #1E6446;
+  --status-warning: #C08A2E;
+  --status-error: #C0432E;
+
+  --radius-card: 14px;
+
+  /* Glass surfaces (DARK) */
+  --card-surface: hsl(233 57% 5% / 0.72);
+  --card-surface-solid: #060816;
+
+  /* Elevation (DARK) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.65);
+  --shadow-xl: 0 24px 56px -12px rgba(0, 0, 0, 0.75);
+
+  /* 3D material params (DARK) */
+  --3d-roughness: 0.1;
+  --3d-transmission: 0.6;
+}

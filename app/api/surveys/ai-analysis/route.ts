@@ -1,0 +1,1 @@
+export const runtime='nodejs';export async function POST(){return Response.json({success:false,error:'Survey AI analysis requires configured server AI and human review.'},{status:503})}

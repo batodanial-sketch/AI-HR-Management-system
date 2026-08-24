@@ -1,0 +1,1 @@
+export const runtime='nodejs';export async function POST(){return Response.json({success:false,error:'Tax form generation requires finalized payroll data and configured jurisdictional provider.'},{status:503})}

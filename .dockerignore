@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.local
+data
+e2e
+playwright-report
+test-results
+supabase/.temp
+__pycache__
+*.pyc
+*.md
+!README_ENTERPRISE.md

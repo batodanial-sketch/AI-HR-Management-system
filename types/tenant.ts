@@ -1,0 +1,2 @@
+export type TenantSettings={organizationId:string;name:string;slug:string;timezone:string;locale:string;currencyCode:string}
+export type DomainWhitelist={id:string;domain:string;verifiedAt:string|null}

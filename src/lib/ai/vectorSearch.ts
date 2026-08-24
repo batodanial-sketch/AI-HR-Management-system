@@ -1,0 +1,2 @@
+import 'server-only'
+export async function semanticSearchBridge(query:string,limit=10){const url=process.env.PYTHON_SEMANTIC_SEARCH_URL;if(!url)throw new Error('PYTHON_SEMANTIC_SEARCH_URL is not configured.');const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,limit}),cache:'no-store'});if(!r.ok)throw new Error(`Semantic search bridge failed with ${r.status}.`);return r.json() as Promise<{matches:Array<{id:string;score:number;metadata:Record<string,unknown>}>}>}

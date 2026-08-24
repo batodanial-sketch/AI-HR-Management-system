@@ -1,0 +1,110 @@
+# Fluxentiq — one-command production stack.
+#
+#   docker compose up -d --build
+#
+# Services:
+#   app     — Next.js frontend/API (standalone output) on :3000
+#   bridge  — Python FastAPI AI bridge on :8000 (INTERNAL network only)
+#   db      — PostgreSQL 16 (self-hosted "memory" backend, INTERNAL only)
+#
+# Security: only `app` is published to the host. `bridge` and `db` live on the
+# internal network and are reachable solely from `app` (the bridge is also
+# protected by BRIDGE_SECRET_KEY). Configuration comes from `.env`
+# (copy .env.example → .env); secrets are interpolated from the host env, never
+# committed.
+
+services:
+  app:
+    build: .
+    container_name: fluxentiq-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      AI_BRIDGE_URL: http://bridge:8000
+      BRIDGE_SECRET_KEY: ${BRIDGE_SECRET_KEY:-}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+    networks:
+      - fluxentiq-internal
+    volumes:
+      - fluxentiq-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    depends_on:
+      bridge:
+        condition: service_healthy
+
+  bridge:
+    # Build context is the repo ROOT (not ./bridge) because the Dockerfile
+    # COPYs `requirements.txt`, `server.py` and `python_engine/` — all of which
+    # live at the repository root. Using `./bridge` as the context would fail
+    # with "requirements.txt not found in build context".
+    build:
+      context: .
+      dockerfile: bridge/Dockerfile
+    container_name: fluxentiq-bridge
+    restart: unless-stopped
+    # Internal only — the Next.js app proxies /api/ai/* to it server-side; the
+    # browser never talks to the bridge directly.
+    expose:
+      - "8000"
+    env_file:
+      - .env
+    environment:
+      AI_BRIDGE_CORS_ORIGINS: "http://localhost:3000"
+      BRIDGE_SECRET_KEY: ${BRIDGE_SECRET_KEY:-}
+      PYTHON_BRIDGE_ALLOWED_SCRAPE_HOSTS: ${PYTHON_BRIDGE_ALLOWED_SCRAPE_HOSTS:-}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+    networks:
+      - fluxentiq-internal
+    volumes:
+      - fluxentiq-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+
+  db:
+    image: postgres:16-alpine
+    container_name: fluxentiq-db
+    restart: unless-stopped
+    # Internal only — reachable from the app/bridge via the internal network.
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fluxentiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fluxentiq}
+      POSTGRES_DB: ${POSTGRES_DB:-fluxentiq}
+    networks:
+      - fluxentiq-internal
+    volumes:
+      - fluxentiq-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fluxentiq}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+networks:
+  fluxentiq-internal:
+    driver: bridge
+    internal: false
+
+volumes:
+  fluxentiq-data:
+  fluxentiq-pgdata:

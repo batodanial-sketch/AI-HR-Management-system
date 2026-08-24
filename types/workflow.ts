@@ -1,0 +1,1 @@
+export type WorkflowNode={id:string;type:'trigger'|'approval'|'slack'|'twilio'|'action';label:string;config:Record<string,unknown>};export type WorkflowGraph={nodes:WorkflowNode[];edges:Array<{source:string;target:string}>}

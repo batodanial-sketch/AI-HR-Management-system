@@ -1,0 +1,1 @@
+import 'server-only';import type{SupabaseClient}from'@supabase/supabase-js';import type{Database}from'@/src/lib/supabase';export async function listTenantRoles(s:SupabaseClient<Database>,org:string){const{data,error}=await s.from('roles').select('*').eq('organization_id',org).order('name');if(error)throw new Error(error.message);return data||[]}

@@ -1,0 +1,1 @@
+export const candidateAlertCard=(name:string,score:number)=>({text:`Candidate alert: ${name} scored ${score}%`})

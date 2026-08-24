@@ -1,0 +1,1 @@
+import 'server-only';export function convert(amount:number,rate:number){if(rate<=0)throw new Error('Currency rate must be positive.');return Number((amount*rate).toFixed(2))}

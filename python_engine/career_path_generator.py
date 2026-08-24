@@ -1,0 +1,2 @@
+from __future__ import annotations
+def pathways(role:str,skills:list[str])->dict:return {'role':role,'skills':skills,'recommendation':'Review development pathways with a human manager; no automatic promotion decision is made.'}

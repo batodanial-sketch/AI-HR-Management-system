@@ -1,0 +1,1 @@
+export function WelcomeEmail({name}:{name:string}){return `<h1>Welcome to Fluxentiq, ${name}</h1><p>Your secure people workspace is ready.</p>`}

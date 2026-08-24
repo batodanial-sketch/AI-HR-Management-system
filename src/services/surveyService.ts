@@ -1,0 +1,1 @@
+import 'server-only';import type{SupabaseClient}from'@supabase/supabase-js';import type{Database}from'@/src/lib/supabase';export async function getSurveys(s:SupabaseClient<Database>,org:string){const{data,error}=await s.from('pulse_surveys').select('*').eq('organization_id',org);if(error)throw new Error(error.message);return data||[]}

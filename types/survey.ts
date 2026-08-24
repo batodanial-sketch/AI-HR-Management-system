@@ -1,0 +1,1 @@
+export type SurveyQuestion={id:string;prompt:string;questionType:'scale'|'text'|'multiple_choice'|'enps';choices:any[]};export type PulseSurvey={id:string;title:string;anonymous:boolean;status:string}

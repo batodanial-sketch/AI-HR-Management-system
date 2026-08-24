@@ -1,0 +1,1 @@
+import 'server-only';export async function postSlackWebhook(payload:any){const url=process.env.SLACK_WEBHOOK_URL;if(!url)throw new Error('SLACK_WEBHOOK_URL is not configured.');const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(!r.ok)throw new Error(`Slack webhook failed with ${r.status}.`) }

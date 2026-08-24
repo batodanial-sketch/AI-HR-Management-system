@@ -1,0 +1,1 @@
+export type ExternalWebhookEvent={organizationId:string;eventType:string;payload:Record<string,unknown>};export type WebhookLog={id:string;direction:'inbound'|'outbound';eventType:string;statusCode:number|null;createdAt:string}

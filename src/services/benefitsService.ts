@@ -1,0 +1,4 @@
+import 'server-only'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/src/lib/supabase'
+export async function getBenefitsWorkspace(supabase: SupabaseClient<Database>, organizationId: string) { const [plans,enrollments,dependents] = await Promise.all([supabase.from('benefit_plans').select('*').eq('organization_id',organizationId),supabase.from('benefit_enrollments').select('*').eq('organization_id',organizationId),supabase.from('benefit_dependents').select('*').eq('organization_id',organizationId)]); const error=plans.error||enrollments.error||dependents.error; if(error) throw new Error(error.message); return {plans:plans.data||[],enrollments:enrollments.data||[],dependents:dependents.data||[]} }

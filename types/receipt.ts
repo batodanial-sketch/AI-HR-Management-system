@@ -1,0 +1,1 @@
+export type ReceiptParse={merchant:string|null;amount:number|null;date:string|null;warnings:string[]}

@@ -1,0 +1,1 @@
+export const runtime='nodejs';export async function POST(){return Response.json({success:false,error:'Receipt OCR requires configured Python OCR worker and storage key.'},{status:503})}

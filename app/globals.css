@@ -1,0 +1,293 @@
+@import "../styles/design-tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --header-height: 3.5rem;
+    --sidebar-width: 17rem;
+    --sidebar-width-collapsed: 4.5rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: theme("fontFamily.sans");
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
+  }
+
+  /* Ambient brand glow layered under the glass surfaces */
+  .app-ambient {
+    background:
+      radial-gradient(60rem 40rem at 110% -10%, hsl(var(--primary) / 0.16), transparent 60%),
+      radial-gradient(44rem 30rem at -15% 112%, hsl(var(--primary) / 0.10), transparent 55%),
+      hsl(var(--background));
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.28);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* Glassmorphic panel — the signature Fluxentiq surface */
+  .glass {
+    background: var(--card-surface);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md);
+  }
+
+  .glass-strong {
+    background: var(--card-surface-solid);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Gradient hairline border for cards / buttons */
+  .ring-hairline {
+    position: relative;
+  }
+  .ring-hairline::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.55),
+      transparent 40%,
+      transparent 60%,
+      hsl(var(--primary) / 0.25)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Section label */
+  .label-xs {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.06),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Electron frameless-window regions (no-op in the browser)          */
+/* `drag` makes the empty titlebar space draggable; `no-drag` keeps   */
+/* interactive controls clickable. Harmless outside Electron.         */
+/* ------------------------------------------------------------------ */
+.electron-drag {
+  -webkit-app-region: drag;
+}
+.electron-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ------------------------------------------------------------------ */
+/* Glassmorphism micro-interactions (Metropolis tokens)              */
+/* ------------------------------------------------------------------ */
+
+/* Dynamic lighting border + lift for glass cards (feature grid, etc.) */
+.card-glow {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.6),
+    transparent 35%,
+    transparent 65%,
+    hsl(var(--primary) / 0.3)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.card-glow:hover {
+  transform: translateY(-3px) scale(1.01);
+  border-color: hsl(var(--primary) / 0.35);
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.12),
+    0 18px 44px -14px hsl(var(--primary) / 0.35);
+}
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Shimmer sweep across primary CTAs on hover (cinematic, token-driven) */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(0 0% 100% / 0.28),
+    transparent
+  );
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.btn-shimmer:hover::after {
+  transform: translateX(120%) skewX(-18deg);
+}
+
+/* Respect reduced motion for the new micro-interactions */
+@media (prefers-reduced-motion: reduce) {
+  .card-glow,
+  .card-glow::before,
+  .btn-shimmer::after {
+    transition: none !important;
+  }
+  .card-glow:hover {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Brand utility classes (strict token mapping, per design spec)      */
+/* Plain CSS (not @layer) so Tailwind never purges them.             */
+/* ------------------------------------------------------------------ */
+.saas-card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.saas-button-primary {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  border-radius: var(--radius-button);
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+.saas-button-primary:hover {
+  background-color: var(--accent-primary-hover);
+}
+
+.saas-button-secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: var(--radius-button);
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.saas-button-secondary:hover {
+  background-color: var(--bg-elevated-2);
+  border-color: var(--border-strong);
+}
+
+.saas-sidebar {
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.saas-badge-success {
+  background-color: hsl(var(--success) / 0.15);
+  border: 1px solid hsl(var(--success) / 0.4);
+  color: hsl(var(--success));
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.saas-badge-warning {
+  background-color: hsl(var(--warning) / 0.15);
+  border: 1px solid hsl(var(--warning) / 0.4);
+  color: hsl(var(--warning));
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.saas-badge-error {
+  background-color: hsl(var(--destructive) / 0.15);
+  border: 1px solid hsl(var(--destructive) / 0.4);
+  color: hsl(var(--destructive));
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+/* Pro Max #7 — reduced-motion: disable non-essential CSS animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

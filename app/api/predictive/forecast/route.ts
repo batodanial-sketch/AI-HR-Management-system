@@ -1,0 +1,1 @@
+import{createScenarioAction}from'@/app/actions/predictiveActions';export const runtime='nodejs';export async function POST(r:Request){try{return Response.json(await createScenarioAction(await r.json()))}catch{return Response.json({success:false,error:'Invalid forecast scenario.'},{status:400})}}

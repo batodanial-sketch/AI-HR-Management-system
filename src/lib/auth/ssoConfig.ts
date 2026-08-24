@@ -1,0 +1,1 @@
+import 'server-only';export function getSsoRedirectUrl(provider:string,returnTo='/'){if(!provider.trim())throw new Error('SSO provider is required.');return `/api/auth/sso/callback?provider=${encodeURIComponent(provider)}&returnTo=${encodeURIComponent(returnTo)}`}

@@ -1,0 +1,5 @@
+import { z } from 'zod'
+import { createEquityGrantAction } from '@/app/actions/equityActions'
+export const runtime='nodejs'; export const dynamic='force-dynamic'
+const schema=z.object({employeeId:z.string().uuid(),grantType:z.enum(['option','rsu','share','phantom']),grantDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),quantity:z.number().positive(),strikePrice:z.number().nonnegative().optional().nullable(),currencyCode:z.string().length(3).optional(),vestingStartDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),vestingMonths:z.number().int().min(1).optional(),cliffMonths:z.number().int().min(0).optional()})
+export async function POST(request:Request){try{const result=await createEquityGrantAction(schema.parse(await request.json()));return Response.json(result,{status:result.success?201:400})}catch(e){const error=e instanceof z.ZodError?e.issues.map(i=>i.message).join(' '):'Invalid equity grant payload.';return Response.json({success:false,error},{status:400})}}

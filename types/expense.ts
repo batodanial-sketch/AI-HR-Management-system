@@ -1,0 +1,1 @@
+export type Expense={id:string;employeeId:string;merchant:string|null;expenseDate:string;category:string;amount:number;currencyCode:string;status:string}

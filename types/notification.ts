@@ -1,0 +1,1 @@
+export type NotificationChannel='in_app'|'email'|'slack'|'webhook';export type NotificationPreference={email:boolean;workflow:boolean;risk:boolean}

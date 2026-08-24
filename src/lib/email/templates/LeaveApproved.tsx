@@ -1,0 +1,1 @@
+export function LeaveApproved({name}:{name:string}){return `<h1>Leave approved</h1><p>${name}, your leave request has been approved.</p>`}

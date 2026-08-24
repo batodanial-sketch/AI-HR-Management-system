@@ -1,0 +1,1 @@
+export const leaveRequestCard=(name:string,status:string)=>({text:`Leave request ${status}: ${name}`})

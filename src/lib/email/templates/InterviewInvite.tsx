@@ -1,0 +1,1 @@
+export function InterviewInvite({candidate,when}:{candidate:string;when:string}){return `<h1>Interview invitation</h1><p>${candidate}, your interview is scheduled for ${when}.</p>`}

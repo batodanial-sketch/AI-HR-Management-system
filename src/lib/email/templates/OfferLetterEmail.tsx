@@ -1,0 +1,1 @@
+export function OfferLetterEmail({name}:{name:string}){return `<h1>Offer letter ready</h1><p>${name}, please review your secure offer document.</p>`}

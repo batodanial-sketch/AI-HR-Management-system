@@ -1,0 +1,1 @@
+export type CultureSignal={label:string;value:number;disclaimer:string}

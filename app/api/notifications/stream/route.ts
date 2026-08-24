@@ -1,0 +1,1 @@
+import{getNotificationsAction}from'@/app/actions/notificationActions';export const runtime='nodejs';export async function GET(){const r=await getNotificationsAction();return Response.json(r,{headers:{'Cache-Control':'no-store'}}) }

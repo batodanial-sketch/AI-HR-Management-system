@@ -1,0 +1,1 @@
+import 'server-only';import type{SupabaseClient}from'@supabase/supabase-js';import type{Database}from'@/src/lib/supabase';export async function createNotification(s:SupabaseClient<Database>,input:any){const{data,error}=await s.from('notifications').insert(input).select().single();if(error)throw new Error(error.message);return data}

@@ -1,0 +1,1 @@
+export{postSlackWebhook as sendSlackMessage}from'@/src/lib/slack/slackClient'

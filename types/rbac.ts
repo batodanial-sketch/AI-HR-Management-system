@@ -1,0 +1,1 @@
+export type Permission={resource:string;actions:string[]};export type RoleDefinition={id:string;code:string;name:string;description:string|null;permissions:Permission[];isSystem:boolean}

@@ -1,0 +1,1 @@
+export type CurrencyRate={baseCurrency:string;quoteCurrency:string;rate:number;asOfDate:string};export type GlobalPayrollRun={id:string;currency:string;status:string}

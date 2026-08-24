@@ -1,0 +1,1 @@
+import 'server-only';import type{SupabaseClient}from'@supabase/supabase-js';import type{Database}from'@/src/lib/supabase';export async function listExpenses(s:SupabaseClient<Database>,org:string){const{data,error}=await s.from('expense_reports').select('*').eq('organization_id',org);if(error)throw new Error(error.message);return data||[]}

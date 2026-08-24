@@ -1,0 +1,1 @@
+export function PayslipReady({name}:{name:string}){return `<h1>Payslip ready</h1><p>${name}, your payslip is available in Fluxentiq.</p>`}

@@ -1,0 +1,4 @@
+import 'server-only'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/src/lib/supabase'
+export async function getEquityWorkspace(supabase: SupabaseClient<Database>, organizationId: string) { const [grants,vesting,bands,bonuses] = await Promise.all([supabase.from('equity_grants').select('*').eq('organization_id',organizationId),supabase.from('equity_vesting_events').select('*').eq('organization_id',organizationId).order('vesting_date'),supabase.from('compensation_bands').select('*').eq('organization_id',organizationId),supabase.from('bonus_awards').select('*').eq('organization_id',organizationId)]); const error=grants.error||vesting.error||bands.error||bonuses.error; if(error) throw new Error(error.message); return {grants:grants.data||[],vesting:vesting.data||[],bands:bands.data||[],bonuses:bonuses.data||[]} }

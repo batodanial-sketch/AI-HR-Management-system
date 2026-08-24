@@ -1,0 +1,1 @@
+export type WorkforceScenario={id:string;name:string;assumptions:Record<string,unknown>;status:string};export type WorkforceForecast={periodDate:string;headcountForecast:number|null;budgetForecast:number|null;confidenceLow:number|null;confidenceHigh:number|null}

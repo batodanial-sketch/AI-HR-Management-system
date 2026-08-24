@@ -1,0 +1,1 @@
+import 'server-only';import type{SupabaseClient}from'@supabase/supabase-js';import type{Database}from'@/src/lib/supabase';export async function getTenantSettings(s:SupabaseClient<Database>,org:string){const{data,error}=await s.from('organizations').select('*').eq('id',org).maybeSingle();if(error)throw new Error(error.message);return data}

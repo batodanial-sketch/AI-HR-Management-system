@@ -1,0 +1,1 @@
+import 'server-only';import{runWorkflowAction}from'@/app/actions/workflowActions';export async function triggerWorkflow(workflowId:string,payload:Record<string,unknown>={}){return runWorkflowAction({workflowId,triggerPayload:payload})}

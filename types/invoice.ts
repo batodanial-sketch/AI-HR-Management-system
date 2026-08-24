@@ -1,0 +1,1 @@
+export type ContractorInvoice={id:string;contractorId:string;invoiceNumber:string;invoiceDate:string;totalAmount:number;currencyCode:string;status:'draft'|'submitted'|'approved'|'paid'|'rejected'}
