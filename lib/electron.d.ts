@@ -20,6 +20,20 @@ interface FluxentiqDesktopNotificationPayload {
   body?: string;
 }
 
+interface FluxentiqUpdaterInfo {
+  version: string;
+  releaseNotes?: string | string[] | null;
+  releaseName?: string | null;
+  releaseDate?: string | null;
+}
+
+interface FluxentiqDownloadProgress {
+  bytesPerSecond: number;
+  percent: number;
+  transferred: number;
+  total: number;
+}
+
 interface FluxentiqDesktopAPI {
   isDesktop: boolean;
   window: {
@@ -33,6 +47,17 @@ interface FluxentiqDesktopAPI {
   files: {
     selectTextFile: () => Promise<FluxentiqDesktopFileSelection | null>;
     readSelectedTextFile: (filePath: string) => Promise<string>;
+  };
+  updater: {
+    getVersion: () => Promise<string>;
+    getUpdateChannel: () => Promise<string>;
+    checkForUpdates: () => Promise<{ checking: boolean; message?: string }>;
+    quitAndInstall: () => Promise<void>;
+    onUpdateAvailable: (callback: (info: FluxentiqUpdaterInfo) => void) => () => void;
+    onUpdateNotAvailable: (callback: (info: FluxentiqUpdaterInfo) => void) => () => void;
+    onUpdateDownloaded: (callback: (info: FluxentiqUpdaterInfo) => void) => () => void;
+    onUpdateError: (callback: (error: string) => void) => () => void;
+    onDownloadProgress: (callback: (progress: FluxentiqDownloadProgress) => void) => () => void;
   };
 }
 
