@@ -14,6 +14,7 @@ import "server-only";
 
 import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
 import { recordAiUsage, type AiFeature } from "@/lib/ai-usage";
+import { recordAiTelemetry } from "@/lib/ai/telemetry";
 import { getLicenseState } from "@/lib/license";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -125,6 +126,7 @@ export async function proxyToBridge(
   const feature = featureFor(pathname);
 
   let upstreamResponse: Response;
+  const startedAt = Date.now();
   try {
     upstreamResponse = await fetch(upstream, {
       method: request.method,
@@ -137,6 +139,7 @@ export async function proxyToBridge(
       { status: 502, headers: { "Content-Type": "application/json" } },
     );
   }
+  const latencyMs = Date.now() - startedAt;
 
   const responseType =
     upstreamResponse.headers.get("content-type") ?? "application/json";
@@ -148,6 +151,7 @@ export async function proxyToBridge(
   const completionTokensHeader =
     upstreamResponse.headers.get("X-Completion-Tokens");
   const modelHeader = upstreamResponse.headers.get("X-Model");
+  const costHeader = upstreamResponse.headers.get("X-Cost-Usd");
 
   if (feature) {
     const promptTokens = promptTokensHeader
@@ -170,6 +174,28 @@ export async function proxyToBridge(
           ? completionTokens
           : undefined,
     });
+
+    // Dedicated telemetry: latency + tokens + cost per organization.
+    if (organizationId) {
+      const costUsd = costHeader ? Number(costHeader) : undefined;
+      void recordAiTelemetry({
+        feature,
+        organizationId,
+        model,
+        provider: "bridge",
+        promptTokens:
+          promptTokens != null && Number.isFinite(promptTokens)
+            ? promptTokens
+            : null,
+        completionTokens:
+          completionTokens != null && Number.isFinite(completionTokens)
+            ? completionTokens
+            : null,
+        latencyMs,
+        costUsd: costUsd != null && Number.isFinite(costUsd) ? costUsd : null,
+        status: upstreamResponse.ok ? "ok" : "error",
+      });
+    }
   }
 
   // Forward token headers + rate-limit headers to client for observability.

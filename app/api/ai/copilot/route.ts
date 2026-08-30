@@ -14,6 +14,11 @@ import {
   validateToolArguments,
 } from "@/lib/copilot/tools";
 import { recordAuditLog } from "@/lib/audit";
+import {
+  checkAiBudget,
+  recordAiTelemetry,
+  type AiBudgetDecision,
+} from "@/lib/ai/telemetry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,21 +74,31 @@ interface BridgeEvent {
   message?: string;
 }
 
+interface BridgeUsage {
+  promptTokens: number;
+  completionTokens: number;
+  model: string | null;
+  costUsd: number | null;
+  latencyMs: number;
+}
+
 /**
  * Calls the bridge copilot endpoint in planner mode (execute_tools=false) and
- * parses its SSE stream. Returns the raw events (replayed for final answers)
- * and the parsed `done` result.
+ * parses its SSE stream. Returns the raw events (replayed for final answers),
+ * the parsed `done` result, and the token/latency metadata echoed by the
+ * bridge (X-Prompt-Tokens / X-Completion-Tokens / X-Model / X-Cost-Usd).
  */
 async function planWithBridge(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   toolNames: string[],
   organizationId: string | null,
-): Promise<{ events: BridgeEvent[]; done: BridgeEvent["result"] | null }> {
+): Promise<{ events: BridgeEvent[]; done: BridgeEvent["result"] | null; usage: BridgeUsage }> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const secret = bridgeSecret();
   if (secret) headers["X-Bridge-Secret"] = secret;
   if (organizationId) headers["X-Organization-Id"] = organizationId;
 
+  const startedAt = Date.now();
   let upstream: Response;
   try {
     upstream = await fetch(`${bridgeUrl()}/api/ai/copilot`, {
@@ -104,6 +119,14 @@ async function planWithBridge(
     const detail = await upstream.text().catch(() => "");
     throw new Error(`AI bridge returned ${upstream.status}${detail ? `: ${detail.slice(0, 200)}` : ""}.`);
   }
+
+  const usage: BridgeUsage = {
+    promptTokens: Number(upstream.headers.get("X-Prompt-Tokens")) || 0,
+    completionTokens: Number(upstream.headers.get("X-Completion-Tokens")) || 0,
+    model: upstream.headers.get("X-Model"),
+    costUsd: Number(upstream.headers.get("X-Cost-Usd")) || null,
+    latencyMs: Date.now() - startedAt,
+  };
 
   const reader = upstream.body.getReader();
   const decoder = new TextDecoder();
@@ -135,7 +158,7 @@ async function planWithBridge(
     }
   }
 
-  return { events, done };
+  return { events, done, usage };
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -234,6 +257,21 @@ export async function POST(request: Request): Promise<Response> {
       organizationId,
     });
 
+  /** Observability: per-plan latency + token metering (fire-and-forget). */
+  const meterPlan = (usage: BridgeUsage) => {
+    if (!organizationId) return;
+    void recordAiTelemetry({
+      feature: "copilot",
+      organizationId,
+      model: usage.model,
+      provider: "bridge",
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      latencyMs: usage.latencyMs,
+      costUsd: usage.costUsd,
+    });
+  };
+
   const encoder = new TextEncoder();
   let streamController: ReadableStreamDefaultController<Uint8Array>;
 
@@ -253,6 +291,54 @@ export async function POST(request: Request): Promise<Response> {
 
   const pump = async () => {
     try {
+      // 0) Budget governance — block before any spend when the org's monthly
+      // cap is exhausted; attach a fallback hint when it approaches.
+      if (organizationId) {
+        const estimatedTokens =
+          conversation.reduce((sum, message) => sum + Math.ceil(message.content.length / 4), 0) +
+          500; // planner overhead allowance
+        const budget: AiBudgetDecision = await checkAiBudget(organizationId, estimatedTokens);
+        if (!budget.allowed) {
+          emit({
+            type: "budget",
+            budget: {
+              allowed: false,
+              threshold: budget.threshold,
+              fallbackModel: budget.fallbackModel,
+              fallbackProvider: budget.fallbackProvider,
+            },
+          });
+          emit({
+            type: "error",
+            message: `AI budget exceeded for this month. Requests are paused until the cap resets — ask an admin to raise the limit or route to the fallback model (${budget.fallbackModel ?? "configure one in Settings"}).`,
+            code: "AI_BUDGET_EXCEEDED",
+          });
+          emit({ type: "done", result: { text: "", actions: [] } });
+          if (organizationId) {
+            void recordAiTelemetry({
+              feature: "copilot",
+              organizationId,
+              status: "budget_blocked",
+              latencyMs: 0,
+            });
+          }
+          return;
+        }
+        if (budget.threshold === "warning") {
+          emit({
+            type: "budget",
+            budget: {
+              allowed: true,
+              threshold: "warning",
+              remainingTokens: budget.remainingTokens,
+              remainingCostUsd: budget.remainingCostUsd,
+              fallbackModel: budget.fallbackModel,
+              fallbackProvider: budget.fallbackProvider,
+            },
+          });
+        }
+      }
+
       // 1) Confirmed tool call (inline approval card → resend).
       if (parsed.data.confirmToolCall) {
         const definition = findCopilotTool(parsed.data.confirmToolCall.name);
@@ -300,6 +386,7 @@ export async function POST(request: Request): Promise<Response> {
       const MAX_TOOL_ROUNDS = 3;
       for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
         const planned = await planWithBridge(conversation, toolNames, organizationId);
+        meterPlan(planned.usage);
         const toolCalls = planned.done?.tool_calls ?? [];
         if (toolCalls.length === 0) {
           // Final answer — replay the planner's stream to the client.
@@ -366,6 +453,7 @@ export async function POST(request: Request): Promise<Response> {
 
       // 3) Loop exhausted — force a final plain answer.
       const forced = await planWithBridge(conversation, [], organizationId);
+      meterPlan(forced.usage);
       for (const event of forced.events) {
         if (event.type === "delta" && typeof event.content === "string") {
           emit({ type: "delta", content: event.content });

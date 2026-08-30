@@ -314,6 +314,17 @@ export default function CopilotPage() {
               ),
             );
           },
+          onBudget: (budget) => {
+            if (!budget.allowed) return; // the error event explains the block
+            toast({
+              variant: "warning",
+              title: "Approaching AI budget",
+              description:
+                budget.remainingTokens !== null && budget.remainingTokens !== undefined
+                  ? `${budget.remainingTokens.toLocaleString()} tokens remaining this month.`
+                  : "This month's AI cap is nearly reached.",
+            });
+          },
           onError: (message) => {
             setMessages((prev) =>
               prev.map((item) =>

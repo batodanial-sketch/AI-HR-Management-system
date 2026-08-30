@@ -24,12 +24,23 @@ export interface ToolCallEvent {
   status?: "executing";
 }
 
+export interface BudgetEvent {
+  allowed: boolean;
+  threshold: "ok" | "warning" | "exceeded";
+  remainingTokens?: number | null;
+  remainingCostUsd?: number | null;
+  fallbackModel?: string | null;
+  fallbackProvider?: string | null;
+}
+
 export interface AiStreamEvent {
-  type: "delta" | "done" | "error" | "tool_result" | "tool_call";
+  type: "delta" | "done" | "error" | "tool_result" | "tool_call" | "budget";
   content?: string;
   result?: unknown;
   message?: string;
+  code?: string;
   call?: ToolCallEvent;
+  budget?: BudgetEvent;
 }
 
 export interface StreamHandlers<TResult> {
@@ -38,6 +49,7 @@ export interface StreamHandlers<TResult> {
   onError?: (message: string) => void;
   onToolResult?: (result: ToolResultEvent) => void;
   onToolCall?: (call: ToolCallEvent) => void;
+  onBudget?: (budget: BudgetEvent) => void;
 }
 
 /**
@@ -182,6 +194,8 @@ function handleSseChunk<TResult>(
       handlers.onToolResult?.(event.result as ToolResultEvent);
     } else if (event.type === "tool_call" && event.call) {
       handlers.onToolCall?.(event.call);
+    } else if (event.type === "budget" && event.budget) {
+      handlers.onBudget?.(event.budget);
     } else if (event.type === "error" && typeof event.message === "string") {
       handlers.onError?.(event.message);
     }
