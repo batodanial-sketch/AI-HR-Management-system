@@ -27,7 +27,8 @@ const CI = Boolean(process.env.CI);
 const STORAGE_STATE = path.join(process.cwd(), "e2e", ".auth", "storageState.json");
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: ".",
+  testMatch: ["e2e/**/*.spec.ts", "tests/e2e/**/*.spec.ts"],
   fullyParallel: true,
   forbidOnly: CI,
   retries: CI ? 2 : 0,
@@ -63,8 +64,15 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // Next.js application.
-      command: process.env.E2E_WEBSERVER_COMMAND ?? "npm run dev",
+      // Next.js application. E2E_ROLE_OVERRIDE_ENABLED is a strictly
+      // header-gated test hook (see lib/rbac.ts) — it lets the rbac-boundaries
+      // spec simulate under-privileged roles; it is inert for every other
+      // request and never active in production builds.
+      command:
+        process.env.E2E_WEBSERVER_COMMAND ??
+        (process.platform === "win32"
+          ? "set E2E_ROLE_OVERRIDE_ENABLED=1&& npm run dev"
+          : "E2E_ROLE_OVERRIDE_ENABLED=1 npm run dev"),
       url: BASE_URL,
       reuseExistingServer: !CI,
       timeout: 120_000,
@@ -73,7 +81,9 @@ export default defineConfig({
     },
     {
       // Python AI bridge (reads .env.local for BRIDGE_SECRET_KEY + scrape hosts).
-      command: "python3 -m uvicorn server:app --host 0.0.0.0 --port 8000",
+      // E2E_BRIDGE_COMMAND overrides the launch command — hermetic suites
+      // (tests/e2e) that mock the AI endpoints can pass `true` to skip it.
+      command: process.env.E2E_BRIDGE_COMMAND ?? "python3 -m uvicorn server:app --host 0.0.0.0 --port 8000",
       url: `${BRIDGE_URL}/health`,
       reuseExistingServer: !CI,
       timeout: 120_000,

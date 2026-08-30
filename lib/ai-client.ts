@@ -13,13 +13,34 @@ export interface ToolResultEvent {
   tool: string;
   ok: boolean;
   message: string;
+  data?: unknown;
+}
+
+export interface ToolCallEvent {
+  name: string;
+  arguments: Record<string, unknown>;
+  confirmationRequired: boolean;
+  description?: string;
+  status?: "executing";
+}
+
+export interface BudgetEvent {
+  allowed: boolean;
+  threshold: "ok" | "warning" | "exceeded";
+  remainingTokens?: number | null;
+  remainingCostUsd?: number | null;
+  fallbackModel?: string | null;
+  fallbackProvider?: string | null;
 }
 
 export interface AiStreamEvent {
-  type: "delta" | "done" | "error" | "tool_result";
+  type: "delta" | "done" | "error" | "tool_result" | "tool_call" | "budget";
   content?: string;
   result?: unknown;
   message?: string;
+  code?: string;
+  call?: ToolCallEvent;
+  budget?: BudgetEvent;
 }
 
 export interface StreamHandlers<TResult> {
@@ -27,6 +48,31 @@ export interface StreamHandlers<TResult> {
   onDone: (result: TResult) => void;
   onError?: (message: string) => void;
   onToolResult?: (result: ToolResultEvent) => void;
+  onToolCall?: (call: ToolCallEvent) => void;
+  onBudget?: (budget: BudgetEvent) => void;
+}
+
+/**
+ * Extracts a human-readable message from a failed AI response. Prefers the
+ * `error` / `detail` / `message` fields the bridge and proxy return, so the
+ * UI can surface "AI bridge unreachable" instead of a bare status code.
+ */
+export async function errorMessageFromResponse(
+  response: Response,
+): Promise<string> {
+  try {
+    const json = (await response.json()) as {
+      error?: string;
+      detail?: string;
+      message?: string;
+    };
+    if (typeof json.error === "string" && json.error) return json.error;
+    if (typeof json.detail === "string" && json.detail) return json.detail;
+    if (typeof json.message === "string" && json.message) return json.message;
+  } catch {
+    // Non-JSON error body — fall through to the status text.
+  }
+  return `AI bridge returned ${response.status} ${response.statusText}`.trim();
 }
 
 /**
@@ -43,7 +89,7 @@ export async function postAi<TResult>(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`AI bridge returned ${response.status}`);
+    throw new Error(await errorMessageFromResponse(response));
   }
   return (await response.json()) as TResult;
 }
@@ -60,7 +106,7 @@ export async function postAiFile<TResult>(
   form.append("file", file);
   const response = await fetch(path, { method: "POST", body: form });
   if (!response.ok) {
-    throw new Error(`AI bridge returned ${response.status}`);
+    throw new Error(await errorMessageFromResponse(response));
   }
   return (await response.json()) as TResult;
 }
@@ -86,7 +132,7 @@ export async function streamAi<TResult>(
   }
 
   if (!response.ok) {
-    handlers.onError?.(`AI bridge returned ${response.status}`);
+    handlers.onError?.(await errorMessageFromResponse(response));
     return;
   }
   const json = (await response.json()) as TResult;
@@ -146,6 +192,10 @@ function handleSseChunk<TResult>(
       handlers.onDone(event.result as TResult);
     } else if (event.type === "tool_result") {
       handlers.onToolResult?.(event.result as ToolResultEvent);
+    } else if (event.type === "tool_call" && event.call) {
+      handlers.onToolCall?.(event.call);
+    } else if (event.type === "budget" && event.budget) {
+      handlers.onBudget?.(event.budget);
     } else if (event.type === "error" && typeof event.message === "string") {
       handlers.onError?.(event.message);
     }

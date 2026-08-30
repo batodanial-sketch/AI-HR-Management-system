@@ -88,9 +88,186 @@ export function isAdmin(user: SessionUser): boolean {
   return user.role === "owner" || user.role === "admin";
 }
 
-/** Returns true when the user can approve/reject (owner, admin, manager). */
+/** True when the user can approve/reject (owner, admin, manager). */
 export function canApprove(user: SessionUser): boolean {
   return (
     user.role === "owner" || user.role === "admin" || user.role === "manager"
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Enterprise SSO (SAML 2.0 / OIDC)                                   */
+/* ------------------------------------------------------------------ */
+
+/** Supported enterprise identity providers. */
+export type SsoProviderId = "google" | "okta" | "azure";
+
+/**
+ * Normalizes a user-supplied provider string onto the supported set.
+ * Unknown values return null (fail closed).
+ */
+export function normalizeSsoProvider(raw: string | null | undefined): SsoProviderId | null {
+  const value = (raw ?? "").trim().toLowerCase();
+  if (value === "google" || value === "google-workspace" || value === "workspace") {
+    return "google";
+  }
+  if (value === "okta" || value === "saml") return "okta";
+  if (value === "azure" || value === "azuread" || value === "microsoft" || value === "entra") {
+    return "azure";
+  }
+  return null;
+}
+
+/**
+ * Infers the likely IdP from an email domain (for domain-first SSO logins).
+ */
+export function ssoProviderForDomain(domain: string | null | undefined): SsoProviderId | null {
+  const host = (domain ?? "").trim().toLowerCase();
+  if (!host) return null;
+  if (host.endsWith("okta.com") || host.endsWith("oktapreview.com")) return "okta";
+  if (host.endsWith("onmicrosoft.com") || host.endsWith("microsoft.com")) return "azure";
+  if (host === "gmail.com" || host === "googlemail.com" || host === "google.com") return "google";
+  return null;
+}
+
+/** Maps a supported provider onto Supabase's `signInWithSSO` provider id. */
+function supabaseSsoProviderId(provider: SsoProviderId): string {
+  if (provider === "google") {
+    // Google Workspace is a hosted OIDC provider — the stable provider id.
+    return "google";
+  }
+  // Okta + Azure AD are SAML 2.0 apps. The provider id is the SAML
+  // provider's UUID as configured in the Supabase dashboard (Auth → SSO),
+  // supplied via env so it is never hard-coded per tenant.
+  const envId =
+    provider === "okta"
+      ? process.env.SUPABASE_SSO_OKTA_PROVIDER_ID
+      : process.env.SUPABASE_SSO_AZURE_PROVIDER_ID;
+  if (!envId) {
+    throw new Error(
+      `SAML SSO for ${provider} is not configured — set ${
+        provider === "okta" ? "SUPABASE_SSO_OKTA_PROVIDER_ID" : "SUPABASE_SSO_AZURE_PROVIDER_ID"
+      } to the provider UUID from the Supabase dashboard.`,
+    );
+  }
+  return envId;
+}
+
+/**
+ * Initiates an SSO login flow via Supabase Auth and returns the
+ * provider-hosted authorization URL. The caller redirects the browser there;
+ * Supabase's callback lands on `/auth/callback` with the session.
+ */
+export async function initiateSsoLogin(input: {
+  provider?: string | null;
+  domain?: string | null;
+  redirectTo?: string | null;
+  captchaToken?: string | null;
+}): Promise<{ url: string; provider: SsoProviderId }> {
+  if (!hasSupabaseEnv()) {
+    throw new Error("SSO is unavailable — Supabase is not configured.");
+  }
+
+  const provider =
+    normalizeSsoProvider(input.provider) ??
+    ssoProviderForDomain(input.domain) ??
+    null;
+
+  // Redirect targets are restricted to same-origin paths — an attacker
+  // controlling `redirectTo` must never be able to exfiltrate the session.
+  let redirectTo = "/dashboard";
+  if (input.redirectTo && input.redirectTo.startsWith("/") && !input.redirectTo.startsWith("//")) {
+    redirectTo = input.redirectTo;
+  }
+  const options = {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}${redirectTo}`,
+    skipBrowserRedirect: true,
+    ...(input.captchaToken ? { captchaToken: input.captchaToken } : {}),
+  };
+
+  const supabase = serverClient();
+
+  if (input.domain && !input.provider) {
+    // Domain-first SSO: Supabase resolves the IdP from the organization's
+    // DNS records — the standard enterprise flow for Okta/Azure/Google.
+    if (!provider) {
+      throw new Error(
+        "Unknown SSO provider. Supported: google (Google Workspace), okta, azure (Microsoft Entra ID).",
+      );
+    }
+    const { data, error } = await supabase.auth.signInWithSSO({
+      domain: input.domain,
+      options,
+    });
+    if (error || !data?.url) {
+      throw new Error(error?.message ?? "The identity provider did not return an authorization URL.");
+    }
+    return { url: data.url, provider };
+  }
+
+  if (!provider) {
+    throw new Error(
+      "Unknown SSO provider. Supported: google (Google Workspace), okta, azure (Microsoft Entra ID).",
+    );
+  }
+
+  const { data, error } = await supabase.auth.signInWithSSO({
+    providerId: supabaseSsoProviderId(provider),
+    options,
+  });
+  if (error || !data?.url) {
+    throw new Error(error?.message ?? "The identity provider did not return an authorization URL.");
+  }
+  return { url: data.url, provider };
+}
+
+/* ------------------------------------------------------------------ */
+/* RBAC role model (tenant-scoped)                                    */
+/* ------------------------------------------------------------------ */
+
+/** Canonical RBAC roles. Every effective role is normalized onto this union. */
+export type RbRole = "SUPER_ADMIN" | "HR_ADMIN" | "MANAGER" | "EMPLOYEE";
+
+/** Role precedence — higher = more access. */
+export const ROLE_HIERARCHY: Record<RbRole, number> = {
+  EMPLOYEE: 1,
+  MANAGER: 2,
+  HR_ADMIN: 3,
+  SUPER_ADMIN: 4,
+};
+
+export const RB_ROLES: RbRole[] = [
+  "SUPER_ADMIN",
+  "HR_ADMIN",
+  "MANAGER",
+  "EMPLOYEE",
+];
+
+/**
+ * Normalizes the free-text legacy membership roles (`owner`, `admin`,
+ * `hr_admin`, `manager`, `member`, …) onto the canonical RBAC union.
+ * Unknown values degrade to EMPLOYEE (fail-closed).
+ */
+export function normalizeRole(role: OrgRole | string | null | undefined): RbRole {
+  const value = (role ?? "").toString().toLowerCase();
+  switch (value) {
+    case "owner":
+    case "super_admin":
+    case "superadmin":
+    case "system_admin":
+      return "SUPER_ADMIN";
+    case "admin":
+    case "hr_admin":
+    case "hr_manager":
+      return "HR_ADMIN";
+    case "manager":
+      return "MANAGER";
+    default:
+      return "EMPLOYEE";
+  }
+}
+
+/** True when `role` is at least `minimum` in the hierarchy. */
+export function roleAtLeast(role: RbRole, minimum: RbRole): boolean {
+  return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[minimum];
 }

@@ -46,7 +46,18 @@ class OpenAICompatibleProvider(LLMProvider):
         if not api_key:
             raise ProviderError("LLM_API_KEY is not configured.")
         self._api_key = api_key
-        base = (base_url or DEFAULT_BASE_URLS.get(provider, "")).rstrip("/")
+        base = (base_url or DEFAULT_BASE_URLS.get(provider, "")).strip().rstrip("/")
+        if base.endswith("/chat/completions"):
+            # Users sometimes paste the full endpoint URL instead of the base.
+            base = base[: -len("/chat/completions")].rstrip("/")
+        if (
+            provider == "custom"
+            and base
+            and "/v1" not in base
+            and not base.endswith("/v1")
+        ):
+            # OpenAI-compatible convention: bare hosts serve under `/v1`.
+            base = f"{base}/v1"
         if not base:
             raise ProviderError(
                 f"No base URL for provider '{provider}'. Set LLM_BASE_URL."
@@ -56,6 +67,11 @@ class OpenAICompatibleProvider(LLMProvider):
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(timeout, connect=15.0),
         )
+
+    @property
+    def endpoint(self) -> str:
+        """The chat-completions URL this provider posts to."""
+        return f"{self._base}/chat/completions"
 
     def _headers(self) -> dict[str, str]:
         return {

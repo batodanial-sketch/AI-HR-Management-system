@@ -1,25 +1,32 @@
 import "server-only";
-import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
+
+import { headers } from "next/headers";
+import { hasSupabaseEnv, serverClient, adminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import type { Json } from "@/lib/database.types";
 
 /**
- * Enterprise audit logging — a tamper-evident trail of administrative and
- * security-relevant actions, written to `audit_logs`.
+ * Enterprise audit logging — a tamper-evident trail of administrative,
+ * security-relevant, and governance actions, written to `audit_logs`.
  *
- * The live `audit_logs` table is the legacy-shaped schema reconciled during the
- * DB migration passes:
+ * The live `audit_logs` table is the legacy-shaped schema reconciled during
+ * the DB migration passes:
  *
  *   id, organization_id, actor_id, actor_user_id, action,
  *   entity_type, entity_id, before_state, after_state,
  *   metadata, ip_address, user_agent, created_at
  *
+ * plus the governance columns added by migration `20260830110000_audit_trail.sql`:
+ *
+ *   actor_type, target_module, changes
+ *
  * IMPORTANT schema note: `audit_logs.action` is a constrained Postgres enum
  * (`audit_action`) with the values { create, read, update, delete, export,
  * login, logout, approve, reject, generate } — NOT free text. The app's rich
- * dotted action labels (e.g. "member.remove") are therefore mapped to the enum
- * verb in `ACTION_TO_VERB`, and the full dotted label is preserved in
- * `metadata.action` so nothing is lost.
+ * dotted action labels (e.g. "member.remove", "module.create",
+ * "copilot.tool.approve_offboarding") are therefore mapped to the enum verb
+ * in `ACTION_TO_VERB` / `governanceVerbFor`, and the full dotted label is
+ * preserved in `metadata.action` so nothing is lost.
  *
  * `entity_type` / `entity_id` are the canonical `resource_type` / `resource_id`
  * (same semantics, historical naming). When Supabase is not configured
@@ -175,4 +182,132 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
     resourceId: entry.entityId,
     metadata: entry.metadata,
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Governance logging (module CRUD, Copilot tools, inbound webhooks)  */
+/* ------------------------------------------------------------------ */
+
+/** Who performed the action. */
+export type AuditActorType = "USER" | "COPILOT_AGENT" | "SYSTEM";
+
+export interface GovernanceAuditEntry {
+  /** Auth user id, or the agent/system identifier (e.g. "copilot-agent"). */
+  actorId: string;
+  actorType: AuditActorType;
+  /** Machine-readable dotted action, e.g. "module.create", "copilot.tool.create_expense". */
+  action: string;
+  /** Module the action targeted, e.g. "expenses", "recruitment", "offboarding". */
+  targetModule: string;
+  targetId?: string | null;
+  /** JSONB payload of what changed (sanitized of credentials). */
+  changes?: Record<string, unknown>;
+  organizationId?: string | null;
+}
+
+const SENSITIVE_KEY = /password|secret|token|api[_-]?key|credential|cvv|iban|routing|ssn/i;
+
+/** Redacts credential-shaped keys before anything reaches the audit table. */
+export function sanitizeAuditChanges(
+  changes: Record<string, unknown> | undefined | null,
+): Record<string, unknown> {
+  if (!changes) return {};
+  return Object.fromEntries(
+    Object.entries(changes).map(([key, value]) => [
+      key,
+      SENSITIVE_KEY.test(key) ? "[redacted]" : value,
+    ]),
+  );
+}
+
+/**
+ * Maps a governance action label onto the constrained `audit_action` enum.
+ * The full label is always preserved in `metadata.action`.
+ */
+function governanceVerbFor(action: string): AuditVerb {
+  const label = action.toLowerCase();
+  if (/approve|advance|complete/.test(label)) return "approve";
+  if (/denied|deny|reject|revoke/.test(label)) return "reject";
+  if (/delete|remove|erase/.test(label)) return "delete";
+  if (/update|transition|upsert|patch/.test(label)) return "update";
+  if (/^fetch|read|get|list|load/.test(label)) return "read";
+  if (/create|insert|record|create_expense|create_survey|create_scenario|create_contractor|create_asset/.test(label)) return "create";
+  if (/export/.test(label)) return "export";
+  if (/generate|screen|score|evaluate/.test(label)) return "generate";
+  return "update";
+}
+
+/** Best-effort client IP from standard proxy headers. */
+export function auditClientIp(): string | null {
+  try {
+    const requestHeaders = headers();
+    const forwarded = requestHeaders.get("x-forwarded-for");
+    if (forwarded) return forwarded.split(",")[0]?.trim() || null;
+    return requestHeaders.get("x-real-ip");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Governance audit writer for module CRUD, Copilot tool executions and
+ * inbound webhook processing.
+ *
+ * Maps onto the legacy-shaped `audit_logs` table: the dotted action label +
+ * actor_type + sanitized changes live in `metadata` / `changes`, while the
+ * enum verb and entity columns stay in their constrained columns.
+ *
+ * By default the entry is written with the caller's own session (RLS-bound to
+ * their tenant). Webhook/background paths pass `useAdmin: true` to write with
+ * the service-role client. Never throws.
+ */
+export async function recordAuditLog(
+  entry: GovernanceAuditEntry,
+  options: { useAdmin?: boolean } = {},
+): Promise<void> {
+  const changes = sanitizeAuditChanges(entry.changes);
+  const rawId = entry.targetId ?? null;
+  const entityId =
+    typeof rawId === "string" && UUID_RE.test(rawId) ? rawId : null;
+
+  const metadata = {
+    action: entry.action,
+    actor_type: entry.actorType,
+    target_id: rawId,
+    changes,
+  } as Record<string, unknown>;
+
+  if (!hasSupabaseEnv()) {
+    // Demo/offline: preserve the trail on stdout (actor id only — no PII).
+    console.info(
+      `[audit] actor=${entry.actorId} [${entry.actorType}] → ${entry.action} ${entry.targetModule}${
+        rawId ? ` (${rawId})` : ""
+      }`,
+      changes,
+    );
+    return;
+  }
+
+  const row = {
+    organization_id: entry.organizationId ?? null,
+    actor_id: entry.actorId,
+    actor_type: entry.actorType,
+    action: governanceVerbFor(entry.action),
+    entity_type: entry.targetModule,
+    entity_id: entityId,
+    target_module: entry.targetModule,
+    changes: changes as Json,
+    metadata: metadata as Json,
+    ip_address: auditClientIp(),
+  };
+
+  try {
+    const client = options.useAdmin ? adminClient() : serverClient();
+    const { error } = await client.from("audit_logs").insert(row as never);
+    if (error) {
+      console.error("[audit] governance write failed:", error.message);
+    }
+  } catch {
+    // Never let audit failure break the mutation it observes.
+  }
 }

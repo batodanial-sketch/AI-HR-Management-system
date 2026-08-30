@@ -34,7 +34,17 @@ export interface LicenseState {
 }
 
 export const TRIAL_DAYS = 15;
-export const TRIAL_MAX_EMPLOYEES = 10;
+
+/**
+ * Trial seat cap — raised from 10 to 50. Trial tenants can onboard up to 50
+ * billable seats; the dynamic capacity engine in `lib/seats.ts` counts only
+ * active (non-terminated/archived) employees + members and excludes
+ * mock/system seed accounts, so demo fixtures never consume billable seats.
+ */
+export const MAX_TRIAL_SEATS = 50;
+
+/** @deprecated Legacy name — kept for import compatibility. Use MAX_TRIAL_SEATS. */
+export const TRIAL_MAX_EMPLOYEES = MAX_TRIAL_SEATS;
 
 export const TIER_LABELS: Record<LicenseTier, string> = {
   TRIAL: "15-Day Free Trial",

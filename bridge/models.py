@@ -15,6 +15,20 @@ LeaveType = Literal["pto", "sick", "unpaid"]
 Recommendation = Literal["advance", "hold", "reject"]
 
 
+class AiTestRequest(BaseModel):
+    """Optional overrides for the ``/api/ai/test`` diagnostic endpoint.
+
+    Lets the Next.js test-connection route validate alternative Groq models
+    and custom OpenAI-compatible endpoints without mutating stored settings.
+    API keys are NEVER accepted here — the bridge resolves them from its own
+    configuration.
+    """
+
+    provider: str | None = None
+    model: str | None = None
+    base_url: str | None = Field(default=None, alias="baseUrl")
+
+
 class CandidateEvaluationRequest(BaseModel):
     candidate_id: str
     candidate_name: str
@@ -56,6 +70,14 @@ class CopilotMessage(BaseModel):
     content: str
 
 
+class CopilotToolSpec(BaseModel):
+    """A tool the Copilot planner may call (name + description + JSON-schema)."""
+
+    name: str
+    description: str
+    parameters: dict[str, Any] = Field(default_factory=dict)
+
+
 class CopilotAction(BaseModel):
     id: str
     title: str
@@ -66,6 +88,13 @@ class CopilotAction(BaseModel):
 class CopilotRequest(BaseModel):
     messages: list[CopilotMessage]
     context: dict[str, Any] = Field(default_factory=dict)
+    # Agentic function-calling: tools available to the planner. When set, the
+    # model may emit `tool_calls` in its trailing JSON.
+    tools: list[CopilotToolSpec] = Field(default_factory=list)
+    # When False, the bridge streams the model's tool_calls in the `done`
+    # event WITHOUT executing them — the Next.js orchestrator executes them
+    # against its RBAC-guarded CRUD routes and feeds results back.
+    execute_tools: bool = True
 
 
 class WorkflowNode(BaseModel):

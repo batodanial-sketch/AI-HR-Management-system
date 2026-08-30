@@ -1,6 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { supabaseUrl, supabasePublishableKey } from "@/lib/supabase/env";
+import {
+  checkEdgeRate,
+  edgeClientIp,
+  edgeRateBody,
+  edgeRateCategoryFor,
+  EDGE_DEFAULT_COPILOT_LIMIT,
+  type EdgeRateResult,
+} from "@/lib/edge/rate-limit";
 
 const SUPABASE_URL = supabaseUrl();
 // Publishable key first, legacy anon key as fallback.
@@ -29,8 +37,9 @@ const MARKETING_PATHS = ["/", "/pricing", "/docs"];
 
 // External integration endpoints authenticate via their own secrets (HMAC
 // signatures, service tokens) rather than a browser session — exempt them from
-// the license/auth gate so n8n, Slack and inbound webhooks keep working.
-const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/desktop/"];
+// the license/auth gate so n8n, Slack, inbound webhooks, and IdP provisioning
+// (SCIM) keep working.
+const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/desktop/", "/api/scim/"];
 
 function isPublic(pathname: string): boolean {
   if (WEBHOOK_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
@@ -65,6 +74,33 @@ function isLicenseProtected(pathname: string): boolean {
   return true;
 }
 
+/**
+ * Edge Shield — coarse distributed rate limiting (Upstash Redis with a
+ * capped in-memory fallback). Categories:
+ *   auth/webhooks → 10 req/min (IP-keyed)      copilot → 60 req/min (IP)
+ *   module CRUD   → 100 req/min per tenant     (org-keyed, after auth)
+ *
+ * The authoritative tier-based throttle for AI endpoints stays server-side
+ * (lib/rate-limit + ai-proxy/orchestrator) where the license tier is
+ * reliably resolvable; the edge layer exists to absorb floods before they
+ * reach the app servers.
+ */
+function applyEdgeLimit(
+  request: NextRequest,
+  category: "auth" | "webhook" | "copilot",
+): Promise<{ blocked: NextResponse | null; result: EdgeRateResult | null }> {
+  const ip = edgeClientIp(request);
+  const limit =
+    category === "copilot" ? EDGE_DEFAULT_COPILOT_LIMIT : undefined;
+  return checkEdgeRate(category, `${category}:ip:${ip}`, limit).then(
+    (result) => {
+      if (result.allowed) return { blocked: null, result };
+      const { body, headers } = edgeRateBody(result);
+      return { blocked: NextResponse.json(body, { status: 429, headers }), result };
+    },
+  );
+}
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
@@ -74,6 +110,17 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
   const forwarded = { request: { headers: requestHeaders } };
+
+  // ── Edge Shield (IP-keyed categories — runs even in demo mode) ─────────
+  const edgeCategory = edgeRateCategoryFor(pathname);
+  if (
+    edgeCategory === "auth" ||
+    edgeCategory === "webhook" ||
+    edgeCategory === "copilot"
+  ) {
+    const { blocked } = await applyEdgeLimit(request, edgeCategory);
+    if (blocked) return blocked;
+  }
 
   // Demo/dev fallback: without Supabase credentials the app runs on seed data
   // and auth is not enforced (keeps the preview and local dev usable).
@@ -129,6 +176,31 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     url.pathname = request.cookies.get(TRIAL_COOKIE) ? "/signup" : "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
+  }
+
+  // ── Module CRUD: 100 req/min per tenant (org-keyed) ────────────────────
+  if (edgeCategory === "module") {
+    // Resolve the tenant once per request — the membership lookup doubles as
+    // the same tenant isolation the data layer enforces via RLS.
+    let tenantKey = `module:user:${user.id}`;
+    const { data: membership } = await supabase
+      .from("organization_memberships")
+      .select("organization_id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+    if (membership?.organization_id) {
+      tenantKey = `module:tenant:${membership.organization_id}`;
+    }
+    const moduleLimit = await checkEdgeRate("module", tenantKey);
+    if (!moduleLimit.allowed) {
+      const { body, headers } = edgeRateBody(moduleLimit);
+      return NextResponse.json(body, { status: 429, headers });
+    }
+    response.headers.set("X-RateLimit-Limit", String(moduleLimit.limit));
+    response.headers.set("X-RateLimit-Remaining", String(moduleLimit.remaining));
+    response.headers.set("X-RateLimit-Reset", String(moduleLimit.resetAt));
   }
 
   return response;

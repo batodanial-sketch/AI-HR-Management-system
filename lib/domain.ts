@@ -4,7 +4,8 @@ import { readSettings } from "@/lib/settings/config";
 import { hasSupabaseEnv } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getAuditEntriesTyped } from "@/lib/legacy/adapters";
-import type { Row } from "@/lib/memory/types";
+import type { MemoryAdapter } from "@/lib/memory/interface";
+import type { Row, RowFilter } from "@/lib/memory/types";
 
 /**
  * Domain data layer for the extended HR modules merged from the Fluxentiq
@@ -294,6 +295,25 @@ const screeningRecords: ScreeningRecord[] = [
 /* Getters (memory adapter → seed fallback)                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Reads rows through the memory adapter with a graceful empty/error fallback.
+ * Returns `null` when the read failed; callers then fall back to the
+ * deterministic seed data so pages always render content — empty Supabase
+ * tables (e.g. a brand-new organization before any writes) and transient
+ * connection blips never produce blank screens.
+ */
+async function selectRows(
+  memory: MemoryAdapter,
+  table: string,
+  filter: RowFilter | undefined,
+): Promise<Row[] | null> {
+  try {
+    return await memory.select<Row>(table, filter);
+  } catch {
+    return null;
+  }
+}
+
 async function shouldUseSeed(): Promise<boolean> {
   const settings = await readSettings();
   if (settings.memory.provider !== "supabase") {
@@ -364,7 +384,8 @@ export async function getLearningCourses(): Promise<LearningCourse[]> {
 export async function getBenefitPlans(): Promise<BenefitPlan[]> {
   if (await shouldUseSeed()) return benefitPlans;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("benefit_plans", await orgFilter(memory));
+  const rows = await selectRows(memory, "benefit_plans", await orgFilter(memory));
+  if (!rows || rows.length === 0) return benefitPlans;
   return rows.map((r) => ({
     id: text(r.id), name: text(r.name), provider: text(r.provider),
     planType: text(r.plan_type), employeeCost: num(r.employee_cost), employerCost: num(r.employer_cost),
@@ -375,7 +396,8 @@ export async function getBenefitPlans(): Promise<BenefitPlan[]> {
 export async function getEquityGrants(): Promise<EquityGrant[]> {
   if (await shouldUseSeed()) return equityGrants;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("equity_grants", await orgFilter(memory));
+  const rows = await selectRows(memory, "equity_grants", await orgFilter(memory));
+  if (!rows || rows.length === 0) return equityGrants;
   return rows.map((r) => ({
     id: text(r.id), employeeName: text(r.employee_name), grantType: text(r.grant_type, "option") as EquityGrant["grantType"],
     quantity: num(r.quantity), strikePrice: typeof r.strike_price === "number" ? r.strike_price : null,
@@ -386,7 +408,8 @@ export async function getEquityGrants(): Promise<EquityGrant[]> {
 export async function getExpenses(): Promise<Expense[]> {
   if (await shouldUseSeed()) return expenses;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("expense_reports", await orgFilter(memory));
+  const rows = await selectRows(memory, "expense_reports", await orgFilter(memory));
+  if (!rows || rows.length === 0) return expenses;
   return rows.map((r) => ({
     id: text(r.id), employeeName: text(r.employee_name), merchant: text(r.merchant),
     category: text(r.category), amount: num(r.amount), currency: text(r.currency, "USD"),
@@ -397,7 +420,8 @@ export async function getExpenses(): Promise<Expense[]> {
 export async function getPulseSurveys(): Promise<PulseSurvey[]> {
   if (await shouldUseSeed()) return pulseSurveys;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("pulse_surveys", await orgFilter(memory));
+  const rows = await selectRows(memory, "pulse_surveys", await orgFilter(memory));
+  if (!rows || rows.length === 0) return pulseSurveys;
   return rows.map((r) => ({
     id: text(r.id), title: text(r.title), anonymous: Boolean(r.anonymous),
     status: text(r.status, "draft") as PulseSurvey["status"], responses: num(r.responses),
@@ -408,7 +432,8 @@ export async function getPulseSurveys(): Promise<PulseSurvey[]> {
 export async function getWorkforceScenarios(): Promise<WorkforceScenario[]> {
   if (await shouldUseSeed()) return workforceScenarios;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("workforce_scenarios", await orgFilter(memory));
+  const rows = await selectRows(memory, "workforce_scenarios", await orgFilter(memory));
+  if (!rows || rows.length === 0) return workforceScenarios;
   return rows.map((r) => ({
     id: text(r.id), name: text(r.name), headcountForecast: num(r.headcount_forecast),
     budgetForecast: num(r.budget_forecast), status: text(r.status, "draft") as WorkforceScenario["status"],
@@ -418,7 +443,8 @@ export async function getWorkforceScenarios(): Promise<WorkforceScenario[]> {
 export async function getContractorInvoices(): Promise<ContractorInvoice[]> {
   if (await shouldUseSeed()) return contractorInvoices;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("contractor_invoices", await orgFilter(memory));
+  const rows = await selectRows(memory, "contractor_invoices", await orgFilter(memory));
+  if (!rows || rows.length === 0) return contractorInvoices;
   return rows.map((r) => ({
     id: text(r.id), contractor: text(r.contractor), invoiceNumber: text(r.invoice_number),
     totalAmount: num(r.total_amount), currency: text(r.currency, "USD"),
@@ -429,7 +455,8 @@ export async function getContractorInvoices(): Promise<ContractorInvoice[]> {
 export async function getOffboardingCases(): Promise<OffboardingCase[]> {
   if (await shouldUseSeed()) return offboardingCases;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("offboarding_cases", await orgFilter(memory));
+  const rows = await selectRows(memory, "offboarding_cases", await orgFilter(memory));
+  if (!rows || rows.length === 0) return offboardingCases;
   return rows.map((r) => ({
     id: text(r.id), employeeName: text(r.employee_name), exitDate: text(r.exit_date),
     status: text(r.status, "planned") as OffboardingCase["status"],
@@ -450,7 +477,8 @@ export async function getOrgChart(): Promise<OrgNode[]> {
 export async function getAssets(): Promise<Asset[]> {
   if (await shouldUseSeed()) return assets;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("assets", await orgFilter(memory));
+  const rows = await selectRows(memory, "assets", await orgFilter(memory));
+  if (!rows || rows.length === 0) return assets;
   return rows.map((r) => ({
     id: text(r.id), name: text(r.name), category: text(r.category),
     status: text(r.status, "available") as Asset["status"],
@@ -461,7 +489,8 @@ export async function getAssets(): Promise<Asset[]> {
 export async function getDocuments(): Promise<DocumentRecord[]> {
   if (await shouldUseSeed()) return documents;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("documents", await orgFilter(memory));
+  const rows = await selectRows(memory, "documents", await orgFilter(memory));
+  if (!rows || rows.length === 0) return documents;
   return rows.map((r) => ({
     id: text(r.id), name: text(r.name), kind: text(r.kind), owner: text(r.owner),
     sizeKb: num(r.size_kb), uploadedAt: text(r.uploaded_at),
@@ -504,7 +533,8 @@ export async function getAuditEntries(): Promise<AuditEntry[]> {
 export async function getScreeningRecords(): Promise<ScreeningRecord[]> {
   if (await shouldUseSeed()) return screeningRecords;
   const memory = await getMemoryAdapter();
-  const rows = await memory.select<Row>("candidate_ai_assessments", await orgFilter(memory));
+  const rows = await selectRows(memory, "candidate_ai_assessments", await orgFilter(memory));
+  if (!rows || rows.length === 0) return screeningRecords;
   return rows.map((r) => ({
     id: text(r.id), candidateName: text(r.candidate_name), role: text(r.role),
     score: num(r.score), recommendation: text(r.recommendation, "hold") as ScreeningRecord["recommendation"],

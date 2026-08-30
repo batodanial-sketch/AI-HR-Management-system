@@ -40,6 +40,7 @@ export interface NavItem {
 
 export const primaryNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "AI Copilot", href: "/copilot", icon: Bot },
   { label: "Employees", href: "/employees", icon: Users },
   { label: "Recruitment", href: "/recruitment", icon: KanbanSquare },
   { label: "Lead Intelligence", href: "/leads", icon: Target },
