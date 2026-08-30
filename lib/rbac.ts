@@ -1,8 +1,10 @@
 import "server-only";
 import { cache } from "react";
+import { headers } from "next/headers";
 import {
   getCurrentUser,
   normalizeRole,
+  RB_ROLES,
   roleAtLeast,
   type RbRole,
   type SessionUser,
@@ -95,14 +97,46 @@ async function resolveEmployeeLinkage(
   }
 }
 
+/**
+ * E2E role override (test hook).
+ *
+ * Playwright's `rbac-boundaries.spec.ts` drives requests with the
+ * `x-fluxentiq-e2e-role` header to verify strict HTTP 403 enforcement for
+ * under-privileged roles. The hook is inert unless the server is started
+ * with `E2E_ROLE_OVERRIDE_ENABLED=1` and NEVER active in production builds.
+ */
+function e2eRoleOverride(): RbRole | null {
+  if (
+    process.env.E2E_ROLE_OVERRIDE_ENABLED !== "1" ||
+    process.env.NODE_ENV === "production"
+  ) {
+    return null;
+  }
+  try {
+    const value = headers().get("x-fluxentiq-e2e-role");
+    if (!value) return null;
+    const normalized = value.trim().toUpperCase();
+    return (RB_ROLES as string[]).includes(normalized) ? (normalized as RbRole) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Resolves the caller's RBAC context (cached per request). */
 export const getRbacContext = cache(async (): Promise<RbacContext> => {
   const user = await getCurrentUser();
-  const role = normalizeRole(user.role);
+  let role = normalizeRole(user.role);
+  const override = e2eRoleOverride();
   const demoMode = !hasSupabaseEnv() || !user.organizationId;
   const organizationId = user.organizationId ?? "";
 
-  const scope: AccessScope = demoMode
+  // Test hook: simulate an under-privileged role with a real org context.
+  if (override) {
+    role = override;
+  }
+  const effectiveDemo = demoMode && !override;
+
+  const scope: AccessScope = effectiveDemo
     ? "org"
     : roleAtLeast(role, "HR_ADMIN")
       ? "org"
@@ -117,10 +151,10 @@ export const getRbacContext = cache(async (): Promise<RbacContext> => {
     scope,
     employeeId: null,
     reportIds: [],
-    demoMode,
+    demoMode: effectiveDemo,
   };
 
-  if (demoMode) return base;
+  if (effectiveDemo) return base;
 
   const linkage = await resolveEmployeeLinkage(organizationId, user.email);
   base.employeeId = linkage.employeeId;

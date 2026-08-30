@@ -8,10 +8,12 @@ import {
   toolSpecsForBridge,
 } from "@/lib/ai-providers";
 import {
+  COPILOT_TOOL_MODULES,
   executeCopilotTool,
   findCopilotTool,
   validateToolArguments,
 } from "@/lib/copilot/tools";
+import { recordAuditLog } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -186,10 +188,14 @@ export async function POST(request: Request): Promise<Response> {
 
   // Rate limit (same tier policy as the classic proxy).
   let organizationId: string | null = null;
+  let actorId: string | null = null;
   try {
-    organizationId = (await getCurrentUser()).organizationId ?? null;
+    const currentUser = await getCurrentUser();
+    organizationId = currentUser.organizationId ?? null;
+    actorId = currentUser.id || "copilot-agent";
   } catch {
     organizationId = null;
+    actorId = "copilot-agent";
   }
   let tier: string | null = null;
   try {
@@ -216,6 +222,17 @@ export async function POST(request: Request): Promise<Response> {
   const origin = new URL(request.url).origin;
   const cookie = request.headers.get("cookie") ?? "";
   const toolContext = { origin, cookie };
+
+  /** Governance: every agentic tool run lands in the audit trail. */
+  const auditToolRun = (name: string, args: Record<string, unknown>, ok: boolean, message: string) =>
+    recordAuditLog({
+      actorId: actorId ?? "copilot-agent",
+      actorType: "COPILOT_AGENT",
+      action: `copilot.tool.${name}`,
+      targetModule: COPILOT_TOOL_MODULES[name] ?? "copilot",
+      changes: { arguments: args, ok, message },
+      organizationId,
+    });
 
   const encoder = new TextEncoder();
   let streamController: ReadableStreamDefaultController<Uint8Array>;
@@ -272,6 +289,7 @@ export async function POST(request: Request): Promise<Response> {
         });
         const execution = await executeCopilotTool(definition, validated.args, toolContext);
         emit({ type: "tool_result", result: { tool: execution.tool, ok: execution.ok, message: execution.message, data: execution.data } });
+        await auditToolRun(definition.spec.name, validated.args, execution.ok, execution.message);
         conversation.push(
           { role: "assistant", content: `Tool call: ${definition.spec.name}(${JSON.stringify(validated.args)})` },
           { role: "user", content: `Tool result: ${execution.ok ? "success" : "failure"} — ${execution.message}` },
@@ -339,6 +357,7 @@ export async function POST(request: Request): Promise<Response> {
         });
         const execution = await executeCopilotTool(definition, validated.args, toolContext);
         emit({ type: "tool_result", result: { tool: execution.tool, ok: execution.ok, message: execution.message, data: execution.data } });
+        await auditToolRun(definition.spec.name, validated.args, execution.ok, execution.message);
         conversation.push(
           { role: "assistant", content: `Tool call: ${definition.spec.name}(${JSON.stringify(validated.args)})` },
           { role: "user", content: `Tool result: ${execution.ok ? "success" : "failure"} — ${execution.message}` },

@@ -9,6 +9,7 @@ import {
   type RbacContext,
 } from "@/lib/rbac";
 import { roleAtLeast, type RbRole } from "@/lib/auth";
+import { recordAuditLog } from "@/lib/audit";
 
 /**
  * Shared RBAC-guarded CRUD plumbing for the extended HR module API routes
@@ -129,12 +130,6 @@ export async function handleModuleCreate<P>(
       .join(" · ");
     return moduleError(`Validation failed — ${details}`, 400);
   }
-  if (!hasSupabaseEnv()) {
-    return moduleError(
-      "Supabase is not configured — writes are disabled in demo mode.",
-      503,
-    );
-  }
   const ctx = await moduleScopedContext();
   if (!ctx) {
     return moduleError("Unauthorized — no organization context.", 401);
@@ -143,8 +138,26 @@ export async function handleModuleCreate<P>(
     policy.employeeIdFromPayload && policy.employeeIdField
       ? policy.employeeIdFromPayload(parsed.data) ?? null
       : null;
+  // Deny first: authorization is evaluated before availability so
+  // unauthorized writers get 403 even when the database is unreachable.
   const denied = enforceWritePolicy(ctx, policy as ModuleWritePolicy<unknown>, employeeId);
-  if (denied) return moduleForbidden(denied);
+  if (denied) {
+    await recordAuditLog({
+      actorId: ctx.user.id,
+      actorType: "USER",
+      action: "module.create.denied",
+      targetModule: table,
+      changes: { reason: denied },
+      organizationId: ctx.organizationId,
+    });
+    return moduleForbidden(denied);
+  }
+  if (!hasSupabaseEnv()) {
+    return moduleError(
+      "Supabase is not configured — writes are disabled in demo mode.",
+      503,
+    );
+  }
 
   try {
     const { data, error } = await serverClient()
@@ -158,6 +171,15 @@ export async function handleModuleCreate<P>(
     if (error) {
       return moduleError(`Write failed: ${error.message}`, 409);
     }
+    await recordAuditLog({
+      actorId: ctx.user.id,
+      actorType: "USER",
+      action: "module.create",
+      targetModule: table,
+      targetId: data ? String((data as { id?: unknown }).id ?? "") : null,
+      changes: parsed.data as unknown as Record<string, unknown>,
+      organizationId: ctx.organizationId,
+    });
     if (options?.onCreated) {
       await options.onCreated(data, { organizationId: ctx.organizationId, userId: ctx.user.id });
     }
@@ -194,12 +216,6 @@ export async function handleModuleUpdate<P>(
       .join(" · ");
     return moduleError(`Validation failed — ${details}`, 400);
   }
-  if (!hasSupabaseEnv()) {
-    return moduleError(
-      "Supabase is not configured — writes are disabled in demo mode.",
-      503,
-    );
-  }
   const ctx = await moduleScopedContext();
   if (!ctx) {
     return moduleError("Unauthorized — no organization context.", 401);
@@ -209,10 +225,10 @@ export async function handleModuleUpdate<P>(
     return moduleError("Validation failed — id: required", 400);
   }
 
-  // Resolve the subject employee id from the existing row for scope checks.
   let employeeId: string | null = null;
-  try {
-    if (policy.employeeIdField) {
+  if (hasSupabaseEnv() && policy.employeeIdField) {
+    // Resolve the subject employee id from the existing row for scope checks.
+    try {
       const { data: row } = await serverClient()
         .from(table as never)
         .select(`${policy.employeeIdField}`)
@@ -220,13 +236,32 @@ export async function handleModuleUpdate<P>(
         .eq("organization_id", ctx.organizationId)
         .maybeSingle();
       employeeId = row?.[policy.employeeIdField as never] ?? null;
+    } catch {
+      // Scope check falls through to null → fail-closed for scoped roles.
     }
-  } catch {
-    // Scope check falls through to null → fail-closed for scoped roles.
   }
 
+  // Deny first (see handleModuleCreate) — unauthorized callers get 403
+  // regardless of database availability.
   const denied = enforceWritePolicy(ctx, policy as ModuleWritePolicy<unknown>, employeeId);
-  if (denied) return moduleForbidden(denied);
+  if (denied) {
+    await recordAuditLog({
+      actorId: ctx.user.id,
+      actorType: "USER",
+      action: "module.update.denied",
+      targetModule: table,
+      targetId: id,
+      changes: { reason: denied },
+      organizationId: ctx.organizationId,
+    });
+    return moduleForbidden(denied);
+  }
+  if (!hasSupabaseEnv()) {
+    return moduleError(
+      "Supabase is not configured — writes are disabled in demo mode.",
+      503,
+    );
+  }
 
   try {
     const { data, error } = await serverClient()
@@ -239,6 +274,15 @@ export async function handleModuleUpdate<P>(
     if (error) {
       return moduleError(`Update failed: ${error.message}`, 409);
     }
+    await recordAuditLog({
+      actorId: ctx.user.id,
+      actorType: "USER",
+      action: "module.update",
+      targetModule: table,
+      targetId: id,
+      changes: parsed.data as unknown as Record<string, unknown>,
+      organizationId: ctx.organizationId,
+    });
     if (options?.onUpdated) {
       await options.onUpdated(data, parsed.data, { organizationId: ctx.organizationId, userId: ctx.user.id });
     }
@@ -264,6 +308,7 @@ async function selectScoped(
   ctx: RbacContext,
   employeeIdField: string,
 ): Promise<ScopedRow[]> {
+  if (!hasSupabaseEnv()) return []; // fail open: no personal rows without a DB
   const ids = scopedEmployeeIds(ctx);
   if (!ids) return [];
   const { data, error } = await serverClient()
@@ -343,6 +388,7 @@ export async function scopedOffboardingList(ctx: RbacContext): Promise<unknown[]
 
 /** Scoped assets (EMPLOYEE/MANAGER → assets assigned to self/team). */
 export async function scopedAssetList(ctx: RbacContext): Promise<unknown[]> {
+  if (!hasSupabaseEnv()) return [];
   const ids = scopedEmployeeIds(ctx);
   if (!ids) return [];
   const { data: assignments, error: assignmentError } = await serverClient()

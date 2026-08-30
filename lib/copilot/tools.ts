@@ -135,6 +135,27 @@ function byName(name: string): CopilotToolSpec {
 
 const BY_NAME = new Map(DEFINITIONS.map((definition) => [definition.spec.name, definition]));
 
+/** Tool → target module mapping (used for audit trail attribution). */
+export const COPILOT_TOOL_MODULES: Record<string, string> = {
+  fetch_benefits: "benefits",
+  fetch_equity: "equity",
+  fetch_expenses: "expenses",
+  create_expense: "expenses",
+  fetch_surveys: "surveys",
+  create_survey: "surveys",
+  fetch_planning: "planning",
+  create_scenario: "planning",
+  fetch_contractors: "contractors",
+  create_contractor: "contractors",
+  fetch_offboarding: "offboarding",
+  approve_offboarding: "offboarding",
+  fetch_assets: "assets",
+  create_asset: "assets",
+  fetch_documents: "documents",
+  screen_candidate: "screening",
+  fetch_team_capacity: "team",
+};
+
 export function findCopilotTool(name: string): ToolDefinition | null {
   return BY_NAME.get(name) ?? null;
 }

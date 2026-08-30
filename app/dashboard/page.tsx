@@ -4,15 +4,20 @@ import { recentActivity } from "@/lib/data";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusOrbClient } from "@/components/three/status-orb-client";
+import { getDashboardInsights } from "@/lib/analytics/insights";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
 
 export default async function DashboardPage() {
-  const metrics = await getDashboardMetrics();
+  const [metrics, insights] = await Promise.all([
+    getDashboardMetrics(),
+    getDashboardInsights(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -37,6 +42,8 @@ export default async function DashboardPage() {
         </div>
         <QuickActions />
       </section>
+
+      <InsightsPanel insights={insights} />
     </div>
   );
 }

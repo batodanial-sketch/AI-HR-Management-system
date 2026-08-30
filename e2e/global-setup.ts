@@ -106,6 +106,25 @@ function buildStorageState(params: {
 }
 
 export default async function globalSetup(): Promise<void> {
+  const hasSupabaseEnv = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
+  );
+
+  // Hermetic mode: when Supabase is not configured (demo-mode development),
+  // persist an empty storage state so specs that only need the demo identity
+  // (copilot-agent, rbac-boundaries, realtime-sync) run without a live stack.
+  if (!hasSupabaseEnv) {
+    const stateDir = path.join(process.cwd(), "e2e", ".auth");
+    await mkdir(stateDir, { recursive: true });
+    await writeFile(
+      path.join(stateDir, "storageState.json"),
+      JSON.stringify({ cookies: [], origins: [] }),
+      "utf8",
+    );
+    return;
+  }
+
   const supabaseUrl = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
   const serviceRoleKey =
     process.env.SUPABASE_SECRET_KEY || requireEnv("SUPABASE_SERVICE_ROLE_KEY");
