@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { getOffboardingCases } from "@/lib/domain";
+import { getCurrentUser } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable, type DataColumn } from "@/components/ui/data-table";
 import { StatusChip } from "@/components/ui/status-chip";
 import { Progress } from "@/components/ui/progress";
+import { RealtimeRefresher } from "@/components/module/realtime-refresher";
 import type { OffboardingCase } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Offboarding" };
 
 export default async function OffboardingPage() {
+  const user = await getCurrentUser();
   const cases = await getOffboardingCases();
 
   const columns: DataColumn<OffboardingCase>[] = [
@@ -31,6 +34,11 @@ export default async function OffboardingPage() {
 
   return (
     <div className="space-y-6">
+      <RealtimeRefresher
+        tables={["offboarding_cases", "offboarding_tasks"]}
+        label="Offboarding"
+        organizationId={user.organizationId}
+      />
       <PageHeader
         title="Offboarding"
         description="Exit interviews, access revocation and task checklists."

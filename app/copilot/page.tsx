@@ -19,17 +19,25 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { useLicense, useUser } from "@/components/providers";
 import { streamAi } from "@/lib/ai-client";
-import type { CopilotAction, CopilotMessage } from "@/lib/types";
+import { COPILOT_TOOL_NAMES } from "@/lib/ai-providers";
+import {
+  ToolStepCard,
+  type ToolStepState,
+} from "@/components/copilot/tool-step";
+import { useSupabaseRealtime } from "@/hooks/use-realtime";
+import type { CopilotAction } from "@/lib/types";
 
 /**
- * AI Copilot — full interactive chat surface.
+ * AI Copilot — agentic chat surface with active tool-calling.
  *
- * Streams completions through `/api/ai/copilot` (Next.js proxy → Python
- * bridge) with token-level deltas, tool-execution feedback and real-time
- * backend state (license tier, seat capacity, AI provider/model/endpoint)
- * rendered alongside the conversation. Provider status is fetched live from
- * `/api/ai/test-connection`, which validates Groq models and custom
- * OpenAI-compatible `/v1/chat/completions` endpoints before dialing.
+ * The conversation runs through `/api/ai/copilot` in agentic mode: the LLM
+ * planner can call any registered tool (create_expense, approve_offboarding,
+ * fetch_contractors, screen_candidate, …), each mapped 1:1 onto the
+ * RBAC-guarded CRUD routes. Read tools execute immediately; write tools
+ * render inline approval cards (Approve/Deny) before any state change.
+ * Tool results render as rich cards with live status badges, and the
+ * backend-state panel (provider, seats, tier) updates in real time via
+ * Supabase Realtime.
  */
 
 type ConnectionStatus = "idle" | "checking" | "connected" | "error";
@@ -62,27 +70,30 @@ interface ChatMessage {
   aborted?: boolean;
 }
 
+interface CopilotDoneResult {
+  text?: string;
+  actions?: CopilotAction[];
+  actionCards?: Array<{ title: string; kind: CopilotAction["kind"]; target: string }>;
+  requiresConfirmation?: boolean;
+}
+
 const WELCOME: ChatMessage = {
   id: "copilot-welcome",
   role: "assistant",
-  text: "Hi, I'm your Fluxentiq Copilot. Ask me about approvals, candidates, payroll, seat capacity, or workflows — I can run tools on your workspace and stream the results back here.",
+  text: "Hi, I'm your Fluxentiq Copilot — now with live tool access. Ask me to check seat capacity, submit an expense, approve an offboarding, or screen a candidate. I'll stream the plan, ask you to approve any write before it happens, and show the result inline.",
   actions: [],
   executions: [],
   createdAt: new Date().toISOString(),
 };
 
 const SUGGESTIONS = [
-  "Summarize my pending leave approvals",
-  "Screen the top candidate for Backend Engineer",
   "How many seats are left on our license?",
-  "Preview this month's payroll",
+  "What offboarding cases are in progress?",
+  "Submit a $240 AWS expense for Priya Nair",
+  "Screen candidate for Backend Engineer with a score of 86",
 ];
 
-function normalizeResult(result: {
-  text?: string;
-  actions?: CopilotAction[];
-  actionCards?: Array<{ title: string; kind: CopilotAction["kind"]; target: string }>;
-}): { text: string; actions: CopilotAction[] } {
+function normalizeResult(result: CopilotDoneResult): { text: string; actions: CopilotAction[] } {
   let actions: CopilotAction[] = [];
   if (result.actions && result.actions.length > 0) {
     actions = result.actions;
@@ -102,6 +113,7 @@ export default function CopilotPage() {
   const user = useUser();
   const license = useLicense();
   const [messages, setMessages] = React.useState<ChatMessage[]>([WELCOME]);
+  const [steps, setSteps] = React.useState<ToolStepState[]>([]);
   const [draft, setDraft] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [backend, setBackend] = React.useState<BackendState>({
@@ -134,6 +146,19 @@ export default function CopilotPage() {
       // Background refresh — silent; the panel keeps its last known state.
     }
   }, []);
+
+  // Real-time backend context: capacity re-evaluates the moment employees or
+  // memberships change anywhere (other tabs, Copilot tools, n8n).
+  useSupabaseRealtime({
+    table: "employees",
+    filter: user.organizationId ? `organization_id=eq.${user.organizationId}` : undefined,
+    onEvent: () => void refreshCapacity(),
+  });
+  useSupabaseRealtime({
+    table: "memberships",
+    filter: user.organizationId ? `organization_id=eq.${user.organizationId}` : undefined,
+    onEvent: () => void refreshCapacity(),
+  });
 
   const testConnection = React.useCallback(async () => {
     setBackend((prev) => ({ ...prev, status: "checking", message: null }));
@@ -191,51 +216,30 @@ export default function CopilotPage() {
     }
   }, [toast]);
 
-  // Real-time backend state context on mount.
   React.useEffect(() => {
     void refreshCapacity();
     void testConnection();
   }, [refreshCapacity, testConnection]);
 
-  // Auto-scroll the conversation as messages stream in.
   React.useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, steps]);
 
-  const send = React.useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || loading) return;
-
-      const userMessage: ChatMessage = {
-        id: `msg-${Date.now()}-u`,
-        role: "user",
-        text: trimmed,
-        actions: [],
-        executions: [],
-        createdAt: new Date().toISOString(),
-      };
-      const streamingId = `msg-${Date.now()}-a`;
-      const history = [...messages, userMessage].map((message) => ({
-        role: message.role,
-        content: message.text,
-      }));
-
-      setMessages((prev) => [
-        ...prev,
-        userMessage,
-        { id: streamingId, role: "assistant", text: "", actions: [], executions: [], createdAt: new Date().toISOString(), streaming: true },
-      ]);
-      setDraft("");
-      setLoading(true);
-
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      void streamAi<{ text?: string; actions?: CopilotAction[]; actionCards?: Array<{ title: string; kind: CopilotAction["kind"]; target: string }> }>(
+  /** Shared agentic streaming runner (send + approval resends). */
+  const runAgentStream = React.useCallback(
+    (
+      body: {
+        messages: Array<{ role: "user" | "assistant"; content: string }>;
+        tools: string[];
+        confirmToolCall?: { name: string; arguments: Record<string, unknown> };
+      },
+      streamingId: string,
+      controller: AbortController,
+    ) => {
+      void streamAi<CopilotDoneResult>(
         "/api/ai/copilot",
-        { messages: history, context: { organization_id: user.organizationId } },
+        { ...body, context: { organization_id: user.organizationId } },
         {
           onDelta: (content) => {
             setMessages((prev) =>
@@ -247,6 +251,15 @@ export default function CopilotPage() {
             );
           },
           onDone: (result) => {
+            if (result.requiresConfirmation) {
+              // A write tool awaits approval — keep the card, finish the bubble.
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === streamingId ? { ...message, streaming: false } : message,
+                ),
+              );
+              return;
+            }
             const normalized = normalizeResult(result);
             setMessages((prev) =>
               prev.map((message) =>
@@ -257,18 +270,47 @@ export default function CopilotPage() {
             );
             void refreshCapacity();
           },
-          onToolResult: (toolResult) => {
-            setMessages((prev) =>
-              prev.map((message) =>
-                message.id === streamingId
+          onToolCall: (call) => {
+            setSteps((prev) => {
+              const pending = prev.findIndex(
+                (step) =>
+                  step.name === call.name &&
+                  step.status === "pending" &&
+                  step.confirmationRequired,
+              );
+              if (pending >= 0 && !call.confirmationRequired) {
+                // The user approved — flip the card from pending → executing.
+                return prev.map((step, index) =>
+                  index === pending
+                    ? { ...step, status: "executing", confirmationRequired: false, message: undefined }
+                    : step,
+                );
+              }
+              return [
+                ...prev,
+                {
+                  id: `step-${Date.now()}-${prev.length}`,
+                  name: call.name,
+                  arguments: call.arguments,
+                  status: call.confirmationRequired ? "pending" : "executing",
+                  confirmationRequired: call.confirmationRequired,
+                  description: call.description,
+                },
+              ];
+            });
+          },
+          onToolResult: (result) => {
+            setSteps((prev) =>
+              prev.map((step) =>
+                step.name === result.tool &&
+                (step.status === "executing" || step.status === "pending")
                   ? {
-                      ...message,
-                      executions: [
-                        ...message.executions,
-                        `${toolResult.ok ? "✓" : "✗"} ${toolResult.message}`,
-                      ],
+                      ...step,
+                      status: result.ok ? "ok" : "error",
+                      message: result.message,
+                      data: result.data,
                     }
-                  : message,
+                  : step,
               ),
             );
           },
@@ -314,7 +356,96 @@ export default function CopilotPage() {
           abortRef.current = null;
         });
     },
-    [messages, loading, toast, user.organizationId, refreshCapacity],
+    [toast, user.organizationId, refreshCapacity],
+  );
+
+  const send = React.useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || loading) return;
+
+      const userMessage: ChatMessage = {
+        id: `msg-${Date.now()}-u`,
+        role: "user",
+        text: trimmed,
+        actions: [],
+        executions: [],
+        createdAt: new Date().toISOString(),
+      };
+      const streamingId = `msg-${Date.now()}-a`;
+      const history = [...messages, userMessage].map((message) => ({
+        role: message.role,
+        content: message.text,
+      }));
+
+      setMessages((prev) => [
+        ...prev,
+        userMessage,
+        { id: streamingId, role: "assistant", text: "", actions: [], executions: [], createdAt: new Date().toISOString(), streaming: true },
+      ]);
+      setDraft("");
+      setLoading(true);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      runAgentStream(
+        { messages: history, tools: COPILOT_TOOL_NAMES },
+        streamingId,
+        controller,
+      );
+    },
+    [messages, loading, runAgentStream],
+  );
+
+  const approveStep = React.useCallback(
+    (step: ToolStepState) => {
+      const streamingId = `msg-${Date.now()}-a`;
+      setSteps((prev) =>
+        prev.map((item) =>
+          item.id === step.id
+            ? { ...item, status: "executing", confirmationRequired: false, message: undefined }
+            : item,
+        ),
+      );
+      setMessages((prev) => [
+        ...prev,
+        { id: streamingId, role: "assistant", text: "", actions: [], executions: [], createdAt: new Date().toISOString(), streaming: true },
+      ]);
+      setLoading(true);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const history = messages.map((message) => ({
+        role: message.role,
+        content: message.text,
+      }));
+      runAgentStream(
+        {
+          messages: history,
+          tools: COPILOT_TOOL_NAMES,
+          confirmToolCall: { name: step.name, arguments: step.arguments },
+        },
+        streamingId,
+        controller,
+      );
+    },
+    [messages, runAgentStream],
+  );
+
+  const denyStep = React.useCallback(
+    (step: ToolStepState) => {
+      setSteps((prev) =>
+        prev.map((item) => (item.id === step.id ? { ...item, status: "denied" } : item)),
+      );
+      toast({
+        variant: "info",
+        title: "Action denied",
+        description: `No changes were made by ${step.name}.`,
+      });
+    },
+    [toast],
   );
 
   const stop = React.useCallback(() => {
@@ -345,12 +476,18 @@ export default function CopilotPage() {
             </p>
           </div>
         </div>
-        {license && (
+        <div className="flex items-center gap-2">
           <Badge variant="outline" className="gap-1.5">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            {license.tier} license
+            <Wrench className="h-3.5 w-3.5 text-primary" />
+            {COPILOT_TOOL_NAMES.length} tools active
           </Badge>
-        )}
+          {license && (
+            <Badge variant="outline" className="gap-1.5">
+              <Zap className="h-3.5 w-3.5 text-primary" />
+              {license.tier} license
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
@@ -360,6 +497,20 @@ export default function CopilotPage() {
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
+
+            {steps.length > 0 && (
+              <div className="space-y-3">
+                {steps.map((step) => (
+                  <ToolStepCard
+                    key={step.id}
+                    step={step}
+                    onApprove={approveStep}
+                    onDeny={denyStep}
+                  />
+                ))}
+              </div>
+            )}
+
             {loading && messages[messages.length - 1]?.text === "" && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -389,7 +540,7 @@ export default function CopilotPage() {
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about approvals, candidates, payroll, capacity…"
+                placeholder="Ask about approvals, candidates, payroll, capacity… or tell me to create an expense, approve an offboarding, screen a candidate."
                 className="min-h-[52px] flex-1 resize-none"
                 aria-label="Copilot message"
               />
@@ -409,7 +560,8 @@ export default function CopilotPage() {
               )}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Enter to send · Shift+Enter for a new line. Responses stream from your configured AI provider.
+              Enter to send · Shift+Enter for a new line. Read tools run immediately; write
+              tools wait for your approval.
             </p>
           </div>
         </section>
@@ -425,7 +577,7 @@ export default function CopilotPage() {
               { label: "Model", value: backend.model ?? "—" },
               { label: "Endpoint", value: backend.endpoint ?? "—", mono: true },
             ]}
-            message={backend.status === "error" ? backend.message : backend.message}
+            message={backend.message}
             actionLabel={backend.status === "checking" ? "Testing…" : "Test connection"}
             actionDisabled={backend.status === "checking"}
             onAction={() => void testConnection()}

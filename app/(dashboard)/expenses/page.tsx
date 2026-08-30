@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { getExpenses } from "@/lib/domain";
+import { getCurrentUser } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable, type DataColumn } from "@/components/ui/data-table";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatCurrency } from "@/lib/utils";
+import { RealtimeRefresher } from "@/components/module/realtime-refresher";
 import type { Expense } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Expenses" };
 
 export default async function ExpensesPage() {
+  const user = await getCurrentUser();
   const expenses = await getExpenses();
   const pending = expenses.filter((e) => e.status === "pending").length;
 
@@ -22,6 +25,11 @@ export default async function ExpensesPage() {
 
   return (
     <div className="space-y-6">
+      <RealtimeRefresher
+        tables={["expense_reports"]}
+        label="Expenses"
+        organizationId={user.organizationId}
+      />
       <PageHeader
         title="Expenses"
         description="Employee reimbursements, receipts and approvals."

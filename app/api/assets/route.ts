@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { getAssets } from "@/lib/domain";
-import { handleModuleCreate, handleModuleList } from "@/lib/module-crud";
+import {
+  handleModuleCreate,
+  handleModuleList,
+  moduleError,
+  moduleScopedContext,
+  scopedAssetList,
+} from "@/lib/module-crud";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,17 +19,33 @@ const createSchema = z.object({
   assignee: z.string().max(240).optional().nullable(),
 });
 
+/**
+ * Assets are personal when assigned:
+ *  - EMPLOYEE / MANAGER → only assets assigned to self / direct reports
+ *  - HR_ADMIN / SUPER_ADMIN → org-wide inventory + writes
+ */
 export async function GET(): Promise<Response> {
+  const ctx = await moduleScopedContext();
+  if (!ctx) return moduleError("Unauthorized — no organization context.", 401);
+  if (ctx.scope !== "org") {
+    return handleModuleList(() => scopedAssetList(ctx));
+  }
   return handleModuleList(getAssets);
 }
 
 export async function POST(request: Request): Promise<Response> {
   const input = await request.json().catch(() => null);
-  return handleModuleCreate("assets", createSchema, input, (parsed) => ({
-    asset_tag: parsed.assetTag,
-    name: parsed.name,
-    category: parsed.category,
-    status: parsed.status,
-    assignee: parsed.assignee ?? null,
-  }));
+  return handleModuleCreate(
+    "assets",
+    createSchema,
+    input,
+    (parsed) => ({
+      asset_tag: parsed.assetTag,
+      name: parsed.name,
+      category: parsed.category,
+      status: parsed.status,
+      assignee: parsed.assignee ?? null,
+    }),
+    { minRole: "HR_ADMIN" },
+  );
 }

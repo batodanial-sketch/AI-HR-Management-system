@@ -133,8 +133,11 @@ class AiClient:
     async def stream_copilot(
         self, request: CopilotRequest
     ) -> AsyncIterator[dict[str, Any]]:
+        system_prompt = _COPILOT_SYSTEM
+        if request.tools:
+            system_prompt = _COPILOT_SYSTEM + self._tool_block(request.tools)
         messages: list[dict[str, str]] = [
-            {"role": "system", "content": _COPILOT_SYSTEM}
+            {"role": "system", "content": system_prompt}
         ]
         for message in request.messages:
             messages.append({"role": message.role, "content": message.content})
@@ -186,6 +189,22 @@ class AiClient:
             tool_calls=tool_calls,
         )
         yield {"type": "done", "result": result.model_dump()}
+
+    @staticmethod
+    def _tool_block(tools: list[CopilotToolSpec]) -> str:
+        """Agentic function-calling instruction block for the planner prompt."""
+        lines = [
+            "\nYou can take real actions by calling tools. When the user's request "
+            "requires an action, output ONLY one trailing JSON line of the form:\n"
+            '[[JSON]]{"tool_calls":[{"tool":"<tool name>","arguments":{...}}]}\n'
+            "When a tool is not required, answer normally. Available tools:",
+        ]
+        for tool in tools:
+            lines.append(
+                f"- {tool.name}: {tool.description}\n"
+                f"  parameters: {json.dumps(tool.parameters, default=str)}"
+            )
+        return "\n".join(lines)
 
     # -- resume parsing -------------------------------------------------------
 

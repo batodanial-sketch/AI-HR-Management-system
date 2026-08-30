@@ -19,7 +19,10 @@ export type WebhookEvent =
   | "leave.resolved"
   | "candidate.moved"
   | "payroll.completed"
-  | "workflow.completed";
+  | "workflow.completed"
+  | "expense.created"
+  | "screening.completed"
+  | "offboarding.completed";
 
 export interface WebhookSubscription {
   id: string;
@@ -102,23 +105,31 @@ export async function deleteWebhook(id: string): Promise<void> {
     .eq("organization_id", user.organizationId);
 }
 
-/** Fans out an event to all matching active subscriptions. */
+/**
+ * Fans out an event to all matching active subscriptions.
+ *
+ * `organizationId` pins the tenant — pass it explicitly from mutation
+ * handlers (server actions / API routes). When omitted it is resolved from
+ * the current session, preserving the legacy call sites.
+ */
 export async function dispatchWebhooks(
   event: WebhookEvent,
   payload: Record<string, unknown>,
+  organizationId?: string | null,
 ): Promise<WebhookDeliveryResult[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
-  const user = await getCurrentUser();
-  if (!user.organizationId) {
+  const organization =
+    organizationId ?? (await getCurrentUser().catch(() => null))?.organizationId;
+  if (!organization) {
     return [];
   }
 
   const { data, error } = await serverClient()
     .from("webhook_subscriptions")
     .select("*")
-    .eq("organization_id", user.organizationId)
+    .eq("organization_id", organization)
     .eq("active", true);
   if (error || !data) {
     return [];
@@ -167,4 +178,44 @@ export async function dispatchWebhooks(
   }
 
   return results;
+}
+
+/**
+ * Fire-and-forget webhook notification for mutation handlers. Never throws —
+ * webhook fan-out must not break the mutation that triggered it.
+ */
+export async function notifyWebhookEvent(
+  event: WebhookEvent,
+  payload: Record<string, unknown>,
+  organizationId?: string | null,
+): Promise<WebhookDeliveryResult[]> {
+  try {
+    return await dispatchWebhooks(event, payload, organizationId);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Verifies the inbound HMAC signature of a dispatch request
+ * (`X-Fluxentiq-Signature: sha256=<hex>`), constant-time compared against
+ * `N8N_WEBHOOK_SECRET`. Used by the outbound gateway to accept
+ * machine-to-machine broadcasts from trusted internal services.
+ */
+export function verifyDispatchSignature(
+  rawBody: string,
+  signature: string | null,
+  secret: string,
+): boolean {
+  if (!secret || !signature) return false;
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const received = signature.startsWith("sha256=")
+    ? signature.slice("sha256=".length)
+    : signature;
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
 }

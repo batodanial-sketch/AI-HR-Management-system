@@ -406,8 +406,10 @@ async def copilot(
         try:
             async for event in client.stream_copilot(request):
                 yield _sse(event)
-                if event.get("type") == "done":
-                    # Execute any tool calls and emit their results.
+                if event.get("type") == "done" and request.execute_tools:
+                    # Execute any tool calls and emit their results. The Next.js
+                    # agentic orchestrator passes execute_tools=False and runs
+                    # the tools itself against its RBAC-guarded CRUD routes.
                     result = event.get("result") or {}
                     organization_id = request.context.get("organization_id") or org_id
                     for call in result.get("tool_calls", []):

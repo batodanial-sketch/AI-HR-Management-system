@@ -94,3 +94,54 @@ export function canApprove(user: SessionUser): boolean {
     user.role === "owner" || user.role === "admin" || user.role === "manager"
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* RBAC role model (tenant-scoped)                                    */
+/* ------------------------------------------------------------------ */
+
+/** Canonical RBAC roles. Every effective role is normalized onto this union. */
+export type RbRole = "SUPER_ADMIN" | "HR_ADMIN" | "MANAGER" | "EMPLOYEE";
+
+/** Role precedence — higher = more access. */
+export const ROLE_HIERARCHY: Record<RbRole, number> = {
+  EMPLOYEE: 1,
+  MANAGER: 2,
+  HR_ADMIN: 3,
+  SUPER_ADMIN: 4,
+};
+
+export const RB_ROLES: RbRole[] = [
+  "SUPER_ADMIN",
+  "HR_ADMIN",
+  "MANAGER",
+  "EMPLOYEE",
+];
+
+/**
+ * Normalizes the free-text legacy membership roles (`owner`, `admin`,
+ * `hr_admin`, `manager`, `member`, …) onto the canonical RBAC union.
+ * Unknown values degrade to EMPLOYEE (fail-closed).
+ */
+export function normalizeRole(role: OrgRole | string | null | undefined): RbRole {
+  const value = (role ?? "").toString().toLowerCase();
+  switch (value) {
+    case "owner":
+    case "super_admin":
+    case "superadmin":
+    case "system_admin":
+      return "SUPER_ADMIN";
+    case "admin":
+    case "hr_admin":
+    case "hr_manager":
+      return "HR_ADMIN";
+    case "manager":
+      return "MANAGER";
+    default:
+      return "EMPLOYEE";
+  }
+}
+
+/** True when `role` is at least `minimum` in the hierarchy. */
+export function roleAtLeast(role: RbRole, minimum: RbRole): boolean {
+  return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[minimum];
+}

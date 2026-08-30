@@ -13,13 +13,23 @@ export interface ToolResultEvent {
   tool: string;
   ok: boolean;
   message: string;
+  data?: unknown;
+}
+
+export interface ToolCallEvent {
+  name: string;
+  arguments: Record<string, unknown>;
+  confirmationRequired: boolean;
+  description?: string;
+  status?: "executing";
 }
 
 export interface AiStreamEvent {
-  type: "delta" | "done" | "error" | "tool_result";
+  type: "delta" | "done" | "error" | "tool_result" | "tool_call";
   content?: string;
   result?: unknown;
   message?: string;
+  call?: ToolCallEvent;
 }
 
 export interface StreamHandlers<TResult> {
@@ -27,6 +37,7 @@ export interface StreamHandlers<TResult> {
   onDone: (result: TResult) => void;
   onError?: (message: string) => void;
   onToolResult?: (result: ToolResultEvent) => void;
+  onToolCall?: (call: ToolCallEvent) => void;
 }
 
 /**
@@ -169,6 +180,8 @@ function handleSseChunk<TResult>(
       handlers.onDone(event.result as TResult);
     } else if (event.type === "tool_result") {
       handlers.onToolResult?.(event.result as ToolResultEvent);
+    } else if (event.type === "tool_call" && event.call) {
+      handlers.onToolCall?.(event.call);
     } else if (event.type === "error" && typeof event.message === "string") {
       handlers.onError?.(event.message);
     }

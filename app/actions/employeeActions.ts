@@ -14,6 +14,7 @@ import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
 import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from './_shared'
 import { assertSeatCapacity, SeatCapacityError } from '@/lib/seats'
+import { notifyWebhookEvent } from '@/lib/webhooks'
 
 export type EmployeeDirectoryRecord = {
   employee: EmployeeRow
@@ -118,6 +119,24 @@ export async function createEmployeeAction(input: z.input<typeof createEmployeeS
     const payload = parsed.data
     const { data: employee, error: employeeError } = await supabase.from('employees').insert({ organization_id: auth.data.organizationId, employee_number: payload.employeeNumber, first_name: payload.firstName, last_name: payload.lastName, preferred_name: payload.preferredName || null, work_email: payload.workEmail, personal_email: payload.personalEmail || null, phone: payload.phone || null, department_id: payload.departmentId || null, job_title_id: payload.jobTitleId || null, manager_id: payload.managerId || null, location_id: payload.locationId || null, employment_type: payload.employmentType, status: 'active', start_date: payload.startDate, emergency_contact: {}, custom_fields: {} }).select().single()
     if (employeeError || !employee) return actionFailure(employeeError?.message || 'Employee creation returned no record.')
+    // Event-driven automation: broadcast the mutation to the tenant's webhook
+    // subscriptions (n8n workflows, Slack, Twilio/WhatsApp outreach).
+    void notifyWebhookEvent(
+      'employee.created',
+      {
+        employee: {
+          id: employee.id,
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          workEmail: payload.workEmail,
+          employmentType: payload.employmentType,
+          startDate: payload.startDate,
+        },
+        organizationId: auth.data.organizationId,
+        createdAt: new Date().toISOString(),
+      },
+      auth.data.organizationId,
+    )
     if (payload.annualSalary !== undefined) {
       const { error: compensationError } = await supabase.from('compensation_packages').insert({ organization_id: auth.data.organizationId, employee_id: employee.id, currency_code: payload.currencyCode, annual_salary: payload.annualSalary, pay_frequency: 'monthly', effective_from: payload.startDate, components: [] })
       if (compensationError) {
