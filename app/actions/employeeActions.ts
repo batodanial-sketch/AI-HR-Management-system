@@ -13,6 +13,7 @@ import {
 import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
 import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from './_shared'
+import { assertSeatCapacity, SeatCapacityError } from '@/lib/seats'
 
 export type EmployeeDirectoryRecord = {
   employee: EmployeeRow
@@ -100,6 +101,17 @@ export async function createEmployeeAction(input: z.input<typeof createEmployeeS
   const auth = await requireOrganizationContext('admin')
   if (!auth.success) return auth
   try {
+    // Dynamic seat-capacity re-evaluation: counts live billable seats (system
+    // seed accounts excluded) and blocks only a genuine over-capacity insert.
+    // Fail-open on lookup errors so capacity plumbing never breaks onboarding.
+    try {
+      await assertSeatCapacity()
+    } catch (error) {
+      if (error instanceof SeatCapacityError) {
+        return actionFailure(`${error.message} (${error.capacity.available} of ${error.capacity.limit} seats available).`)
+      }
+      // Non-capacity errors are ignored — never a false 403.
+    }
     const supabase = await createServerSupabaseClient()
     const assignmentError = await validateEmployeeAssignments(supabase, auth.data.organizationId, parsed.data)
     if (assignmentError) return actionFailure(assignmentError)

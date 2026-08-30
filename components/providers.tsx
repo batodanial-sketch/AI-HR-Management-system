@@ -4,6 +4,7 @@ import * as React from "react";
 import { MotionConfig } from "framer-motion";
 import { CopilotProvider } from "@/components/copilot/copilot-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { RouteErrorToast } from "@/components/layout/route-error-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { applyAccent, findAccent } from "@/lib/appearance";
 import { applyBrandAccent } from "@/lib/branding";
@@ -144,6 +145,7 @@ export function Providers({
               <LicenseContext.Provider value={license}>
                 <ToastProvider>
                   <BrandingApplier accent={branding.accent} />
+                  <RouteErrorToast />
                   <CopilotProvider organizationId={user?.organizationId ?? null}>
                     {children}
                   </CopilotProvider>

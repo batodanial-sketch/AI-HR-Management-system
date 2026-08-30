@@ -15,6 +15,20 @@ LeaveType = Literal["pto", "sick", "unpaid"]
 Recommendation = Literal["advance", "hold", "reject"]
 
 
+class AiTestRequest(BaseModel):
+    """Optional overrides for the ``/api/ai/test`` diagnostic endpoint.
+
+    Lets the Next.js test-connection route validate alternative Groq models
+    and custom OpenAI-compatible endpoints without mutating stored settings.
+    API keys are NEVER accepted here — the bridge resolves them from its own
+    configuration.
+    """
+
+    provider: str | None = None
+    model: str | None = None
+    base_url: str | None = Field(default=None, alias="baseUrl")
+
+
 class CandidateEvaluationRequest(BaseModel):
     candidate_id: str
     candidate_name: str

@@ -30,6 +30,29 @@ export interface StreamHandlers<TResult> {
 }
 
 /**
+ * Extracts a human-readable message from a failed AI response. Prefers the
+ * `error` / `detail` / `message` fields the bridge and proxy return, so the
+ * UI can surface "AI bridge unreachable" instead of a bare status code.
+ */
+export async function errorMessageFromResponse(
+  response: Response,
+): Promise<string> {
+  try {
+    const json = (await response.json()) as {
+      error?: string;
+      detail?: string;
+      message?: string;
+    };
+    if (typeof json.error === "string" && json.error) return json.error;
+    if (typeof json.detail === "string" && json.detail) return json.detail;
+    if (typeof json.message === "string" && json.message) return json.message;
+  } catch {
+    // Non-JSON error body — fall through to the status text.
+  }
+  return `AI bridge returned ${response.status} ${response.statusText}`.trim();
+}
+
+/**
  * POSTs JSON to an AI endpoint and returns the parsed result (non-streaming
  * endpoints: parse-resume, rank-candidates, interview-report, insights, …).
  */
@@ -43,7 +66,7 @@ export async function postAi<TResult>(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`AI bridge returned ${response.status}`);
+    throw new Error(await errorMessageFromResponse(response));
   }
   return (await response.json()) as TResult;
 }
@@ -60,7 +83,7 @@ export async function postAiFile<TResult>(
   form.append("file", file);
   const response = await fetch(path, { method: "POST", body: form });
   if (!response.ok) {
-    throw new Error(`AI bridge returned ${response.status}`);
+    throw new Error(await errorMessageFromResponse(response));
   }
   return (await response.json()) as TResult;
 }
@@ -86,7 +109,7 @@ export async function streamAi<TResult>(
   }
 
   if (!response.ok) {
-    handlers.onError?.(`AI bridge returned ${response.status}`);
+    handlers.onError?.(await errorMessageFromResponse(response));
     return;
   }
   const json = (await response.json()) as TResult;

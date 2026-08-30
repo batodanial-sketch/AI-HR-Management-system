@@ -38,6 +38,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from bridge.config import settings
 from bridge.ai_client import AiClient, GroqError
 from bridge.models import (
+    AiTestRequest,
     CandidateEvaluationRequest,
     CopilotRequest,
     InsightsRequest,
@@ -48,6 +49,7 @@ from bridge.models import (
     WorkflowTriggerRequest,
 )
 from bridge.providers import make_provider
+from bridge.providers.base import ProviderError
 from bridge.supabase_client import SupabaseClient, SupabaseError
 from bridge.tools import make_executor
 from bridge.usage import make_recorder
@@ -298,9 +300,32 @@ async def job_status(job_id: str):
 
 
 @app.post("/api/ai/test")
-async def test_ai():
-    """Verifies the configured AI provider with a minimal completion."""
-    client = _require_ai()
+async def test_ai(payload: AiTestRequest | None = None):
+    """Verifies the configured AI provider with a minimal completion.
+
+    Accepts optional overrides (`provider`, `model`, `baseUrl`) so the
+    Next.js test-connection route can validate alternative Groq models and
+    custom OpenAI-compatible endpoints without mutating stored settings.
+    """
+    if payload is not None and (
+        payload.provider or payload.model or payload.base_url
+    ):
+        try:
+            client = AiClient(
+                make_provider(
+                    provider=payload.provider,
+                    model=payload.model,
+                    base_url=payload.base_url,
+                )
+            )
+        except ProviderError as exc:
+            return JSONResponse(
+                status_code=400,
+                content={"ok": False, "message": str(exc)},
+            )
+    else:
+        client = _require_ai()
+
     try:
         await client._provider.complete_json(
             [
@@ -311,11 +336,14 @@ async def test_ai():
                 {"role": "user", "content": "ping"},
             ]
         )
+        endpoint = getattr(client._provider, "endpoint", None)
+        provider_name = client.provider_name or settings.llm_provider
         return {
             "ok": True,
-            "provider": settings.llm_provider,
+            "provider": provider_name,
             "model": client.model,
-            "message": f"Connected to {settings.llm_provider} ({client.model}).",
+            "endpoint": endpoint,
+            "message": f"Connected to {provider_name} ({client.model}).",
         }
     except Exception as exc:  # noqa: BLE001
         return JSONResponse(

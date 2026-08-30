@@ -16,7 +16,8 @@
     "test:e2e:update-snapshots": "playwright test --update-snapshots",
     "test:ai": "node tests/engine-smoke-test.cjs",
     "test:e2e:report": "playwright show-report",
-    "preflight": "bash scripts/preflight.sh"
+    "preflight": "bash scripts/preflight.sh",
+    "test:unit": "jest"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.1.0",
