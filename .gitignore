@@ -55,3 +55,5 @@ e2e/.auth/storageState.json
 
 /uploads
 
+
+.claude/
