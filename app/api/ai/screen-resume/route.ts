@@ -1,116 +1,74 @@
-import { proxyToBridge } from "@/lib/ai-proxy";
-import { z } from "zod";
 import { parseResumeSchema } from "@/lib/validations/ai";
-import { evaluateCandidate, calculateCandidateFit, formatEvaluateCandidateResponse, handleEvaluateCandidateError } from "@/services/ai/evaluateCandidateService";
+import { evaluateCandidate, calculateCandidateFit } from "@/services/ai/evaluateCandidateService";
 import { parseResume, storeParsedResume, formatResumeForStorage } from "@/services/ai/parseResumeService";
 import { getCurrentUser } from "@/lib/auth";
 import { getOrganizationId } from "@/lib/organization";
+import { proxyToBridge } from "@/lib/ai-proxy";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request): Promise<Response> {
+export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const parseResult = parseResumeSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return new Response(JSON.stringify({ error: parseResult.error.format() }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const { fileBase64, fileName, metadata } = parseResult.data;
-
-    // Get current user and organization context
     const user = await getCurrentUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: "Authentication required" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    const organizationId = getOrganizationId(user);
-    if (!organizationId) {
-      return new Response(JSON.stringify({ error: "Organization context required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Step 1: Parse the resume using AI bridge
-    const parseResponse = await parseResume(fileBase64, fileName, metadata);
-    const parsedData = parseResponse as Record<string, unknown>;
+    const organizationId = await getOrganizationId();
+    const body = await request.json();
+    const parsedInput = parseResumeSchema.parse(body);
 
-    // Step 2: Store parsed resume data in Supabase candidates table
-    const resumeForStorage = formatResumeForStorage(parsedData, user.id);
+    // Step 1: Parse resume
+    const parsedData = await parseResume(parsedInput);
+    const resumeForStorage = formatResumeForStorage(parsedData);
+
+    // Step 2: Store parsed resume
     await storeParsedResume(user.id, resumeForStorage, organizationId);
 
-    // Step 3: Find matching job for this candidate
-    const jobResponse = await proxyToBridge(request, "/api/ai/jobs", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!jobResponse.ok) {
-      throw new Error("Failed to fetch matching jobs");
-    }
+    // Step 3: Fetch matching job via bridge proxy
+    const jobResponse = await proxyToBridge(request, "/api/ai/jobs");
     const jobs = await jobResponse.json();
+    const activeJob = Array.isArray(jobs) ? jobs[0] : null;
 
-    // Step 4: Evaluate candidate against each job
-    const evaluations: Record<string, unknown>[] = [];
-    for (const job of jobs) {
-      const fit = calculateCandidateFit(
-        resumeForStorage,
-        job,
-        parsedData.skills as string[],
+    if (!activeJob) {
+      return NextResponse.json(
+        { error: "No active job posting found for evaluation" },
+        { status: 404 }
       );
-      evaluations.push({
-        jobId: job.id,
-        score: fit.score,
-        strengths: fit.strengths,
-        missing: fit.missing,
-        recommendation: fit.recommendation,
-      });
     }
 
-    // Step 5: Store evaluations in Supabase
-    for (const evaluation of evaluations) {
-      await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/candidate_evaluations`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          "Content-Type": "application/json",
-          "Prefer": "return=representation",
-        },
-        body: JSON.stringify({
-          candidate_id: user.id,
-          job_id: evaluation.jobId,
-          score: evaluation.score,
-          strengths: evaluation.strengths,
-          missing_requirements: evaluation.missing,
-          recommendation: evaluation.recommendation,
-          evaluated_at: new Date().toISOString(),
-          organization_id: organizationId,
-        }),
-      });
-    }
+    // Step 4: Evaluate candidate fit
+    const resumeText = JSON.stringify(resumeForStorage);
+    const fitScore = await calculateCandidateFit(resumeText, activeJob.description);
+    const evaluation = await evaluateCandidate(resumeText, activeJob);
 
-    // Step 6: Return consolidated results
-    const response = {
-      success: true,
-      data: {
-        parsedResume: resumeForStorage,
-        evaluations,
-      },
-    };
-
-    return Response.json(response);
-  } catch (e) {
-    const errorResponse = handleEvaluateCandidateError(e);
-    return Response.json(errorResponse, {
-      status: errorResponse.status,
-      headers: { "Content-Type": "application/json" },
+    // Step 5: Store evaluation entry
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/candidate_evaluations`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      } as Record<string, string>,
+      body: JSON.stringify({
+        candidate_id: user.id,
+        job_id: activeJob.id,
+        fit_score: fitScore,
+        evaluation_data: evaluation,
+      }),
     });
+
+    return NextResponse.json({
+      success: true,
+      fitScore,
+      evaluation,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || "Failed to process resume screening" },
+      { status: 500 }
+    );
   }
 }

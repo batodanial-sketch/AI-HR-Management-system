@@ -29,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // In a real application, get the organizationId from the user's session or context
     // For this example, we'll use a placeholder or assume a global context provider
-    const organizationId = getOrganizationId(user);
+    const organizationId = getOrganizationId();
     if (!organizationId) {
       return NextResponse.json({ error: "Organization context required" }, { status: 400 });
     }
