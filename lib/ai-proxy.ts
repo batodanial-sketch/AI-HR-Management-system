@@ -16,7 +16,7 @@ import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
 import { recordAiUsage, type AiFeature } from "@/lib/ai-usage";
 import { recordAiTelemetry } from "@/lib/ai/telemetry";
 import { getLicenseState } from "@/lib/license";
-import { getCurrentUser } from "@/lib/auth";
+import { getRbacContext, rbacErrorResponse } from "@/lib/rbac";
 
 export function bridgeUrl(): string {
   return process.env.AI_BRIDGE_URL ?? "http://localhost:8000";
@@ -81,15 +81,23 @@ export async function proxyToBridge(
   request: Request,
   pathname: string,
 ): Promise<Response> {
-  // Resolve org + tier (best-effort, never block the request on failure).
-  let organizationId: string | null = null;
-  let tier: string | null = null;
+  // Fail closed: the caller must resolve to a canonical actor→org→membership
+  // →role. The tenant forwarded to the bridge (X-Organization-Id) is ALWAYS the
+  // canonical organization of the session — never a header/body claim.
+  let organizationId: string;
   try {
-    const user = await getCurrentUser();
-    organizationId = user.organizationId ?? null;
-  } catch {
-    organizationId = null;
+    const ctx = await getRbacContext();
+    organizationId = ctx.organizationId;
+  } catch (error) {
+    return (
+      rbacErrorResponse(error) ??
+      new Response(JSON.stringify({ detail: "Unauthorized." }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
   }
+  let tier: string | null = null;
   try {
     const license = await getLicenseState();
     tier = license?.tier ?? null;

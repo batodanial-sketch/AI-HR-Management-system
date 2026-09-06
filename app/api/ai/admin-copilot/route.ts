@@ -3,7 +3,7 @@ import { z } from "zod";
 import { bridgeUrl, bridgeSecret } from "@/lib/ai-proxy";
 import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
 import { getLicenseState, requireEnterpriseTier } from "@/lib/license";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole, rbacErrorResponse } from "@/lib/rbac";
 import { getOrganizationConfigAction, updateOrganizationConfigAction } from "@/app/actions/studioActions";
 import type { OrganizationConfig } from "@/lib/studio/config";
 
@@ -41,14 +41,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Rate limiting — org-scoped, tier-aware
+  // Deny-first caller RBAC: HR_ADMIN+ from the canonical membership resolver
+  // (the config write path re-checks via requireOrganizationContext("admin")).
+  // Unauthorized callers are rejected before any bridge/LLM spend.
   let organizationId: string | null = null;
   let tier: string | null = null;
   try {
-    const user = await getCurrentUser();
-    organizationId = user.organizationId ?? null;
-  } catch {
-    organizationId = null;
+    const ctx = await requireRole("HR_ADMIN");
+    organizationId = ctx.demoMode ? null : ctx.organizationId;
+  } catch (error) {
+    const denied = rbacErrorResponse(error);
+    if (denied) {
+      const body = (await denied.json()) as Record<string, unknown>;
+      return NextResponse.json(body, { status: denied.status });
+    }
+    throw error;
   }
   try {
     const license = await getLicenseState();

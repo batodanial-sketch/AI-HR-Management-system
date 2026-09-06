@@ -1,14 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
-import {
-  getCurrentUser,
-  normalizeRole,
-  RB_ROLES,
-  roleAtLeast,
-  type RbRole,
-  type SessionUser,
-} from "@/lib/auth";
+import { type SessionUser } from "@/lib/auth";
+import { AuthzDeniedError, resolveCanonicalAuthz } from "@/lib/authz/canonical";
+import { RB_ROLES, roleAtLeast, type RbRole } from "@/lib/authz/model";
 import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
 
 /**
@@ -19,6 +14,10 @@ import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
  *   SUPER_ADMIN / HR_ADMIN  → `org`   (unrestricted, org-wide)
  *   MANAGER                 → `team`  (self + direct reports)
  *   EMPLOYEE                → `self`  (personal records only)
+ *
+ * The role comes exclusively from the canonical membership resolver
+ * (`lib/authz/canonical.ts`). A caller without a valid canonical membership
+ * is DENIED (`AuthzDeniedError`) — there is no default role.
  *
  * The employee linkage (auth user → employees row) is resolved by email, and
  * direct reports by `employees.manager_id`. In demo mode (Supabase
@@ -39,6 +38,10 @@ export interface RbacContext {
   reportIds: string[];
   /** True when Supabase is unconfigured (demo identity drives access). */
   demoMode: boolean;
+  /** Canonical role code (`memberships.role`); null only in demo mode. */
+  roleCode: "owner" | "admin" | "manager" | "member" | null;
+  /** Canonical membership row id; null only in demo mode. */
+  membershipId: string | null;
 }
 
 /** Error thrown when the caller's role is below the required minimum. */
@@ -122,45 +125,96 @@ function e2eRoleOverride(): RbRole | null {
   }
 }
 
-/** Resolves the caller's RBAC context (cached per request). */
+/**
+ * Resolves the caller's RBAC context (cached per request).
+ *
+ * Throws {@link AuthzDeniedError} when Supabase is configured and the caller
+ * has no valid canonical membership. Route handlers translate that into a
+ * 401/403 via {@link rbacErrorResponse}.
+ */
 export const getRbacContext = cache(async (): Promise<RbacContext> => {
-  const user = await getCurrentUser();
-  let role = normalizeRole(user.role);
   const override = e2eRoleOverride();
-  const demoMode = !hasSupabaseEnv() || !user.organizationId;
-  const organizationId = user.organizationId ?? "";
 
-  // Test hook: simulate an under-privileged role with a real org context.
-  if (override) {
-    role = override;
+  // Demo/preview (Supabase unconfigured): the demo admin identity drives
+  // access. The E2E override may still simulate an under-privileged role.
+  if (!hasSupabaseEnv()) {
+    const user: SessionUser = {
+      id: "demo-user",
+      email: "ayesha.rahman@fluxentiq.test",
+      fullName: "Ayesha Rahman",
+      organizationId: "11111111-1111-4111-8111-111111111111",
+      role: "admin",
+    };
+    const role: RbRole = override ?? "HR_ADMIN";
+    return {
+      user,
+      organizationId: user.organizationId ?? "",
+      role,
+      scope: override ? scopeForRole(role) : "org",
+      employeeId: null,
+      reportIds: [],
+      demoMode: !override,
+      roleCode: override ? null : "admin",
+      membershipId: null,
+    };
   }
-  const effectiveDemo = demoMode && !override;
 
-  const scope: AccessScope = effectiveDemo
-    ? "org"
-    : roleAtLeast(role, "HR_ADMIN")
-      ? "org"
-      : roleAtLeast(role, "MANAGER")
-        ? "team"
-        : "self";
+  const authz = await resolveCanonicalAuthz();
+  if (!authz.ok) {
+    throw new AuthzDeniedError(authz.reason, authz.detail);
+  }
+
+  const { actor, membership } = authz;
+  const user: SessionUser = {
+    id: actor.id,
+    email: actor.email,
+    fullName: actor.fullName,
+    organizationId: membership.organizationId,
+    role: membership.roleCode,
+  };
+
+  // Test hook: simulate an under-privileged role for a REAL membership. The
+  // override can only ever lower/adjust the tier of an authenticated,
+  // canonically-resolved member — it never grants a tenant.
+  const role: RbRole = override ?? membership.role;
 
   const base: RbacContext = {
     user,
-    organizationId,
+    organizationId: membership.organizationId,
     role,
-    scope,
+    scope: scopeForRole(role),
     employeeId: null,
     reportIds: [],
-    demoMode: effectiveDemo,
+    demoMode: false,
+    roleCode: membership.roleCode,
+    membershipId: membership.membershipId,
   };
 
-  if (effectiveDemo) return base;
-
-  const linkage = await resolveEmployeeLinkage(organizationId, user.email);
+  const linkage = await resolveEmployeeLinkage(membership.organizationId, actor.email);
   base.employeeId = linkage.employeeId;
   base.reportIds = linkage.reportIds;
   return base;
 });
+
+function scopeForRole(role: RbRole): AccessScope {
+  return roleAtLeast(role, "HR_ADMIN") ? "org" : roleAtLeast(role, "MANAGER") ? "team" : "self";
+}
+
+/**
+ * Maps an authorization failure to an HTTP response. Unauthenticated → 401,
+ * every other canonical denial (no/ambiguous membership, unknown role) → 403.
+ * Returns null for non-authorization errors so callers can rethrow.
+ */
+export function rbacErrorResponse(error: unknown): Response | null {
+  if (error instanceof RbacForbiddenError) {
+    return Response.json({ ok: false, error: error.message, code: error.code }, { status: 403 });
+  }
+  if (error instanceof AuthzDeniedError) {
+    const status = error.reason === "UNAUTHENTICATED" ? 401 : 403;
+    return Response.json({ ok: false, error: error.message, code: error.code, reason: error.reason }, { status });
+  }
+  return null;
+}
 
 /**
  * Employee ids the caller may touch, or `null` when unrestricted (org scope).

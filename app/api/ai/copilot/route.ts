@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { proxyToBridge, bridgeUrl, bridgeSecret } from "@/lib/ai-proxy";
 import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
-import { getCurrentUser } from "@/lib/auth";
+import { getRbacContext, rbacErrorResponse } from "@/lib/rbac";
 import { getLicenseState } from "@/lib/license";
 import {
   COPILOT_TOOL_NAMES,
@@ -209,17 +209,21 @@ export async function POST(request: Request): Promise<Response> {
     return invalid(`Unknown tools: ${unknownTools.join(", ")}.`);
   }
 
-  // Rate limit (same tier policy as the classic proxy).
-  let organizationId: string | null = null;
-  let actorId: string | null = null;
+  // Caller RBAC — resolved ONCE from the canonical membership resolver and
+  // fixed for the whole agentic run. The tenant and actor used for tool
+  // execution, audit attribution, budget and telemetry all derive from it;
+  // `context.organization_id` in the request body is ignored. A caller with
+  // no valid canonical membership is denied before any planning happens.
+  let rbac;
   try {
-    const currentUser = await getCurrentUser();
-    organizationId = currentUser.organizationId ?? null;
-    actorId = currentUser.id || "copilot-agent";
-  } catch {
-    organizationId = null;
-    actorId = "copilot-agent";
+    rbac = await getRbacContext();
+  } catch (error) {
+    const denied = rbacErrorResponse(error);
+    if (denied) return denied;
+    throw error;
   }
+  const organizationId: string | null = rbac.demoMode ? null : rbac.organizationId;
+  const actorId: string = rbac.user.id;
   let tier: string | null = null;
   try {
     tier = (await getLicenseState())?.tier ?? null;
@@ -249,7 +253,7 @@ export async function POST(request: Request): Promise<Response> {
   /** Governance: every agentic tool run lands in the audit trail. */
   const auditToolRun = (name: string, args: Record<string, unknown>, ok: boolean, message: string) =>
     recordAuditLog({
-      actorId: actorId ?? "copilot-agent",
+      actorId,
       actorType: "COPILOT_AGENT",
       action: `copilot.tool.${name}`,
       targetModule: COPILOT_TOOL_MODULES[name] ?? "copilot",

@@ -180,18 +180,18 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   // ── Module CRUD: 100 req/min per tenant (org-keyed) ────────────────────
   if (edgeCategory === "module") {
-    // Resolve the tenant once per request — the membership lookup doubles as
-    // the same tenant isolation the data layer enforces via RLS.
+    // Rate-limit bucketing only — NOT an authorization decision. Reads the
+    // canonical `memberships` table so the bucket matches the tenant the
+    // canonical resolver will authorize downstream; falls back to a per-user
+    // bucket when the caller has no single membership.
     let tenantKey = `module:user:${user.id}`;
-    const { data: membership } = await supabase
-      .from("organization_memberships")
+    const { data: membershipRows } = await supabase
+      .from("memberships")
       .select("organization_id")
       .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle();
-    if (membership?.organization_id) {
-      tenantKey = `module:tenant:${membership.organization_id}`;
+      .limit(2);
+    if (membershipRows?.length === 1 && membershipRows[0]?.organization_id) {
+      tenantKey = `module:tenant:${membershipRows[0].organization_id}`;
     }
     const moduleLimit = await checkEdgeRate("module", tenantKey);
     if (!moduleLimit.allowed) {

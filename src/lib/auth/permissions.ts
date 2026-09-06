@@ -1,1 +1,0 @@
-import type{RoleDefinition}from'@/types/rbac';export function hasPermission(role:RoleDefinition|undefined,resource:string,action:string){if(!role)return false;return role.permissions.some(p=>(p.resource==='*'||p.resource===resource)&&(p.actions.includes('*')||p.actions.includes(action)))}

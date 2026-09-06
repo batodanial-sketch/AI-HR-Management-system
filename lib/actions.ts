@@ -5,6 +5,7 @@ import { z } from "zod";
 import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
 import { emitWorkflowEvent } from "@/lib/bridge";
 import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/rbac";
 import { getMemoryAdapter } from "@/lib/memory/factory";
 import { getLicenseState, TRIAL_MAX_EMPLOYEES } from "@/lib/license";
 import { recordAudit, logAuditEvent } from "@/lib/audit";
@@ -110,6 +111,7 @@ export interface ActionResult {
 
 /** Creates an employee and returns its id (navigates to the profile on the client). */
 export async function createEmployee(input: EmployeeInput): Promise<ActionResult> {
+  await requireRole("HR_ADMIN");
   const data = validate(employeeSchema, input);
   const id = syntheticId("emp");
   const user = await getCurrentUser();
@@ -172,6 +174,7 @@ export async function setEmploymentStatus(
   id: string,
   status: Employee["employmentStatus"],
 ): Promise<void> {
+  await requireRole("HR_ADMIN");
   const memory = await getMemoryAdapter();
   await memory.update("employees", { column: "id", value: id }, { employment_status: status });
 
@@ -191,6 +194,7 @@ export async function moveCandidateStage(
   id: string,
   stage: RecruitmentStage,
 ): Promise<void> {
+  await requireRole("HR_ADMIN");
   const memory = await getMemoryAdapter();
   await memory.update("candidates", { column: "id", value: id }, { stage });
 
@@ -276,6 +280,7 @@ export async function resolveLeaveRequest(
   id: string,
   status: LeaveStatus,
 ): Promise<void> {
+  await requireRole("MANAGER");
   const memory = await getMemoryAdapter();
   await memory.update("leave_requests", { column: "id", value: id }, { status });
 
@@ -292,6 +297,7 @@ export async function resolveLeaveRequest(
 
 /** Executes a payroll run, transitioning it to completed. */
 export async function executePayrollRun(id: string): Promise<void> {
+  await requireRole("HR_ADMIN");
   const memory = await getMemoryAdapter();
   await memory.update("payroll_runs", { column: "id", value: id }, { status: "completed" });
 
@@ -311,6 +317,7 @@ export async function setPayrollRunStatus(
   id: string,
   status: PayrollRunStatus,
 ): Promise<void> {
+  await requireRole("HR_ADMIN");
   const memory = await getMemoryAdapter();
   await memory.update("payroll_runs", { column: "id", value: id }, { status });
   revalidatePath("/payroll");
@@ -386,6 +393,7 @@ export async function updateProfile(input: {
 export async function updateOrganization(
   input: WorkspaceInput,
 ): Promise<void> {
+  await requireRole("HR_ADMIN");
   const user = await getCurrentUser();
   if (!user.organizationId) {
     throw new Error("No active workspace.");
@@ -407,6 +415,7 @@ export async function addMemberByEmail(input: {
   email: string;
   role: OrgRole;
 }): Promise<void> {
+  await requireRole("HR_ADMIN");
   const data = validate(addMemberSchema, input);
   const user = await getCurrentUser();
   if (!user.organizationId) {
@@ -445,6 +454,10 @@ export async function updateMemberRole(
   userId: string,
   role: OrgRole,
 ): Promise<void> {
+  await requireRole("HR_ADMIN");
+  // Input is client-supplied: validate the role against the canonical enum
+  // before it can reach the authoritative `memberships.role` column.
+  validate(addMemberSchema.shape.role, role);
   const user = await getCurrentUser();
   if (!user.organizationId) {
     throw new Error("No active workspace.");
@@ -470,6 +483,7 @@ export async function updateMemberRole(
 
 /** Removes a member from the workspace. */
 export async function removeMember(userId: string): Promise<void> {
+  await requireRole("HR_ADMIN");
   const user = await getCurrentUser();
   if (!user.organizationId) {
     throw new Error("No active workspace.");
@@ -505,6 +519,7 @@ export interface CandidateInput {
 export async function createCandidate(
   input: CandidateInput,
 ): Promise<ActionResult> {
+  await requireRole("HR_ADMIN");
   const data = validate(candidateSchema, input);
   const id = syntheticId("cand");
   const user = await getCurrentUser();
@@ -531,6 +546,7 @@ export async function updateCandidateResume(
   candidateId: string,
   resumeUrl: string,
 ): Promise<void> {
+  await requireRole("HR_ADMIN");
   const memory = await getMemoryAdapter();
   await memory.update("candidates", { column: "id", value: candidateId }, { resume_url: resumeUrl });
   revalidatePath("/recruitment");

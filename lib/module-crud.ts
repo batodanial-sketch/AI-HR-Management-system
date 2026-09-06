@@ -5,10 +5,11 @@ import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
 import {
   getRbacContext,
   canTouchEmployee,
+  rbacErrorResponse,
   scopedEmployeeIds,
   type RbacContext,
 } from "@/lib/rbac";
-import { roleAtLeast, type RbRole } from "@/lib/auth";
+import { roleAtLeast, type RbRole } from "@/lib/authz/model";
 import { recordAuditLog } from "@/lib/audit";
 
 /**
@@ -51,6 +52,8 @@ export async function handleModuleList<T>(
     const data = await loader();
     return Response.json({ ok: true, data, count: data.length, scope: ctx.scope, role: ctx.role });
   } catch (error) {
+    const denied = rbacErrorResponse(error);
+    if (denied) return denied;
     return moduleError(
       error instanceof Error ? error.message : "Unable to load module data.",
       500,

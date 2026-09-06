@@ -1,10 +1,27 @@
 import "server-only";
 import { cache } from "react";
 import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
+import { resolveCanonicalAuthz } from "@/lib/authz/canonical";
+import {
+  RB_ROLES,
+  ROLE_HIERARCHY,
+  roleAtLeast,
+  tierForRoleCode,
+  type CanonicalRoleCode,
+  type RbRole,
+} from "@/lib/authz/model";
 import type { OrgRole } from "@/lib/types";
 
 export type { OrgRole };
 
+/**
+ * Session identity surfaced to server components + server actions.
+ *
+ * `organizationId` and `role` are populated ONLY from the canonical
+ * membership resolver (`lib/authz/canonical.ts`). When the caller has no
+ * valid canonical membership both are `null` — there is no fallback to a
+ * pinned claim, a legacy table, or a default role.
+ */
 export interface SessionUser {
   id: string;
   email: string;
@@ -21,56 +38,44 @@ const DEMO_USER: SessionUser = {
   role: "admin",
 };
 
+/** Anonymous identity used when Supabase is configured but no session exists. */
+const ANONYMOUS_USER: SessionUser = {
+  id: "",
+  email: "",
+  fullName: "Guest",
+  organizationId: null,
+  role: null,
+};
+
 /**
- * Returns the authenticated user with their active organization membership.
- * Falls back to a demo identity when Supabase is not configured so the
- * interface remains fully usable in local dev / preview.
+ * Returns the authenticated user with their canonical organization membership.
+ * Falls back to a demo identity ONLY when Supabase is not configured at all
+ * (local preview). With Supabase configured, an unauthenticated request
+ * resolves to an anonymous identity with no organization and no role.
  */
 export const getCurrentUser = cache(async (): Promise<SessionUser> => {
   if (!hasSupabaseEnv()) {
     return DEMO_USER;
   }
 
-  const {
-    data: { user },
-  } = await serverClient().auth.getUser();
-  if (!user) {
-    return DEMO_USER;
+  const authz = await resolveCanonicalAuthz();
+  if (!authz.actor) {
+    return ANONYMOUS_USER;
   }
 
-  const { data: profile } = await serverClient()
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const { data: membership } = await serverClient()
-    .from("memberships")
-    .select("organization_id, role")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-
-  // Pinned tenant claim (written by attachOrganizationClaim). Used only as a
-  // fallback when the memberships row is momentarily unavailable; the
-  // memberships query remains the authoritative tenant source.
-  const claimOrgId =
-    typeof user.app_metadata?.organization_id === "string"
-      ? user.app_metadata.organization_id
-      : null;
+  const base: SessionUser = {
+    id: authz.actor.id,
+    email: authz.actor.email,
+    fullName: authz.actor.fullName,
+    organizationId: null,
+    role: null,
+  };
+  if (!authz.ok) return base;
 
   return {
-    id: user.id,
-    email: user.email ?? "",
-    fullName:
-      profile?.full_name ??
-      (typeof user.user_metadata?.full_name === "string"
-        ? user.user_metadata.full_name
-        : user.email ?? "User"),
-    organizationId: membership?.organization_id ?? claimOrgId ?? null,
-    // Live memberships.role is free-text (legacy schema); coerce to the
-    // canonical OrgRole union with a safe fallback to null.
-    role: (membership?.role as OrgRole | null) ?? null,
+    ...base,
+    organizationId: authz.membership.organizationId,
+    role: authz.membership.roleCode,
   };
 });
 
@@ -83,7 +88,7 @@ export async function requireUser(): Promise<SessionUser> {
   return user;
 }
 
-/** Returns true when the user holds an admin-or-higher role. */
+/** Returns true when the user holds an admin-or-higher canonical role. */
 export function isAdmin(user: SessionUser): boolean {
   return user.role === "owner" || user.role === "admin";
 }
@@ -225,49 +230,18 @@ export async function initiateSsoLogin(input: {
 /* RBAC role model (tenant-scoped)                                    */
 /* ------------------------------------------------------------------ */
 
-/** Canonical RBAC roles. Every effective role is normalized onto this union. */
-export type RbRole = "SUPER_ADMIN" | "HR_ADMIN" | "MANAGER" | "EMPLOYEE";
-
-/** Role precedence — higher = more access. */
-export const ROLE_HIERARCHY: Record<RbRole, number> = {
-  EMPLOYEE: 1,
-  MANAGER: 2,
-  HR_ADMIN: 3,
-  SUPER_ADMIN: 4,
-};
-
-export const RB_ROLES: RbRole[] = [
-  "SUPER_ADMIN",
-  "HR_ADMIN",
-  "MANAGER",
-  "EMPLOYEE",
-];
+/**
+ * Re-exported from the canonical model so existing imports keep working.
+ * The mapping canonical role code → tier lives in `lib/authz/model.ts` and
+ * nowhere else.
+ */
+export { RB_ROLES, ROLE_HIERARCHY, roleAtLeast };
+export type { RbRole, CanonicalRoleCode };
 
 /**
- * Normalizes the free-text legacy membership roles (`owner`, `admin`,
- * `hr_admin`, `manager`, `member`, …) onto the canonical RBAC union.
- * Unknown values degrade to EMPLOYEE (fail-closed).
+ * Maps a canonical role code onto its RBAC tier. Accepts only exact
+ * canonical codes; anything else returns `null` (callers must deny).
  */
-export function normalizeRole(role: OrgRole | string | null | undefined): RbRole {
-  const value = (role ?? "").toString().toLowerCase();
-  switch (value) {
-    case "owner":
-    case "super_admin":
-    case "superadmin":
-    case "system_admin":
-      return "SUPER_ADMIN";
-    case "admin":
-    case "hr_admin":
-    case "hr_manager":
-      return "HR_ADMIN";
-    case "manager":
-      return "MANAGER";
-    default:
-      return "EMPLOYEE";
-  }
-}
-
-/** True when `role` is at least `minimum` in the hierarchy. */
-export function roleAtLeast(role: RbRole, minimum: RbRole): boolean {
-  return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[minimum];
+export function tierForCanonicalRole(role: OrgRole | null | undefined): RbRole | null {
+  return role ? tierForRoleCode(role) : null;
 }

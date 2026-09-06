@@ -1,0 +1,558 @@
+{
+  "phase": "R1 — authorization model unification",
+  "generatedAt": "2026-09-06T14:28:25.935Z",
+  "generator": "scripts/phase-r1-evidence.mjs",
+  "staleGuard": {
+    "gitHead": "9ffbecf00bd143ff57896a84566fd39ce85ad46f",
+    "branch": "arena/01a076d5-ai-hr-management-system",
+    "sourceFingerprint": {
+      "files": 635,
+      "sha256": "f9e02a548edb219e842035819a8c3ecf2558b682f68c95cac3d0dacc00f35fe0"
+    },
+    "rule": "evidence is stale when the sha256 over all tracked+untracked source files (excluding docs/generated) differs from sourceFingerprint.sha256",
+    "verifyCommand": "node scripts/phase-r1-evidence.mjs --verify"
+  },
+  "canonicalModel": {
+    "chain": "auth.users.id (actor) → memberships(user_id, organization_id) → memberships.role (org_role enum: owner|admin|manager|member) → tier SUPER_ADMIN|HR_ADMIN|MANAGER|EMPLOYEE",
+    "resolverTs": "lib/authz/canonical.ts resolveCanonicalAuthz / requireCanonicalAuthz",
+    "modelTs": "lib/authz/model.ts selectCanonicalMembership (pure, fail-closed)",
+    "resolverSql": "public.user_role(org) / public.current_org_role(org) / public.is_organization_member(org) — supabase/migrations/20260906000100_canonical_membership_authz.sql",
+    "nonAuthoritative": [
+      "organization_memberships",
+      "roles",
+      "user_roles"
+    ]
+  },
+  "summary": {
+    "mandatoryGates": 9,
+    "pass": 9,
+    "fail": 0,
+    "blocked": 3,
+    "notApplicable": 1
+  },
+  "workingTree": {
+    "changedPaths": 37,
+    "paths": [
+      "M app/actions/_shared.ts",
+      " M app/actions/attendanceActions.ts",
+      " M app/actions/copilotActions.ts",
+      " M app/actions/leaveActions.ts",
+      " M app/actions/lmsActions.ts",
+      " M app/actions/onboardingActions.ts",
+      " M app/actions/performanceActions.ts",
+      "D  app/actions/rbacActions.ts",
+      " M app/actions/workspaceAccessActions.ts",
+      " M app/api/ai/admin-copilot/route.ts",
+      " M app/api/ai/copilot/route.ts",
+      " M bridge/models.py",
+      " M bridge/tools.py",
+      " M lib/actions.ts",
+      " M lib/ai-proxy.ts",
+      " M lib/api.ts",
+      " M lib/auth.ts",
+      " M lib/module-crud.ts",
+      " M lib/rbac.ts",
+      " M lib/scim/provisioning.ts",
+      " M middleware.ts",
+      " M server.py",
+      " M src/lib/ai/copilotTools.ts",
+      "D  src/lib/auth/permissions.ts",
+      "D  src/services/rbacService.ts",
+      " M supabase/migrations/20260830100000_rbac_roles.sql",
+      " M supabase/migrations/20260830110000_audit_trail.sql",
+      "D  types/rbac.ts",
+      "?? docs/generated/",
+      "?? lib/authz/",
+      "?? python_engine/tests/test_bridge_copilot_authority.py",
+      "?? scripts/authz-duplicate-check.mjs",
+      "?? scripts/db/",
+      "?? scripts/phase-r1-evidence.mjs",
+      "?? supabase/migrations/20260906000100_canonical_membership_authz.sql",
+      "?? tests/unit/aiAuthority.test.ts",
+      "?? tests/unit/authzModel.test.ts"
+    ]
+  },
+  "gates": [
+    {
+      "id": "typescript",
+      "phase": "baseline+regression",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "errors": 0
+      },
+      "exitCode": 0,
+      "log": "",
+      "recordedAt": "2026-09-06T14:26:55.475Z"
+    },
+    {
+      "id": "eslint",
+      "phase": "baseline+regression",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "errors": 0,
+        "warnings": 0
+      },
+      "exitCode": 0,
+      "log": "\u001b[32m✔ No ESLint warnings or errors\u001b[39m\n",
+      "recordedAt": "2026-09-06T14:26:57.576Z"
+    },
+    {
+      "id": "jest",
+      "phase": "fail-closed+ai-security+regression",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "suites": 5,
+        "tests": 41,
+        "passed": 41,
+        "failed": 0
+      },
+      "suites": {
+        "tests/unit/aiAuthority.test.ts": {
+          "passed": 16,
+          "failed": 0
+        },
+        "tests/unit/authzModel.test.ts": {
+          "passed": 22,
+          "failed": 0
+        },
+        "tests/unit/screeningService.test.ts": {
+          "passed": 1,
+          "failed": 0
+        },
+        "tests/unit/employeeService.test.ts": {
+          "passed": 1,
+          "failed": 0
+        },
+        "tests/unit/payrollService.test.ts": {
+          "passed": 1,
+          "failed": 0
+        }
+      },
+      "exitCode": 0,
+      "log": "PASS tests/unit/aiAuthority.test.ts\nPASS tests/unit/authzModel.test.ts\nPASS tests/unit/screeningService.test.ts\nPASS tests/unit/employeeService.test.ts\nPASS tests/unit/payrollService.test.ts\n\nTest Suites: 5 passed, 5 total\nTests:       41 passed, 41 total\nSnapshots:   0 total\nTime:        0.626 s, estimated 1 s\n",
+      "recordedAt": "2026-09-06T14:26:58.825Z"
+    },
+    {
+      "id": "pytest",
+      "phase": "ai-security+regression",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "passed": 15,
+        "failed": 0
+      },
+      "exitCode": 0,
+      "log": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                                          [100%]\u001b[0m\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\n../.local/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /home/user/.local/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n../.local/lib/python3.11/site-packages/starlette/testclient.py:53\n  /home/user/.local/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m\u001b[32m15 passed\u001b[0m, \u001b[33m\u001b[1m2 warnings\u001b[0m\u001b[33m in 0.52s\u001b[0m\u001b[0m\n",
+      "recordedAt": "2026-09-06T14:26:59.672Z"
+    },
+    {
+      "id": "postgres-migration-preflight",
+      "phase": "baseline+migration",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "applied": 35,
+        "filesWithFailures": 4,
+        "failedStatements": 4
+      },
+      "postgres": "PostgreSQL 18.4 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "note": "Pre-existing column-name drift in 202608150003/4/5/6 (email vs work_email, stage, payroll_run_id) is reported, not hidden; canonical migration 20260906000100 applies cleanly.",
+      "failures": [
+        {
+          "file": "202608150003_employees.sql",
+          "failures": [
+            {
+              "statement": "create index if not exists idx_employees_email on public.employees (email);",
+              "error": "column \"email\" does not exist"
+            }
+          ]
+        },
+        {
+          "file": "202608150004_recruitment.sql",
+          "failures": [
+            {
+              "statement": "create index if not exists idx_candidates_stage on public.candidates (stage);",
+              "error": "column \"stage\" does not exist"
+            }
+          ]
+        },
+        {
+          "file": "202608150005_leave.sql",
+          "failures": [
+            {
+              "statement": "create policy leave_requests_update on public.leave_requests\n  for update using (\n    public.is_org_member(organization_id)\n    and (\n      ",
+              "error": "column \"email\" does not exist"
+            }
+          ]
+        },
+        {
+          "file": "202608150006_payroll.sql",
+          "failures": [
+            {
+              "statement": "create index if not exists idx_payroll_lines_run on public.payroll_line_items (payroll_run_id);",
+              "error": "column \"payroll_run_id\" does not exist"
+            },
+            {
+              "statement": "create policy payroll_lines_select on public.payroll_line_items\n  for select using (\n    exists (\n      select 1 from public.payroll_runs r\n",
+              "error": "column \"payroll_run_id\" does not exist"
+            },
+            {
+              "statement": "create policy payroll_lines_insert on public.payroll_line_items\n  for insert with check (\n    exists (\n      select 1 from public.payroll_ru",
+              "error": "column \"payroll_run_id\" does not exist"
+            }
+          ]
+        }
+      ],
+      "exitCode": 2,
+      "recordedAt": "2026-09-06T14:27:00.827Z"
+    },
+    {
+      "id": "postgres-rls-lifecycle-concurrency",
+      "phase": "rls+proposal+concurrency",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "exitCode": 0,
+        "total": 48,
+        "passed": 48,
+        "failed": 0,
+        "sections": {
+          "canonical": {
+            "total": 17,
+            "passed": 17
+          },
+          "rls": {
+            "total": 14,
+            "passed": 14
+          },
+          "lifecycle": {
+            "total": 12,
+            "passed": 12
+          },
+          "concurrency": {
+            "total": 5,
+            "passed": 5
+          }
+        },
+        "failures": []
+      },
+      "repeatedRuns": 3,
+      "runs": [
+        {
+          "exitCode": 0,
+          "total": 48,
+          "passed": 48,
+          "failed": 0,
+          "sections": {
+            "canonical": {
+              "total": 17,
+              "passed": 17
+            },
+            "rls": {
+              "total": 14,
+              "passed": 14
+            },
+            "lifecycle": {
+              "total": 12,
+              "passed": 12
+            },
+            "concurrency": {
+              "total": 5,
+              "passed": 5
+            }
+          },
+          "failures": []
+        },
+        {
+          "exitCode": 0,
+          "total": 48,
+          "passed": 48,
+          "failed": 0,
+          "sections": {
+            "canonical": {
+              "total": 17,
+              "passed": 17
+            },
+            "rls": {
+              "total": 14,
+              "passed": 14
+            },
+            "lifecycle": {
+              "total": 12,
+              "passed": 12
+            },
+            "concurrency": {
+              "total": 5,
+              "passed": 5
+            }
+          },
+          "failures": []
+        },
+        {
+          "exitCode": 0,
+          "total": 48,
+          "passed": 48,
+          "failed": 0,
+          "sections": {
+            "canonical": {
+              "total": 17,
+              "passed": 17
+            },
+            "rls": {
+              "total": 14,
+              "passed": 14
+            },
+            "lifecycle": {
+              "total": 12,
+              "passed": 12
+            },
+            "concurrency": {
+              "total": 5,
+              "passed": 5
+            }
+          },
+          "failures": []
+        }
+      ],
+      "recordedAt": "2026-09-06T14:27:01.760Z"
+    },
+    {
+      "id": "authz-duplicate-check",
+      "phase": "duplicates+security-regression",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "total": 21,
+        "passed": 21,
+        "failed": 0,
+        "filesScanned": 369
+      },
+      "checks": [
+        {
+          "id": "canonical-resolver-single-definition",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "canonical-selector-single-definition",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "role-tier-mapping-single-definition",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-legacy-normalizeRole",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-legacy-role-table-reads",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "memberships-read-only-by-resolver",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-rpc-role-resolution",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-default-member-fallback",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-hardcoded-privileged-role-sets",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-copilot-agent-actor-fallback",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "no-client-org-header-authorization",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "e2e-role-override-gated",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "e2e-role-override-env-gate",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "consumers-import-canonical",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "copilot-route-uses-rbac",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "admin-copilot-route-deny-first",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "privileged-lib-actions-guarded",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "dead-permission-models-removed",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "db-helpers-final-definition-canonical",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "db-canonical-migration-reads-memberships-only",
+          "ok": true,
+          "violations": []
+        },
+        {
+          "id": "db-user_role-no-default",
+          "ok": true,
+          "violations": []
+        }
+      ],
+      "recordedAt": "2026-09-06T14:27:01.878Z"
+    },
+    {
+      "id": "live-http-smoke",
+      "phase": "baseline+provider-protocol",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "total": 6,
+        "passed": 6
+      },
+      "checks": [
+        {
+          "check": "GET /health public",
+          "expected": 200,
+          "status": 200,
+          "ok": true,
+          "body": "{\"status\":\"ok\",\"service\":\"fluxentiq-ai-bridge\",\"uptime_seconds\":0.051,\"queue_depth\":0,\"memory\":{\"maxrss_kb\":52988},\"ai\":{\"configured\":false,\"provider\":\"groq\",\"model\":null},\"supabase\":{\"configured\":fal"
+        },
+        {
+          "check": "copilot without secret -> 401",
+          "expected": 401,
+          "status": 401,
+          "ok": true,
+          "body": "{\"detail\":\"Unauthorized: invalid or missing bridge secret.\"}"
+        },
+        {
+          "check": "copilot forged secret -> 401",
+          "expected": 401,
+          "status": 401,
+          "ok": true,
+          "body": "{\"detail\":\"Unauthorized: invalid or missing bridge secret.\"}"
+        },
+        {
+          "check": "copilot valid secret, no provider, forged body org, execute_tools=true -> 503 (no tool path)",
+          "expected": 503,
+          "status": 503,
+          "ok": true,
+          "body": "{\"detail\":\"No AI provider is configured (set LLM_PROVIDER / LLM_API_KEY).\"}"
+        },
+        {
+          "check": "workflows/process-batch without tenant -> 422",
+          "expected": 422,
+          "status": 422,
+          "ok": true,
+          "body": "{\"detail\":\"X-Organization-Id header or organization_id in body is required.\"}"
+        },
+        {
+          "check": "engine route without secret -> 401",
+          "expected": 401,
+          "status": 401,
+          "ok": true,
+          "body": "{\"detail\":\"Unauthorized: invalid or missing bridge secret.\"}"
+        }
+      ],
+      "log": "",
+      "recordedAt": "2026-09-06T14:27:02.998Z"
+    },
+    {
+      "id": "next-build",
+      "phase": "baseline+regression",
+      "mandatory": true,
+      "status": "PASS",
+      "counts": {
+        "exitCode": 0,
+        "routes": 135,
+        "compileWarningBlocks": 1
+      },
+      "note": "Single pre-existing warning: @upstash/redis Node API in Edge runtime via lib/edge/rate-limit.ts (present in baseline build).",
+      "log": "\n├ ƒ /workflows/builder                       4.88 kB         \u001b[37m\u001b[1m171 kB\u001b[22m\u001b[39m\n├ ƒ /workflows/templates                     6.58 kB         \u001b[37m\u001b[1m109 kB\u001b[22m\u001b[39m\n└ ƒ /workforce                               3.98 kB         \u001b[37m\u001b[1m100 kB\u001b[22m\u001b[39m\n+ First Load JS shared by all                \u001b[37m\u001b[1m87.8 kB\u001b[22m\u001b[39m\n  ├ chunks/2117-df16206783addefc.js          31.9 kB\n  ├ chunks/fd9d1056-aae3c195ffa3f415.js      53.6 kB\n  └ other shared chunks (total)              2.27 kB\n\n\nƒ Middleware                                 \u001b[37m\u001b[1m112 kB\u001b[22m\u001b[39m\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (107kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (258kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n \u001b[33m\u001b[1m⚠\u001b[22m\u001b[39m Compiled with warnings\n\n./node_modules/@upstash/redis/nodejs.mjs\nA Node.js API is used (process.version at line: 240) which is not supported in the Edge Runtime.\nLearn more: https://nextjs.org/docs/api-reference/edge-runtime\n\nImport trace for requested module:\n./node_modules/@upstash/redis/nodejs.mjs\n./lib/edge/rate-limit.ts\n\n",
+      "recordedAt": "2026-09-06T14:28:25.907Z"
+    },
+    {
+      "id": "playwright-e2e-rbac-boundaries",
+      "phase": "regression",
+      "mandatory": false,
+      "status": "BLOCKED",
+      "detail": {
+        "reason": "Playwright browsers not installed and requires live Supabase project",
+        "suite": "tests/e2e/rbac-boundaries.spec.ts (unchanged, kept)"
+      },
+      "recordedAt": "2026-09-06T14:28:25.908Z"
+    },
+    {
+      "id": "restore-drill",
+      "phase": "baseline",
+      "mandatory": false,
+      "status": "BLOCKED",
+      "detail": {
+        "reason": "pg_dump/pg_restore/psql binaries unavailable in sandbox; no root"
+      },
+      "recordedAt": "2026-09-06T14:28:25.908Z"
+    },
+    {
+      "id": "proposal-lifecycle-e2e",
+      "phase": "proposal",
+      "mandatory": false,
+      "status": "NOT_APPLICABLE",
+      "detail": {
+        "reason": "No proposal/agent/provider-protocol subsystem exists on main. Per user decision the approval analog is (a) the Copilot confirmToolCall flow — covered by tests/unit/aiAuthority.test.ts — and (b) the leave_requests approval lifecycle — covered on real PostgreSQL by scripts/db/authz-rls-suite.mjs (lifecycle + concurrency sections)."
+      },
+      "recordedAt": "2026-09-06T14:28:25.908Z"
+    },
+    {
+      "id": "live-supabase-http-smoke",
+      "phase": "baseline",
+      "mandatory": false,
+      "status": "BLOCKED",
+      "detail": {
+        "reason": "No Supabase project credentials in sandbox; Next.js auth routes cannot be exercised end-to-end. Bridge HTTP smoke ran live (see live-http-smoke)."
+      },
+      "recordedAt": "2026-09-06T14:28:25.908Z"
+    }
+  ],
+  "verdict": {
+    "code": "BLOCKED",
+    "statement": "AUTHORIZATION MODEL UNIFIED — EXTERNAL INFRASTRUCTURE BLOCKED"
+  }
+}

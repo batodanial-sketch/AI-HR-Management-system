@@ -11,7 +11,7 @@ import {
 } from '@/src/lib/supabase'
 import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
-import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from './_shared'
+import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure, isPrivileged } from './_shared'
 
 const createLeaveSchema = z.object({
   employeeId: uuidSchema,
@@ -128,7 +128,7 @@ export async function createLeaveRequestAction(input: z.input<typeof createLeave
     const employee = employeeResult.data as { id: string; user_id: string | null } | null
     const leaveType = leaveTypeResult.data as LeaveTypeRow | null
     if (!employee || !leaveType) return actionFailure('Employee or leave type was not found.')
-    if (employee.user_id !== auth.data.userId && !['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'].includes(auth.data.roleCode)) return actionFailure('You are not authorized to create leave on behalf of this employee.')
+    if (employee.user_id !== auth.data.userId && !isPrivileged(auth.data)) return actionFailure('You are not authorized to create leave on behalf of this employee.')
     if (leaveType.requires_attachment && !parsed.data.attachmentKey) return actionFailure('This leave type requires an attachment.')
 
     const totalDays = Math.floor((new Date(`${parsed.data.endDate}T12:00:00Z`).getTime() - new Date(`${parsed.data.startDate}T12:00:00Z`).getTime()) / 86_400_000) + 1

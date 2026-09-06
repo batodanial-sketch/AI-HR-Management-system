@@ -208,16 +208,26 @@ def _require_ai() -> AiClient:
 
 
 def _org_id_from_request(request: Request | None, context: dict[str, Any] | None = None) -> str | None:
-    """Resolves organization_id from header or copilot context."""
+    """Resolves the tenant from the trusted ``X-Organization-Id`` header only.
+
+    The header is set by the Next.js proxy from the caller's canonical
+    membership (``lib/ai-proxy.ts`` / ``app/api/ai/copilot/route.ts``) after
+    the bridge secret has been verified. The request body / copilot ``context``
+    is model- and client-influenced and is therefore NEVER used to select a
+    tenant — a mismatch is logged and the body value is ignored.
+    """
+    header_org: str | None = None
     if request is not None:
-        header_org = request.headers.get("x-organization-id")
-        if header_org:
-            return header_org.strip() or None
+        raw = request.headers.get("x-organization-id")
+        header_org = raw.strip() if raw and raw.strip() else None
     if context is not None:
         ctx_org = context.get("organization_id")
-        if ctx_org:
-            return str(ctx_org).strip() or None
-    return None
+        if ctx_org and header_org and str(ctx_org).strip() != header_org:
+            logger.warning(
+                "copilot context.organization_id (%s) ignored: does not match trusted tenant header",
+                str(ctx_org)[:64],
+            )
+    return header_org
 
 
 async def _meter(
@@ -407,17 +417,34 @@ async def copilot(
             async for event in client.stream_copilot(request):
                 yield _sse(event)
                 if event.get("type") == "done" and request.execute_tools:
-                    # Execute any tool calls and emit their results. The Next.js
-                    # agentic orchestrator passes execute_tools=False and runs
-                    # the tools itself against its RBAC-guarded CRUD routes.
+                    # Bridge-side execution is opt-in and fail-closed: it runs
+                    # only for a tenant established by the trusted proxy header
+                    # (never the body). The Next.js agentic orchestrator passes
+                    # execute_tools=False and executes tools itself under the
+                    # caller's canonical RBAC.
                     result = event.get("result") or {}
-                    organization_id = request.context.get("organization_id") or org_id
-                    for call in result.get("tool_calls", []):
+                    tool_calls = result.get("tool_calls", []) or []
+                    if tool_calls and (org_id is None or tool_executor is None):
+                        logger.warning(
+                            "refusing to execute %d copilot tool call(s): tenant not established",
+                            len(tool_calls),
+                        )
+                        for call in tool_calls:
+                            yield _sse(
+                                {
+                                    "type": "tool_result",
+                                    "result": {
+                                        "tool": str(call.get("tool", "")),
+                                        "ok": False,
+                                        "message": "Tool execution refused: tenant not established by trusted proxy.",
+                                    },
+                                }
+                            )
+                        tool_calls = []
+                    for call in tool_calls:
                         from bridge.models import ToolCall
 
-                        tool_result = await tool_executor.execute(
-                            ToolCall(**call), organization_id
-                        )
+                        tool_result = await tool_executor.execute(ToolCall(**call), org_id)
                         yield _sse(
                             {"type": "tool_result", "result": tool_result.model_dump()}
                         )
@@ -426,7 +453,7 @@ async def copilot(
             await _meter(
                 "copilot",
                 client.model,
-                organization_id=org_id or request.context.get("organization_id"),
+                organization_id=org_id,
                 prompt_tokens=pt,
                 completion_tokens=ct,
             )

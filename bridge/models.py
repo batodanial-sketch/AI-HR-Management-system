@@ -91,10 +91,14 @@ class CopilotRequest(BaseModel):
     # Agentic function-calling: tools available to the planner. When set, the
     # model may emit `tool_calls` in its trailing JSON.
     tools: list[CopilotToolSpec] = Field(default_factory=list)
-    # When False, the bridge streams the model's tool_calls in the `done`
-    # event WITHOUT executing them — the Next.js orchestrator executes them
-    # against its RBAC-guarded CRUD routes and feeds results back.
-    execute_tools: bool = True
+    # When False (the default — fail closed), the bridge streams the model's
+    # tool_calls in the `done` event WITHOUT executing them — the Next.js
+    # orchestrator executes them under the caller's canonical RBAC
+    # (agent ceiling ∩ caller role ∩ tool policy) and feeds results back.
+    # The bridge has no notion of the calling user's role, so bridge-side
+    # execution must be opted into explicitly and is additionally refused
+    # when the tenant is not established by the trusted proxy header.
+    execute_tools: bool = False
 
 
 class WorkflowNode(BaseModel):
