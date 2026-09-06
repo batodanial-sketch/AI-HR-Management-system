@@ -1,9 +1,9 @@
 {
   "phase": "R1 — authorization model unification",
-  "generatedAt": "2026-09-06T14:28:25.935Z",
+  "generatedAt": "2026-09-06T14:31:34.991Z",
   "generator": "scripts/phase-r1-evidence.mjs",
   "staleGuard": {
-    "gitHead": "9ffbecf00bd143ff57896a84566fd39ce85ad46f",
+    "gitHead": "f33af7b845654559032256abb27c238501c16e6d",
     "branch": "arena/01a076d5-ai-hr-management-system",
     "sourceFingerprint": {
       "files": 635,
@@ -31,46 +31,8 @@
     "notApplicable": 1
   },
   "workingTree": {
-    "changedPaths": 37,
-    "paths": [
-      "M app/actions/_shared.ts",
-      " M app/actions/attendanceActions.ts",
-      " M app/actions/copilotActions.ts",
-      " M app/actions/leaveActions.ts",
-      " M app/actions/lmsActions.ts",
-      " M app/actions/onboardingActions.ts",
-      " M app/actions/performanceActions.ts",
-      "D  app/actions/rbacActions.ts",
-      " M app/actions/workspaceAccessActions.ts",
-      " M app/api/ai/admin-copilot/route.ts",
-      " M app/api/ai/copilot/route.ts",
-      " M bridge/models.py",
-      " M bridge/tools.py",
-      " M lib/actions.ts",
-      " M lib/ai-proxy.ts",
-      " M lib/api.ts",
-      " M lib/auth.ts",
-      " M lib/module-crud.ts",
-      " M lib/rbac.ts",
-      " M lib/scim/provisioning.ts",
-      " M middleware.ts",
-      " M server.py",
-      " M src/lib/ai/copilotTools.ts",
-      "D  src/lib/auth/permissions.ts",
-      "D  src/services/rbacService.ts",
-      " M supabase/migrations/20260830100000_rbac_roles.sql",
-      " M supabase/migrations/20260830110000_audit_trail.sql",
-      "D  types/rbac.ts",
-      "?? docs/generated/",
-      "?? lib/authz/",
-      "?? python_engine/tests/test_bridge_copilot_authority.py",
-      "?? scripts/authz-duplicate-check.mjs",
-      "?? scripts/db/",
-      "?? scripts/phase-r1-evidence.mjs",
-      "?? supabase/migrations/20260906000100_canonical_membership_authz.sql",
-      "?? tests/unit/aiAuthority.test.ts",
-      "?? tests/unit/authzModel.test.ts"
-    ]
+    "changedPaths": 0,
+    "paths": []
   },
   "gates": [
     {
@@ -83,7 +45,7 @@
       },
       "exitCode": 0,
       "log": "",
-      "recordedAt": "2026-09-06T14:26:55.475Z"
+      "recordedAt": "2026-09-06T14:30:02.429Z"
     },
     {
       "id": "eslint",
@@ -96,7 +58,7 @@
       },
       "exitCode": 0,
       "log": "\u001b[32m✔ No ESLint warnings or errors\u001b[39m\n",
-      "recordedAt": "2026-09-06T14:26:57.576Z"
+      "recordedAt": "2026-09-06T14:30:04.709Z"
     },
     {
       "id": "jest",
@@ -118,11 +80,11 @@
           "passed": 22,
           "failed": 0
         },
-        "tests/unit/screeningService.test.ts": {
+        "tests/unit/employeeService.test.ts": {
           "passed": 1,
           "failed": 0
         },
-        "tests/unit/employeeService.test.ts": {
+        "tests/unit/screeningService.test.ts": {
           "passed": 1,
           "failed": 0
         },
@@ -132,8 +94,8 @@
         }
       },
       "exitCode": 0,
-      "log": "PASS tests/unit/aiAuthority.test.ts\nPASS tests/unit/authzModel.test.ts\nPASS tests/unit/screeningService.test.ts\nPASS tests/unit/employeeService.test.ts\nPASS tests/unit/payrollService.test.ts\n\nTest Suites: 5 passed, 5 total\nTests:       41 passed, 41 total\nSnapshots:   0 total\nTime:        0.626 s, estimated 1 s\n",
-      "recordedAt": "2026-09-06T14:26:58.825Z"
+      "log": "PASS tests/unit/aiAuthority.test.ts\nPASS tests/unit/authzModel.test.ts\nPASS tests/unit/employeeService.test.ts\nPASS tests/unit/screeningService.test.ts\nPASS tests/unit/payrollService.test.ts\n\nTest Suites: 5 passed, 5 total\nTests:       41 passed, 41 total\nSnapshots:   0 total\nTime:        0.642 s, estimated 1 s\n",
+      "recordedAt": "2026-09-06T14:30:05.953Z"
     },
     {
       "id": "pytest",
@@ -145,8 +107,8 @@
         "failed": 0
       },
       "exitCode": 0,
-      "log": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                                          [100%]\u001b[0m\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\n../.local/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /home/user/.local/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n../.local/lib/python3.11/site-packages/starlette/testclient.py:53\n  /home/user/.local/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m\u001b[32m15 passed\u001b[0m, \u001b[33m\u001b[1m2 warnings\u001b[0m\u001b[33m in 0.52s\u001b[0m\u001b[0m\n",
-      "recordedAt": "2026-09-06T14:26:59.672Z"
+      "log": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                                          [100%]\u001b[0m\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\n../.local/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /home/user/.local/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n../.local/lib/python3.11/site-packages/starlette/testclient.py:53\n  /home/user/.local/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m\u001b[32m15 passed\u001b[0m, \u001b[33m\u001b[1m2 warnings\u001b[0m\u001b[33m in 0.54s\u001b[0m\u001b[0m\n",
+      "recordedAt": "2026-09-06T14:30:06.833Z"
     },
     {
       "id": "postgres-migration-preflight",
@@ -207,7 +169,7 @@
         }
       ],
       "exitCode": 2,
-      "recordedAt": "2026-09-06T14:27:00.827Z"
+      "recordedAt": "2026-09-06T14:30:08.038Z"
     },
     {
       "id": "postgres-rls-lifecycle-concurrency",
@@ -317,7 +279,7 @@
           "failures": []
         }
       ],
-      "recordedAt": "2026-09-06T14:27:01.760Z"
+      "recordedAt": "2026-09-06T14:30:09.057Z"
     },
     {
       "id": "authz-duplicate-check",
@@ -437,7 +399,7 @@
           "violations": []
         }
       ],
-      "recordedAt": "2026-09-06T14:27:01.878Z"
+      "recordedAt": "2026-09-06T14:30:09.181Z"
     },
     {
       "id": "live-http-smoke",
@@ -454,7 +416,7 @@
           "expected": 200,
           "status": 200,
           "ok": true,
-          "body": "{\"status\":\"ok\",\"service\":\"fluxentiq-ai-bridge\",\"uptime_seconds\":0.051,\"queue_depth\":0,\"memory\":{\"maxrss_kb\":52988},\"ai\":{\"configured\":false,\"provider\":\"groq\",\"model\":null},\"supabase\":{\"configured\":fal"
+          "body": "{\"status\":\"ok\",\"service\":\"fluxentiq-ai-bridge\",\"uptime_seconds\":0.248,\"queue_depth\":0,\"memory\":{\"maxrss_kb\":52956},\"ai\":{\"configured\":false,\"provider\":\"groq\",\"model\":null},\"supabase\":{\"configured\":fal"
         },
         {
           "check": "copilot without secret -> 401",
@@ -493,7 +455,7 @@
         }
       ],
       "log": "",
-      "recordedAt": "2026-09-06T14:27:02.998Z"
+      "recordedAt": "2026-09-06T14:30:10.547Z"
     },
     {
       "id": "next-build",
@@ -507,7 +469,7 @@
       },
       "note": "Single pre-existing warning: @upstash/redis Node API in Edge runtime via lib/edge/rate-limit.ts (present in baseline build).",
       "log": "\n├ ƒ /workflows/builder                       4.88 kB         \u001b[37m\u001b[1m171 kB\u001b[22m\u001b[39m\n├ ƒ /workflows/templates                     6.58 kB         \u001b[37m\u001b[1m109 kB\u001b[22m\u001b[39m\n└ ƒ /workforce                               3.98 kB         \u001b[37m\u001b[1m100 kB\u001b[22m\u001b[39m\n+ First Load JS shared by all                \u001b[37m\u001b[1m87.8 kB\u001b[22m\u001b[39m\n  ├ chunks/2117-df16206783addefc.js          31.9 kB\n  ├ chunks/fd9d1056-aae3c195ffa3f415.js      53.6 kB\n  └ other shared chunks (total)              2.27 kB\n\n\nƒ Middleware                                 \u001b[37m\u001b[1m112 kB\u001b[22m\u001b[39m\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (107kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (258kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n \u001b[33m\u001b[1m⚠\u001b[22m\u001b[39m Compiled with warnings\n\n./node_modules/@upstash/redis/nodejs.mjs\nA Node.js API is used (process.version at line: 240) which is not supported in the Edge Runtime.\nLearn more: https://nextjs.org/docs/api-reference/edge-runtime\n\nImport trace for requested module:\n./node_modules/@upstash/redis/nodejs.mjs\n./lib/edge/rate-limit.ts\n\n",
-      "recordedAt": "2026-09-06T14:28:25.907Z"
+      "recordedAt": "2026-09-06T14:31:34.966Z"
     },
     {
       "id": "playwright-e2e-rbac-boundaries",
@@ -518,7 +480,7 @@
         "reason": "Playwright browsers not installed and requires live Supabase project",
         "suite": "tests/e2e/rbac-boundaries.spec.ts (unchanged, kept)"
       },
-      "recordedAt": "2026-09-06T14:28:25.908Z"
+      "recordedAt": "2026-09-06T14:31:34.966Z"
     },
     {
       "id": "restore-drill",
@@ -528,7 +490,7 @@
       "detail": {
         "reason": "pg_dump/pg_restore/psql binaries unavailable in sandbox; no root"
       },
-      "recordedAt": "2026-09-06T14:28:25.908Z"
+      "recordedAt": "2026-09-06T14:31:34.966Z"
     },
     {
       "id": "proposal-lifecycle-e2e",
@@ -538,7 +500,7 @@
       "detail": {
         "reason": "No proposal/agent/provider-protocol subsystem exists on main. Per user decision the approval analog is (a) the Copilot confirmToolCall flow — covered by tests/unit/aiAuthority.test.ts — and (b) the leave_requests approval lifecycle — covered on real PostgreSQL by scripts/db/authz-rls-suite.mjs (lifecycle + concurrency sections)."
       },
-      "recordedAt": "2026-09-06T14:28:25.908Z"
+      "recordedAt": "2026-09-06T14:31:34.966Z"
     },
     {
       "id": "live-supabase-http-smoke",
@@ -548,7 +510,7 @@
       "detail": {
         "reason": "No Supabase project credentials in sandbox; Next.js auth routes cannot be exercised end-to-end. Bridge HTTP smoke ran live (see live-http-smoke)."
       },
-      "recordedAt": "2026-09-06T14:28:25.908Z"
+      "recordedAt": "2026-09-06T14:31:34.966Z"
     }
   ],
   "verdict": {

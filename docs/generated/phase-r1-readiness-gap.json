@@ -1,8 +1,8 @@
 {
   "phase": "R1",
-  "generatedAt": "2026-09-06T14:28:25.935Z",
+  "generatedAt": "2026-09-06T14:31:34.991Z",
   "staleGuard": {
-    "gitHead": "9ffbecf00bd143ff57896a84566fd39ce85ad46f",
+    "gitHead": "f33af7b845654559032256abb27c238501c16e6d",
     "branch": "arena/01a076d5-ai-hr-management-system",
     "sourceFingerprint": {
       "files": 635,
