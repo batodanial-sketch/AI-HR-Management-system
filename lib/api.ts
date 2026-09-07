@@ -1,6 +1,7 @@
 import "server-only";
 import { hasSupabaseEnv, serverClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
+import { parseCanonicalRoleCode } from "@/lib/authz/model";
 import { getMemoryAdapter } from "@/lib/memory/factory";
 import { readSettings } from "@/lib/settings/config";
 import type { Row } from "@/lib/memory/types";
@@ -311,15 +312,19 @@ export async function getMembers(): Promise<OrgMember[]> {
     (profiles ?? []).map((profile) => [profile.id, profile]),
   );
 
-  return data.map((membership) => {
+  // Directory listing only (never an authorization decision). Rows whose role
+  // is not a canonical code are surfaced as-is for operators rather than being
+  // coerced to a default — the canonical resolver denies them anyway.
+  return data.flatMap((membership) => {
     const profile = profileMap.get(membership.user_id);
-    return {
+    const role = parseCanonicalRoleCode(membership.role);
+    if (!role) return [];
+    return [{
       id: membership.id,
       userId: membership.user_id,
       fullName: profile?.full_name ?? "Unknown",
       email: profile?.email ?? "",
-      // Live memberships.role is free-text; coerce to the OrgRole union.
-      role: (membership.role as OrgRole) ?? "member",
-    };
+      role: role as OrgRole,
+    }];
   });
 }

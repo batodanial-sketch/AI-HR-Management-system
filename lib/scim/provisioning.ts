@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { adminClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import type { CanonicalRoleCode } from "@/lib/authz/model";
 import { recordAuditLog } from "@/lib/audit";
 
 /**
@@ -117,11 +118,27 @@ async function findAuthUserByEmail(email: string): Promise<string | null> {
   return String(data.id);
 }
 
-const ROLE_CODES = new Set(["super_admin", "hr_admin", "manager", "employee", "member"]);
+/**
+ * Maps IdP-facing role names onto CANONICAL role codes (`memberships.role`).
+ * The SCIM vocabulary (`hr_admin`, `employee`, …) is presentation only; the
+ * stored value is always one of the canonical `org_role` codes. Unknown
+ * values map to the least-privileged canonical role (`member`) — this is a
+ * provisioning default for a brand-new IdP assignment, not an authorization
+ * fallback: authorization still requires the resulting row to exist.
+ */
+const SCIM_ROLE_TO_CANONICAL: Record<string, CanonicalRoleCode> = {
+  owner: "owner",
+  super_admin: "owner",
+  admin: "admin",
+  hr_admin: "admin",
+  manager: "manager",
+  employee: "member",
+  member: "member",
+};
 
-function normalizeRoleCode(raw: unknown): string {
-  const value = String(raw ?? "employee").toLowerCase().trim();
-  return ROLE_CODES.has(value) ? value : "employee";
+function normalizeRoleCode(raw: unknown): CanonicalRoleCode {
+  const value = String(raw ?? "member").toLowerCase().trim();
+  return SCIM_ROLE_TO_CANONICAL[value] ?? "member";
 }
 
 export async function scimListUsers(tenantId: string): Promise<ScimUser[]> {
@@ -288,23 +305,18 @@ export async function scimDeprovisionUser(tenantId: string, userId: string): Pro
   }
   const org = await resolveOrganization(tenantId);
 
-  const { data: membership } = await adminClient()
-    .from("organization_memberships")
-    .select("id")
+  // Canonical revocation = the `memberships` row no longer exists. The
+  // canonical resolver then fails closed (NO_MEMBERSHIP) on the next request.
+  const { data: revoked, error } = await adminClient()
+    .from("memberships")
+    .delete()
     .eq("user_id", userId)
     .eq("organization_id", org.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (membership) {
-    const { error } = await adminClient()
-      .from("organization_memberships")
-      .update({ status: "inactive" })
-      .eq("id", membership.id);
-    if (error) {
-      throw new ScimErrorResponse(500, `Unable to deactivate membership: ${error.message}`);
-    }
+    .select("id");
+  if (error) {
+    throw new ScimErrorResponse(500, `Unable to revoke membership: ${error.message}`);
   }
+  const membership = (revoked ?? []).length > 0;
 
   // Revoke all live sessions for the user (global sign-out).
   await adminClient().auth.admin.signOut(userId, "global").catch(() => undefined);
@@ -320,7 +332,7 @@ export async function scimDeprovisionUser(tenantId: string, userId: string): Pro
       action: "scim.user.deprovision",
       targetModule: "directory",
       targetId: userId,
-      changes: { deactivated: Boolean(membership), hardDeleted: process.env.SCIM_HARD_DELETE_USERS === "1" },
+      changes: { deactivated: membership, hardDeleted: process.env.SCIM_HARD_DELETE_USERS === "1" },
       organizationId: org.id,
     },
     { useAdmin: true },

@@ -1,0 +1,92 @@
+{
+  "phase": "R1",
+  "generatedAt": "2026-09-06T14:31:34.991Z",
+  "staleGuard": {
+    "gitHead": "f33af7b845654559032256abb27c238501c16e6d",
+    "branch": "arena/01a076d5-ai-hr-management-system",
+    "sourceFingerprint": {
+      "files": 635,
+      "sha256": "f9e02a548edb219e842035819a8c3ecf2558b682f68c95cac3d0dacc00f35fe0"
+    },
+    "rule": "evidence is stale when the sha256 over all tracked+untracked source files (excluding docs/generated) differs from sourceFingerprint.sha256",
+    "verifyCommand": "node scripts/phase-r1-evidence.mjs --verify"
+  },
+  "verdict": {
+    "code": "BLOCKED",
+    "statement": "AUTHORIZATION MODEL UNIFIED — EXTERNAL INFRASTRUCTURE BLOCKED"
+  },
+  "externalBlockers": [
+    {
+      "gate": "playwright-e2e-rbac-boundaries",
+      "reason": "Playwright browsers not installed and requires live Supabase project",
+      "unblockBy": "npx playwright install && NEXT_PUBLIC_SUPABASE_URL/ANON_KEY + E2E accounts, then `npm run test:e2e -- tests/e2e/rbac-boundaries.spec.ts`"
+    },
+    {
+      "gate": "restore-drill",
+      "reason": "pg_dump/pg_restore/psql binaries unavailable in sandbox; no root",
+      "unblockBy": "run on a host with PostgreSQL client tools: pg_dump → fresh DB → pg_restore → node scripts/db/authz-rls-suite.mjs"
+    },
+    {
+      "gate": "live-supabase-http-smoke",
+      "reason": "No Supabase project credentials in sandbox; Next.js auth routes cannot be exercised end-to-end. Bridge HTTP smoke ran live (see live-http-smoke).",
+      "unblockBy": "provide a staging Supabase project; apply migrations with `supabase db push`; run the HTTP smoke against the deployed Next.js app"
+    }
+  ],
+  "notApplicable": [
+    {
+      "gate": "proposal-lifecycle-e2e",
+      "reason": "No proposal/agent/provider-protocol subsystem exists on main. Per user decision the approval analog is (a) the Copilot confirmToolCall flow — covered by tests/unit/aiAuthority.test.ts — and (b) the leave_requests approval lifecycle — covered on real PostgreSQL by scripts/db/authz-rls-suite.mjs (lifecycle + concurrency sections)."
+    }
+  ],
+  "knownPreexistingDrift": [
+    {
+      "file": "202608150003_employees.sql",
+      "failures": [
+        {
+          "statement": "create index if not exists idx_employees_email on public.employees (email);",
+          "error": "column \"email\" does not exist"
+        }
+      ]
+    },
+    {
+      "file": "202608150004_recruitment.sql",
+      "failures": [
+        {
+          "statement": "create index if not exists idx_candidates_stage on public.candidates (stage);",
+          "error": "column \"stage\" does not exist"
+        }
+      ]
+    },
+    {
+      "file": "202608150005_leave.sql",
+      "failures": [
+        {
+          "statement": "create policy leave_requests_update on public.leave_requests\n  for update using (\n    public.is_org_member(organization_id)\n    and (\n      ",
+          "error": "column \"email\" does not exist"
+        }
+      ]
+    },
+    {
+      "file": "202608150006_payroll.sql",
+      "failures": [
+        {
+          "statement": "create index if not exists idx_payroll_lines_run on public.payroll_line_items (payroll_run_id);",
+          "error": "column \"payroll_run_id\" does not exist"
+        },
+        {
+          "statement": "create policy payroll_lines_select on public.payroll_line_items\n  for select using (\n    exists (\n      select 1 from public.payroll_runs r\n",
+          "error": "column \"payroll_run_id\" does not exist"
+        },
+        {
+          "statement": "create policy payroll_lines_insert on public.payroll_line_items\n  for insert with check (\n    exists (\n      select 1 from public.payroll_ru",
+          "error": "column \"payroll_run_id\" does not exist"
+        }
+      ]
+    }
+  ],
+  "residualRisks": [
+    "Supabase-hosted validation (auth cookies → RLS with real JWTs) not executed here; run scripts/db/authz-rls-suite.mjs against a staging project and tests/e2e/rbac-boundaries.spec.ts.",
+    "Legacy tables organization_memberships/roles remain readable (RLS-scoped) for backfill; drop in a follow-up phase after confirming no external reader.",
+    "Pre-existing migration drift in 202608150003-0006 predates R1; fixing it is a schema change outside R1 scope and is reported, not silently patched."
+  ]
+}

@@ -16,7 +16,9 @@ import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
 import { recordAiUsage, type AiFeature } from "@/lib/ai-usage";
 import { recordAiTelemetry } from "@/lib/ai/telemetry";
 import { getLicenseState } from "@/lib/license";
-import { getCurrentUser } from "@/lib/auth";
+import { getRbacContext, rbacErrorResponse } from "@/lib/rbac";
+import { evaluatePilotAccess } from "@/lib/pilot/controls";
+import { metrics } from "@/lib/observability/metrics";
 
 export function bridgeUrl(): string {
   return process.env.AI_BRIDGE_URL ?? "http://localhost:8000";
@@ -81,15 +83,31 @@ export async function proxyToBridge(
   request: Request,
   pathname: string,
 ): Promise<Response> {
-  // Resolve org + tier (best-effort, never block the request on failure).
-  let organizationId: string | null = null;
-  let tier: string | null = null;
+  // Fail closed: the caller must resolve to a canonical actor→org→membership
+  // →role. The tenant forwarded to the bridge (X-Organization-Id) is ALWAYS the
+  // canonical organization of the session — never a header/body claim.
+  let organizationId: string;
   try {
-    const user = await getCurrentUser();
-    organizationId = user.organizationId ?? null;
-  } catch {
-    organizationId = null;
+    const ctx = await getRbacContext();
+    organizationId = ctx.organizationId;
+  } catch (error) {
+    return (
+      rbacErrorResponse(error) ??
+      new Response(JSON.stringify({ detail: "Unauthorized." }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
   }
+  const pilot = evaluatePilotAccess({ organizationId });
+  if (!pilot.allowed) {
+    metrics.increment("ai_requests_total", { feature: featureFor(pathname) ?? "engine", outcome: "denied" });
+    return new Response(JSON.stringify({ ok: false, detail: pilot.message, code: pilot.code }), {
+      status: pilot.status,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
+  let tier: string | null = null;
   try {
     const license = await getLicenseState();
     tier = license?.tier ?? null;
@@ -102,6 +120,7 @@ export async function proxyToBridge(
   const rate = checkRateLimit(rateKey, tierLimit);
 
   if (!rate.allowed) {
+    metrics.increment("rate_limit_events_total", { scope: "org" });
     return new Response(
       JSON.stringify({ detail: "Rate limit exceeded. Try again shortly." }),
       {
@@ -134,12 +153,23 @@ export async function proxyToBridge(
       body,
     });
   } catch {
+    metrics.increment("ai_failures_total", { feature: feature ?? "engine", reason: "unavailable" });
+    // Never echo the upstream host to the client.
     return new Response(
-      JSON.stringify({ detail: `AI bridge unreachable at ${upstream}` }),
+      JSON.stringify({ detail: "AI bridge unreachable.", code: "BRIDGE_UNREACHABLE" }),
       { status: 502, headers: { "Content-Type": "application/json" } },
     );
   }
   const latencyMs = Date.now() - startedAt;
+  {
+    const f = feature ?? "engine";
+    const st = upstreamResponse.status;
+    metrics.increment("ai_requests_total", { feature: f, outcome: st < 400 ? "ok" : st === 429 ? "rate_limited" : "error" });
+    metrics.observe("ai_request_duration_ms", latencyMs, { feature: f });
+    if (st >= 400) {
+      metrics.increment("ai_failures_total", { feature: f, reason: st === 401 || st === 403 ? "unauthorized" : st === 429 ? "rate_limited" : st === 504 || st === 408 ? "timeout" : st >= 500 ? "server_error" : "unknown" });
+    }
+  }
 
   const responseType =
     upstreamResponse.headers.get("content-type") ?? "application/json";

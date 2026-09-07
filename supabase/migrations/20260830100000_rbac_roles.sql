@@ -35,11 +35,11 @@ AS $$
   SELECT COALESCE(
     (
       SELECT CASE
-        WHEN lower(m.role) LIKE '%owner%' OR lower(m.role) LIKE '%super%' OR lower(m.role) LIKE '%system_admin%'
+        WHEN lower(m.role::text) LIKE '%owner%' OR lower(m.role::text) LIKE '%super%' OR lower(m.role::text) LIKE '%system_admin%'
           THEN 'SUPER_ADMIN'
-        WHEN lower(m.role) LIKE '%admin%'
+        WHEN lower(m.role::text) LIKE '%admin%'
           THEN 'HR_ADMIN'
-        WHEN lower(m.role) LIKE '%manager%'
+        WHEN lower(m.role::text) LIKE '%manager%'
           THEN 'MANAGER'
         ELSE 'EMPLOYEE'
       END

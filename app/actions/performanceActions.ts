@@ -22,9 +22,8 @@ import {
 import { getPerformanceWorkspace } from '@/src/services/performanceService'
 import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
-import { dateSchema, isoDateTimeSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from './_shared'
+import { dateSchema, isoDateTimeSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure, isPrivileged } from './_shared'
 
-const privilegedRoleCodes = new Set(['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'])
 const jsonRecord = z.record(z.string(), z.unknown())
 const feedbackQuestionSchema = z.object({ id: z.string().min(1).max(120), prompt: z.string().min(2).max(1000), required: z.boolean().optional(), scale: z.enum(['rating_1_5', 'text']).optional() })
 
@@ -311,7 +310,7 @@ export async function updateGoalProgressAction(input: z.input<typeof updateGoalS
     const { data: goal, error: goalError } = await supabase.from('goals').select('*').eq('id', parsed.data.goalId).eq('organization_id', auth.data.organizationId).maybeSingle()
     if (goalError || !goal) return actionFailure(goalError?.message || 'Goal was not found.')
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
-    if (goal.employee_id !== actorEmployeeId && !privilegedRoleCodes.has(auth.data.roleCode)) return actionFailure('You are not authorized to update this employee goal.')
+    if (goal.employee_id !== actorEmployeeId && !isPrivileged(auth.data)) return actionFailure('You are not authorized to update this employee goal.')
     const patch: Record<string, unknown> = { progress_percent: parsed.data.progressPercent, status: parsed.data.status, updated_at: new Date().toISOString() }
     if (parsed.data.currentValue !== undefined) patch.current_value = parsed.data.currentValue
     const { data, error } = await supabase.from('goals').update(patch as Database['public']['Tables']['goals']['Update']).eq('id', goal.id).select().single()
@@ -334,7 +333,7 @@ export async function createGoalCheckInAction(input: z.input<typeof goalCheckInS
     const { data: goal, error: goalError } = await supabase.from('goals').select('*').eq('id', parsed.data.goalId).eq('organization_id', auth.data.organizationId).maybeSingle()
     if (goalError || !goal) return actionFailure(goalError?.message || 'Goal was not found.')
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
-    if (goal.employee_id !== actorEmployeeId && !privilegedRoleCodes.has(auth.data.roleCode)) return actionFailure('You are not authorized to create a check-in for this goal.')
+    if (goal.employee_id !== actorEmployeeId && !isPrivileged(auth.data)) return actionFailure('You are not authorized to create a check-in for this goal.')
     const { data, error } = await supabase.from('goal_check_ins').insert({ organization_id: auth.data.organizationId, goal_id: goal.id, employee_id: goal.employee_id, created_by: auth.data.userId, current_value: parsed.data.currentValue ?? goal.current_value, progress_percent: parsed.data.progressPercent, confidence: parsed.data.confidence, blockers: parsed.data.blockers || null, next_steps: parsed.data.nextSteps || null }).select().single()
     if (error || !data) return actionFailure(error?.message || 'Goal check-in creation returned no record.')
     const { error: goalUpdateError } = await supabase.from('goals').update({ current_value: parsed.data.currentValue ?? goal.current_value, progress_percent: parsed.data.progressPercent, status: parsed.data.confidence === 'at_risk' ? 'at_risk' : goal.status === 'completed' ? 'completed' : 'in_progress', updated_at: new Date().toISOString() }).eq('id', goal.id).eq('organization_id', auth.data.organizationId)
@@ -379,7 +378,7 @@ export async function saveSelfAssessmentAction(input: z.input<typeof selfAssessm
   try {
     const supabase = await createServerSupabaseClient()
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
-    if (actorEmployeeId !== parsed.data.employeeId && !privilegedRoleCodes.has(auth.data.roleCode)) return actionFailure('You are not authorized to submit this self assessment.')
+    if (actorEmployeeId !== parsed.data.employeeId && !isPrivileged(auth.data)) return actionFailure('You are not authorized to submit this self assessment.')
     const { data: cycle, error: cycleError } = await supabase.from('performance_cycles').select('id').eq('id', parsed.data.performanceCycleId).eq('organization_id', auth.data.organizationId).maybeSingle()
     if (cycleError || !cycle) return actionFailure(cycleError?.message || 'Performance cycle was not found.')
     const reviewerId = actorEmployeeId || parsed.data.employeeId
@@ -442,7 +441,7 @@ export async function submit360FeedbackAction(input: z.input<typeof feedbackSubm
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
     const actorEmail = await getAuthenticatedEmail(supabase)
     const isAssigned = request.recipient_employee_id === actorEmployeeId || (request.recipient_email && actorEmail && request.recipient_email.toLowerCase() === actorEmail)
-    if (!isAssigned && !privilegedRoleCodes.has(auth.data.roleCode)) return actionFailure('You are not authorized to submit this feedback request.')
+    if (!isAssigned && !isPrivileged(auth.data)) return actionFailure('You are not authorized to submit this feedback request.')
     const { data, error } = await supabase.from('performance_feedback_responses').upsert({ organization_id: auth.data.organizationId, feedback_request_id: request.id, respondent_employee_id: actorEmployeeId || null, respondent_email: actorEmail, overall_rating: parsed.data.overallRating ?? null, answers: toJson(parsed.data.answers), strengths: parsed.data.strengths || null, growth_areas: parsed.data.growthAreas || null, submitted_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: actorEmployeeId ? 'feedback_request_id,respondent_employee_id' : 'feedback_request_id,respondent_email' }).select().single()
     if (error || !data) return actionFailure(error?.message || 'Feedback response persistence returned no record.')
     const { error: requestUpdateError } = await supabase.from('performance_feedback_requests').update({ status: 'submitted', updated_at: new Date().toISOString() }).eq('id', request.id).eq('organization_id', auth.data.organizationId)

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { createServerSupabaseClient, type AttendanceRecordRow, type EmployeeRow, type SupabaseTypedClient } from '@/src/lib/supabase'
 import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
-import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from './_shared'
+import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure, isPrivileged } from './_shared'
 
 const clockInSchema = z.object({
   employeeId: uuidSchema,
@@ -88,7 +88,7 @@ export async function clockInAction(input: z.input<typeof clockInSchema>): Promi
   try {
     const supabase = await createServerSupabaseClient()
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
-    if (actorEmployeeId !== parsed.data.employeeId && !['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'].includes(auth.data.roleCode)) return actionFailure('You are not authorized to clock in on behalf of this employee.')
+    if (actorEmployeeId !== parsed.data.employeeId && !isPrivileged(auth.data)) return actionFailure('You are not authorized to clock in on behalf of this employee.')
     const { data: existing, error: existingError } = await supabase.from('attendance_records').select('*').eq('organization_id', auth.data.organizationId).eq('employee_id', parsed.data.employeeId).eq('work_date', parsed.data.workDate).maybeSingle()
     if (existingError) return actionFailure(existingError.message)
     if (existing) return actionFailure('A time record already exists for this employee and work date.')
@@ -113,7 +113,7 @@ export async function clockOutAction(input: z.input<typeof clockOutSchema>): Pro
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
     const { data: record, error: lookupError } = await supabase.from('attendance_records').select('*').eq('id', parsed.data.recordId).eq('organization_id', auth.data.organizationId).maybeSingle()
     if (lookupError || !record) return actionFailure(lookupError?.message || 'Attendance record was not found.')
-    if (record.employee_id !== actorEmployeeId && !['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'].includes(auth.data.roleCode)) return actionFailure('You are not authorized to clock out this employee.')
+    if (record.employee_id !== actorEmployeeId && !isPrivileged(auth.data)) return actionFailure('You are not authorized to clock out this employee.')
     if (record.check_out_at) return actionFailure('This attendance record is already checked out.')
     const { data, error } = await supabase.from('attendance_records').update({ check_out_at: parsed.data.checkedOutAt, worked_minutes: parsed.data.workedMinutes, note: parsed.data.note || record.note, updated_at: new Date().toISOString() }).eq('id', record.id).select().single()
     if (error || !data) return actionFailure(error?.message || 'Clock-out returned no attendance record.')

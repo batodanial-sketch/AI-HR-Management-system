@@ -41,6 +41,15 @@ class ToolExecutor:
     async def execute(
         self, call: ToolCall, organization_id: str | None
     ) -> ToolResult:
+        # Tenant pinning: every read and write below is scoped to the tenant
+        # established by the trusted proxy header. Without one, refuse — the
+        # service-role client would otherwise see every tenant.
+        if self._supabase and not (organization_id or "").strip():
+            return ToolResult(
+                tool=call.tool,
+                ok=False,
+                message="Tool execution refused: tenant not established.",
+            )
         try:
             if call.tool == "approve_leave":
                 return await self._approve_leave(call.arguments, organization_id)
@@ -72,7 +81,7 @@ class ToolExecutor:
         rows = await self._supabase.select(
             "leave_requests",
             columns="id, employee_name, status",
-            filters={"employee_name": name, "status": "pending"},
+            filters={"organization_id": str(organization_id), "employee_name": name, "status": "pending"},
             limit=1,
         )
         if not rows:
@@ -83,7 +92,7 @@ class ToolExecutor:
             )
         await self._supabase.update(
             "leave_requests",
-            {"id": rows[0]["id"]},
+            {"id": rows[0]["id"], "organization_id": str(organization_id), "status": "pending"},
             {"status": "approved"},
         )
         return ToolResult(tool="approve_leave", ok=True, message=f"Approved leave for {name}.")
@@ -103,7 +112,7 @@ class ToolExecutor:
         rows = await self._supabase.select(
             "leave_requests",
             columns="id, employee_name, status",
-            filters={"employee_name": name, "status": "pending"},
+            filters={"organization_id": str(organization_id), "employee_name": name, "status": "pending"},
             limit=1,
         )
         if not rows:
@@ -114,7 +123,7 @@ class ToolExecutor:
             )
         await self._supabase.update(
             "leave_requests",
-            {"id": rows[0]["id"]},
+            {"id": rows[0]["id"], "organization_id": str(organization_id), "status": "pending"},
             {"status": "rejected"},
         )
         return ToolResult(tool="reject_leave", ok=True, message=f"Rejected leave for {name}.")
@@ -135,6 +144,7 @@ class ToolExecutor:
         rows = await self._supabase.select(
             "candidates",
             columns="id, first_name, last_name, stage",
+            filters={"organization_id": str(organization_id)},
             limit=200,
         )
         match = next(
@@ -160,7 +170,11 @@ class ToolExecutor:
                 ok=False,
                 message=f"{name} is already at the final stage.",
             )
-        await self._supabase.update("candidates", {"id": match["id"]}, {"stage": target})
+        await self._supabase.update(
+            "candidates",
+            {"id": match["id"], "organization_id": str(organization_id)},
+            {"stage": target},
+        )
         return ToolResult(
             tool="advance_candidate",
             ok=True,

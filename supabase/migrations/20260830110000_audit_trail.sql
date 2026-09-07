@@ -75,8 +75,8 @@ CREATE POLICY audit_logs_governance_insert ON public.audit_logs FOR INSERT
     WITH CHECK (
         public.is_organization_member(organization_id)
         AND (
-            (actor_type = 'USER' AND actor_id = auth.uid()::text)
-            OR (actor_type = 'COPILOT_AGENT' AND actor_id = auth.uid()::text)
+            (actor_type = 'USER' AND actor_id::text = auth.uid()::text)
+            OR (actor_type = 'COPILOT_AGENT' AND actor_id::text = auth.uid()::text)
         )
     );
 

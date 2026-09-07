@@ -17,9 +17,8 @@ import {
 } from '@/src/lib/supabase'
 import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
-import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from './_shared'
+import { dateSchema, requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure, isPrivileged } from './_shared'
 
-const privilegedRoleCodes = new Set(['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'])
 
 const templateStepSchema = z.object({
   title: z.string().min(2).max(240),
@@ -238,7 +237,7 @@ export async function updateOnboardingTaskAction(input: z.input<typeof updateTas
     if (enrollmentError || !enrollment) return actionFailure(enrollmentError?.message || 'Onboarding enrollment was not found.')
 
     const actorEmployeeId = await getActorEmployeeId(supabase, auth.data.organizationId, auth.data.userId)
-    const canUpdate = privilegedRoleCodes.has(auth.data.roleCode) || actorEmployeeId === task.owner_employee_id || actorEmployeeId === enrollment.employee_id || actorEmployeeId === enrollment.manager_id
+    const canUpdate = isPrivileged(auth.data) || actorEmployeeId === task.owner_employee_id || actorEmployeeId === enrollment.employee_id || actorEmployeeId === enrollment.manager_id
     if (!canUpdate) return actionFailure('You are not authorized to update this onboarding task.')
 
     const metadata = typeof task.metadata === 'object' && task.metadata !== null && !Array.isArray(task.metadata) ? { ...task.metadata as Record<string, unknown> } : {}

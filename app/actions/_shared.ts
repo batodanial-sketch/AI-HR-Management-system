@@ -2,7 +2,9 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { createServerSupabaseClient, isSupabaseConfigured, type OrganizationMembershipRow, type RoleRow } from '@/src/lib/supabase'
+import { isSupabaseConfigured } from '@/src/lib/supabase'
+import { resolveCanonicalAuthz } from '@/lib/authz/canonical'
+import { denyMessage, roleAtLeast, type CanonicalRoleCode, type RbRole } from '@/lib/authz/model'
 import type { ActionResponse } from './types'
 import { actionFailure } from './types'
 
@@ -10,52 +12,55 @@ export const uuidSchema = z.string().uuid()
 export const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
 export const isoDateTimeSchema = z.string().datetime({ offset: true }).or(z.string().datetime())
 
+/**
+ * Authorization context handed to every server action.
+ *
+ * Produced exclusively by the canonical resolver (`lib/authz/canonical.ts`):
+ * `roleCode` is the exact `memberships.role` value and `role` its RBAC tier.
+ * Actions must never re-derive either from the database or from input.
+ */
 export type AuthorizedContext = {
   userId: string
   organizationId: string
-  roleCode: string
+  roleCode: CanonicalRoleCode
+  role: RbRole
 }
 
-const privilegedRoleCodes = new Set(['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'])
-const recruitmentRoleCodes = new Set([...privilegedRoleCodes, 'recruiter', 'talent_acquisition'])
-const payrollRoleCodes = new Set([...privilegedRoleCodes, 'finance_admin', 'payroll_admin'])
+export type ActionScope = 'employee' | 'recruitment' | 'payroll' | 'admin'
 
-export async function requireOrganizationContext(scope: 'employee' | 'recruitment' | 'payroll' | 'admin' = 'employee'): Promise<ActionResponse<AuthorizedContext>> {
+/** Minimum canonical tier per action scope. */
+const SCOPE_MIN_ROLE: Record<ActionScope, RbRole> = {
+  employee: 'EMPLOYEE',
+  recruitment: 'HR_ADMIN',
+  payroll: 'HR_ADMIN',
+  admin: 'HR_ADMIN'
+}
+
+/** True when the context holds an HR_ADMIN-or-higher canonical role. */
+export function isPrivileged(ctx: Pick<AuthorizedContext, 'role'>): boolean {
+  return roleAtLeast(ctx.role, 'HR_ADMIN')
+}
+
+export async function requireOrganizationContext(scope: ActionScope = 'employee'): Promise<ActionResponse<AuthorizedContext>> {
   if (!isSupabaseConfigured) return actionFailure('Supabase is not configured. Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY before invoking server actions.')
 
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data: authData, error: authError } = await supabase.auth.getUser()
-    if (authError || !authData.user) return actionFailure('Authentication is required for this action.')
+    const authz = await resolveCanonicalAuthz()
+    if (!authz.ok) return actionFailure(denyMessage(authz.reason))
 
-    const membershipResult = await supabase
-      .from('organization_memberships')
-      .select('*')
-      .eq('user_id', authData.user.id)
-      .eq('status', 'active')
-      .limit(1)
-      .maybeSingle()
-
-    if (membershipResult.error || !membershipResult.data) return actionFailure('No active organization membership was found for the current user.')
-    const membership = membershipResult.data as OrganizationMembershipRow
-
-    let roleCode = 'member'
-    if (membership.role_id) {
-      const roleResult = await supabase.from('roles').select('*').eq('id', membership.role_id).maybeSingle()
-      if (roleResult.error) return actionFailure(`Unable to resolve organization role: ${roleResult.error.message}`)
-      roleCode = ((roleResult.data as RoleRow | null)?.code || 'member').toLowerCase()
+    const { membership } = authz
+    if (!roleAtLeast(membership.role, SCOPE_MIN_ROLE[scope])) {
+      return actionFailure(`The ${membership.roleCode} role is not authorized for this ${scope} action.`)
     }
-
-    const permitted = scope === 'admin'
-      ? privilegedRoleCodes.has(roleCode)
-      : scope === 'recruitment'
-        ? recruitmentRoleCodes.has(roleCode)
-        : scope === 'payroll'
-          ? payrollRoleCodes.has(roleCode)
-          : true
-
-    if (!permitted) return actionFailure(`The ${roleCode} role is not authorized for this ${scope} action.`)
-    return { success: true, data: { userId: authData.user.id, organizationId: membership.organization_id, roleCode } }
+    return {
+      success: true,
+      data: {
+        userId: membership.userId,
+        organizationId: membership.organizationId,
+        roleCode: membership.roleCode,
+        role: membership.role
+      }
+    }
   } catch (error) {
     return actionFailure(error instanceof Error ? error.message : 'Unable to validate organization authorization.')
   }

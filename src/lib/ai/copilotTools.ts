@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { createServerSupabaseClient, type Database, type OrganizationMembershipRow, type RoleRow } from '@/src/lib/supabase'
+import { createServerSupabaseClient, type Database } from '@/src/lib/supabase'
+import { resolveCanonicalAuthz } from '@/lib/authz/canonical'
+import { denyMessage, isPrivilegedRoleCode, type CanonicalRoleCode } from '@/lib/authz/model'
 import { enqueuePythonJob, type PythonJobType } from '@/src/lib/pythonBridge'
 
-export type CopilotRoleCode = string
+export type CopilotRoleCode = CanonicalRoleCode
 export type CopilotToolName = 'search_employee' | 'update_employee_status' | 'trigger_ai_screening' | 'manage_leave_request' | 'dispatch_python_job'
 
 export type CopilotToolContext = {
@@ -49,19 +51,20 @@ export type CopilotToolDefinition<TSchema extends z.ZodTypeAny> = {
   execute: (context: CopilotToolContext, input: z.output<TSchema>) => Promise<CopilotToolResult>
 }
 
-const privilegedRoles = new Set(['owner', 'admin', 'hr_admin', 'hr_manager', 'system_admin'])
-const recruitmentRoles = new Set([...privilegedRoles, 'recruiter', 'talent_acquisition'])
-
-function canManageEmployees(roleCode: string) {
-  return privilegedRoles.has(roleCode)
+/**
+ * Tool policy — evaluated against the caller's CANONICAL role code only.
+ * Model output, tool arguments and prompt text never influence these checks.
+ */
+function canManageEmployees(roleCode: CopilotRoleCode) {
+  return isPrivilegedRoleCode(roleCode)
 }
 
-function canManageRecruitment(roleCode: string) {
-  return recruitmentRoles.has(roleCode)
+function canManageRecruitment(roleCode: CopilotRoleCode) {
+  return isPrivilegedRoleCode(roleCode)
 }
 
-function canManageLeave(roleCode: string) {
-  return privilegedRoles.has(roleCode)
+function canManageLeave(roleCode: CopilotRoleCode) {
+  return isPrivilegedRoleCode(roleCode)
 }
 
 async function writeSystemAudit(context: CopilotToolContext, action: 'read' | 'update' | 'approve' | 'reject' | 'generate', entityType: string, entityId: string | null, afterState: Record<string, unknown>) {
@@ -346,21 +349,27 @@ export function getCopilotTool(name: string) {
   return (copilotTools as Record<string, CopilotToolDefinition<z.ZodTypeAny> | undefined>)[name]
 }
 
+/**
+ * Resolves the Copilot tool context from the canonical authorization
+ * resolver. The RLS-bound Supabase client is created for the same session,
+ * so database policies and the application role check agree by construction.
+ */
 export async function resolveCopilotToolContext(): Promise<{ success: true; data: CopilotToolContext } | { success: false; error: string }> {
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data: authData, error: authError } = await supabase.auth.getUser()
-    if (authError || !authData.user) return { success: false, error: 'Unauthorized. Sign in before executing Copilot tools.' }
-    const { data: membership, error: membershipError } = await supabase.from('organization_memberships').select('*').eq('user_id', authData.user.id).eq('status', 'active').limit(1).maybeSingle()
-    if (membershipError || !membership) return { success: false, error: 'No active organization membership was found.' }
-    const typedMembership = membership as OrganizationMembershipRow
-    let roleCode = 'member'
-    if (typedMembership.role_id) {
-      const { data: role, error: roleError } = await supabase.from('roles').select('*').eq('id', typedMembership.role_id).maybeSingle()
-      if (roleError) return { success: false, error: roleError.message }
-      roleCode = ((role as RoleRow | null)?.code || 'member').toLowerCase()
+    const authz = await resolveCanonicalAuthz()
+    if (!authz.ok) {
+      return { success: false, error: authz.reason === 'UNAUTHENTICATED' ? 'Unauthorized. Sign in before executing Copilot tools.' : denyMessage(authz.reason) }
     }
-    return { success: true, data: { supabase, userId: authData.user.id, organizationId: typedMembership.organization_id, roleCode } }
+    const supabase = await createServerSupabaseClient()
+    return {
+      success: true,
+      data: {
+        supabase,
+        userId: authz.membership.userId,
+        organizationId: authz.membership.organizationId,
+        roleCode: authz.membership.roleCode
+      }
+    }
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Unable to resolve Copilot tool context.' }
   }

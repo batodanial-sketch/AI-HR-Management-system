@@ -1,7 +1,9 @@
 'use server'
 
 import { z } from 'zod'
-import { createServerSupabaseClient, isSupabaseConfigured, type Database, type OrganizationMembershipRow, type RoleRow } from '@/src/lib/supabase'
+import { createServerSupabaseClient, isSupabaseConfigured } from '@/src/lib/supabase'
+import { resolveCanonicalAuthz } from '@/lib/authz/canonical'
+import { denyMessage } from '@/lib/authz/model'
 import type { ActionResponse } from './types'
 import { actionFailure, actionSuccess } from './types'
 import { requireOrganizationContext, validationFailure } from './_shared'
@@ -19,32 +21,23 @@ export type WorkspaceAccessState =
       membership: { organizationId: string; roleCode: string } | null
     }
 
+/**
+ * Reports the caller's authentication + canonical membership state.
+ * Membership/role come from the canonical resolver only; a user with no
+ * valid canonical membership is reported as `membership: null` (never a
+ * defaulted role).
+ */
 export async function getWorkspaceAccessAction(): Promise<ActionResponse<WorkspaceAccessState>> {
   if (!isSupabaseConfigured) return actionFailure('Supabase public configuration is unavailable.')
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data: authData, error: authError } = await supabase.auth.getUser()
-    if (authError || !authData.user) return actionSuccess({ authenticated: false })
-
-    const [profileResult, membershipResult] = await Promise.all([
-      supabase.from('users').select('id,email,full_name').eq('id', authData.user.id).maybeSingle(),
-      supabase.from('organization_memberships').select('*').eq('user_id', authData.user.id).eq('status', 'active').limit(1).maybeSingle()
-    ])
-    const error = profileResult.error || membershipResult.error
-    if (error) return actionFailure(error.message)
-    if (!profileResult.data) return actionFailure('Your Supabase Auth profile has not synchronized to public.users yet. Refresh after signup or verify the auth profile trigger.')
-
-    const profile = profileResult.data as { id: string; email: string; full_name: string }
-    const membership = membershipResult.data as OrganizationMembershipRow | null
-    if (!membership) return actionSuccess({ authenticated: true, user: { id: profile.id, email: profile.email, fullName: profile.full_name }, membership: null })
-
-    let roleCode = 'member'
-    if (membership.role_id) {
-      const { data: role, error: roleError } = await supabase.from('roles').select('*').eq('id', membership.role_id).maybeSingle()
-      if (roleError) return actionFailure(roleError.message)
-      roleCode = ((role as RoleRow | null)?.code || 'member').toLowerCase()
+    const authz = await resolveCanonicalAuthz()
+    if (!authz.actor) return actionSuccess({ authenticated: false })
+    const user = { id: authz.actor.id, email: authz.actor.email, fullName: authz.actor.fullName }
+    if (!authz.ok) {
+      if (authz.reason === 'NO_MEMBERSHIP') return actionSuccess({ authenticated: true, user, membership: null })
+      return actionFailure(denyMessage(authz.reason))
     }
-    return actionSuccess({ authenticated: true, user: { id: profile.id, email: profile.email, fullName: profile.full_name }, membership: { organizationId: membership.organization_id, roleCode } })
+    return actionSuccess({ authenticated: true, user, membership: { organizationId: authz.membership.organizationId, roleCode: authz.membership.roleCode } })
   } catch (error) {
     return actionFailure(error instanceof Error ? error.message : 'Unable to resolve workspace access.')
   }
@@ -101,15 +94,27 @@ export async function verifyAuthenticatedWorkspaceReadinessAction(): Promise<Act
   }
 }
 
+/**
+ * Creates the caller's first workspace and its canonical `owner` membership.
+ *
+ * Provisioning writes ONLY the canonical `memberships` table (the
+ * `bootstrap_organization` RPC was re-pointed at it; it no longer writes
+ * `organization_memberships` / `roles` for authorization-bearing state).
+ */
 export async function bootstrapWorkspaceAction(input: z.input<typeof bootstrapSchema>): Promise<ActionResponse<{ organizationId: string; organizationName: string; organizationSlug: string; roleCode: string }>> {
   const parsed = bootstrapSchema.safeParse(input)
   if (!parsed.success) return validationFailure(parsed.error)
   if (!isSupabaseConfigured) return actionFailure('Supabase public configuration is unavailable.')
   try {
-    const supabase = await createServerSupabaseClient()
-    const { data: authData, error: authError } = await supabase.auth.getUser()
-    if (authError || !authData.user) return actionFailure('Authentication is required to create your first workspace.')
+    const authz = await resolveCanonicalAuthz()
+    if (!authz.actor) return actionFailure('Authentication is required to create your first workspace.')
+    if (authz.ok) return actionFailure('The current user already has an active organization membership.')
+    if (authz.reason !== 'NO_MEMBERSHIP') return actionFailure(denyMessage(authz.reason))
 
+    // SECURITY DEFINER RPC — provisions the organization and the caller's
+    // canonical `memberships` row (role = owner). See migration
+    // 20260906000100_canonical_membership_authz.sql.
+    const supabase = await createServerSupabaseClient()
     const { data, error } = await supabase.rpc('bootstrap_organization', {
       workspace_name: parsed.data.workspaceName,
       workspace_slug: parsed.data.workspaceSlug

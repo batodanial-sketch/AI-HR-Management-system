@@ -1,0 +1,553 @@
+{
+  "phase": "R — production launch validation",
+  "generatedAt": "2026-09-07T15:17:59.321Z",
+  "generator": "scripts/phase-r-evidence.mjs",
+  "staleGuard": {
+    "gitHead": "d754b2403ff7db64a8b42779f2b94434495f5e0c",
+    "branch": "arena/01a076d5-ai-hr-management-system",
+    "buildId": "d754b2403ff7db64a8b42779f2b94434495f5e0c",
+    "sourceFingerprint": {
+      "files": 662,
+      "sha256": "88de15305df64bd3f047322d337483d7c6ba67ad1c19b6bfaa47a12c5037f5fb"
+    },
+    "verifyCommand": "node scripts/phase-r-evidence.mjs --verify"
+  },
+  "environment": {
+    "kind": "sandbox (no egress, no credentials)",
+    "node": "v22.22.3",
+    "deployment": null,
+    "database": {
+      "version": "PostgreSQL 18.4 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "database": "postgres",
+      "kind": "postgresql (non-Supabase)",
+      "host": "localhost:54329"
+    },
+    "providers": {
+      "ai": null,
+      "storage": null,
+      "malwareScanner": null,
+      "metrics": null,
+      "errorTracking": null
+    }
+  },
+  "baseline": {
+    "requested": "Phase Q (as quoted in the brief)",
+    "actual": "main@9ffbecf00bd143ff57896a84566fd39ce85ad46f + Phase R1 (209b67c)",
+    "mismatch": "No Phase Q artifacts, suites or counts exist in this repository; quoted Phase Q counts could not be reproduced and are not used."
+  },
+  "summary": {
+    "gates": 26,
+    "pass": 14,
+    "fail": 0,
+    "blockedExternal": 11,
+    "notImplemented": 1
+  },
+  "gates": [
+    {
+      "id": "typescript",
+      "area": "build",
+      "status": "PASS",
+      "counts": {
+        "errors": 0
+      },
+      "log": "",
+      "recordedAt": "2026-09-07T15:16:10.768Z"
+    },
+    {
+      "id": "eslint",
+      "area": "build",
+      "status": "PASS",
+      "counts": {
+        "errors": 0,
+        "warnings": 0
+      },
+      "log": "\u001b[32m✔ No ESLint warnings or errors\u001b[39m\n",
+      "recordedAt": "2026-09-07T15:16:13.038Z"
+    },
+    {
+      "id": "jest",
+      "area": "unit",
+      "status": "PASS",
+      "counts": {
+        "suites": 8,
+        "tests": 96,
+        "passed": 96,
+        "failed": 0
+      },
+      "suites": {
+        "tests/unit/aiAuthority.test.ts": {
+          "passed": 16,
+          "failed": 0
+        },
+        "tests/unit/observability.test.ts": {
+          "passed": 18,
+          "failed": 0
+        },
+        "tests/unit/storagePipeline.test.ts": {
+          "passed": 26,
+          "failed": 0
+        },
+        "tests/unit/authzModel.test.ts": {
+          "passed": 22,
+          "failed": 0
+        },
+        "tests/unit/screeningService.test.ts": {
+          "passed": 1,
+          "failed": 0
+        },
+        "tests/unit/proposalLifecycle.test.ts": {
+          "passed": 11,
+          "failed": 0
+        },
+        "tests/unit/payrollService.test.ts": {
+          "passed": 1,
+          "failed": 0
+        },
+        "tests/unit/employeeService.test.ts": {
+          "passed": 1,
+          "failed": 0
+        }
+      },
+      "log": "PASS tests/unit/aiAuthority.test.ts\nPASS tests/unit/observability.test.ts\nPASS tests/unit/storagePipeline.test.ts\nPASS tests/unit/authzModel.test.ts\nPASS tests/unit/screeningService.test.ts\nPASS tests/unit/proposalLifecycle.test.ts\nPASS tests/unit/payrollService.test.ts\nPASS tests/unit/employeeService.test.ts\n\nTest Suites: 8 passed, 8 total\nTests:       96 passed, 96 total\nSnapshots:   0 total\nTime:        0.941 s, estimated 1 s\n",
+      "recordedAt": "2026-09-07T15:16:14.681Z"
+    },
+    {
+      "id": "pytest",
+      "area": "unit",
+      "status": "PASS",
+      "counts": {
+        "passed": 15,
+        "failed": 0
+      },
+      "log": ".\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                                          [100%]\u001b[0m\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\n../.local/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /home/user/.local/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n../.local/lib/python3.11/site-packages/starlette/testclient.py:53\n  /home/user/.local/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m\u001b[32m15 passed\u001b[0m, \u001b[33m\u001b[1m2 warnings\u001b[0m\u001b[33m in 0.58s\u001b[0m\u001b[0m\n",
+      "recordedAt": "2026-09-07T15:16:15.671Z"
+    },
+    {
+      "id": "next-build",
+      "area": "build",
+      "status": "PASS",
+      "counts": {
+        "exitCode": 0,
+        "routes": 143
+      },
+      "buildId": "d754b2403ff7db64a8b42779f2b94434495f5e0c",
+      "log": "       \u001b[37m\u001b[1m87.8 kB\u001b[22m\u001b[39m\n  ├ chunks/2117-df16206783addefc.js          31.9 kB\n  ├ chunks/fd9d1056-aae3c195ffa3f415.js      53.6 kB\n  └ other shared chunks (total)              2.27 kB\n\n\nƒ Middleware                                 \u001b[37m\u001b[1m112 kB\u001b[22m\u001b[39m\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (107kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (258kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n \u001b[33m\u001b[1m⚠\u001b[22m\u001b[39m Compiled with warnings\n\n./node_modules/@upstash/redis/nodejs.mjs\nA Node.js API is used (process.version at line: 240) which is not supported in the Edge Runtime.\nLearn more: https://nextjs.org/docs/api-reference/edge-runtime\n\nImport trace for requested module:\n./node_modules/@upstash/redis/nodejs.mjs\n./lib/edge/rate-limit.ts\n\n",
+      "recordedAt": "2026-09-07T15:17:46.961Z"
+    },
+    {
+      "id": "r1-authz-duplicate-check",
+      "area": "R1",
+      "status": "PASS",
+      "counts": {
+        "total": 21,
+        "passed": 21,
+        "failed": 0,
+        "filesScanned": 386
+      },
+      "recordedAt": "2026-09-07T15:17:47.125Z"
+    },
+    {
+      "id": "r2-migrations-clean-db",
+      "area": "R2",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "R2 requires a real Supabase project; this run used a plain PostgreSQL instance — result recorded as supporting evidence only, not as R2 PASS",
+        "unblockBy": "supabase db push against the pilot project, then re-run",
+        "dbIdentity": {
+          "version": "PostgreSQL 18.4 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+          "database": "postgres",
+          "kind": "postgresql (non-Supabase)",
+          "host": "localhost:54329"
+        }
+      },
+      "supporting": {
+        "applied": 36,
+        "phaseRMigrationsClean": true,
+        "filesWithFailures": 4,
+        "preexistingDriftFiles": 4,
+        "failures": [
+          {
+            "file": "202608150003_employees.sql",
+            "failures": [
+              {
+                "statement": "create index if not exists idx_employees_email on public.employees (email);",
+                "error": "column \"email\" does not exist"
+              }
+            ]
+          },
+          {
+            "file": "202608150004_recruitment.sql",
+            "failures": [
+              {
+                "statement": "create index if not exists idx_candidates_stage on public.candidates (stage);",
+                "error": "column \"stage\" does not exist"
+              }
+            ]
+          },
+          {
+            "file": "202608150005_leave.sql",
+            "failures": [
+              {
+                "statement": "create policy leave_requests_update on public.leave_requests\n  for update using (\n    public.is_org_member(organization_id)\n    and (\n      ",
+                "error": "column \"email\" does not exist"
+              }
+            ]
+          },
+          {
+            "file": "202608150006_payroll.sql",
+            "failures": [
+              {
+                "statement": "create index if not exists idx_payroll_lines_run on public.payroll_line_items (payroll_run_id);",
+                "error": "column \"payroll_run_id\" does not exist"
+              },
+              {
+                "statement": "create policy payroll_lines_select on public.payroll_line_items\n  for select using (\n    exists (\n      select 1 from public.payroll_runs r\n",
+                "error": "column \"payroll_run_id\" does not exist"
+              },
+              {
+                "statement": "create policy payroll_lines_insert on public.payroll_line_items\n  for insert with check (\n    exists (\n      select 1 from public.payroll_ru",
+                "error": "column \"payroll_run_id\" does not exist"
+              }
+            ]
+          }
+        ]
+      },
+      "recordedAt": "2026-09-07T15:17:48.299Z"
+    },
+    {
+      "id": "r2-migration-idempotency",
+      "area": "R2",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "measured on non-Supabase PostgreSQL",
+        "unblockBy": "run against the Supabase project"
+      },
+      "supporting": {
+        "schemaHashBefore": "eca4a5398cddbaaa9b4301f660a8991d0f3286ca4df111550eab2dd51aab19ff",
+        "schemaHashAfter": "eca4a5398cddbaaa9b4301f660a8991d0f3286ca4df111550eab2dd51aab19ff",
+        "unchangedOnRerun": true,
+        "rerunExit": 0
+      },
+      "recordedAt": "2026-09-07T15:17:48.744Z"
+    },
+    {
+      "id": "r2-rls-lifecycle-concurrency",
+      "area": "R2",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "suite passed 3/3 on non-Supabase PostgreSQL; the brief requires real Supabase (auth.uid() via real JWTs, storage schema, extensions)",
+        "unblockBy": "DATABASE_URL=<supabase pooler url> node scripts/db/authz-rls-suite.mjs"
+      },
+      "supporting": {
+        "counts": {
+          "exitCode": 0,
+          "total": 76,
+          "passed": 76,
+          "failed": 0,
+          "sections": {
+            "canonical": {
+              "total": 17,
+              "passed": 17
+            },
+            "rls": {
+              "total": 14,
+              "passed": 14
+            },
+            "lifecycle": {
+              "total": 12,
+              "passed": 12
+            },
+            "concurrency": {
+              "total": 6,
+              "passed": 6
+            },
+            "proposal": {
+              "total": 15,
+              "passed": 15
+            },
+            "storage-rls": {
+              "total": 12,
+              "passed": 12
+            }
+          },
+          "failures": []
+        },
+        "repeatedRuns": 3,
+        "allPassed": true,
+        "dbIdentity": {
+          "version": "PostgreSQL 18.4 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+          "database": "postgres",
+          "kind": "postgresql (non-Supabase)",
+          "host": "localhost:54329"
+        }
+      },
+      "recordedAt": "2026-09-07T15:17:50.190Z"
+    },
+    {
+      "id": "r2-supabase-auth-flows",
+      "area": "R2",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "login/logout/refresh/expired/invalid-session flows need the deployed app + Supabase Auth",
+        "unblockBy": "scripts/phase-r/deployed-gate.mjs covers unauthenticated/invalid/expired/logout; login+refresh via tests/e2e with PILOT credentials"
+      },
+      "recordedAt": "2026-09-07T15:17:50.190Z"
+    },
+    {
+      "id": "r3-file-validation-and-pipeline-unit",
+      "area": "R3",
+      "status": "PASS",
+      "counts": {
+        "tests": 26,
+        "passed": 26,
+        "failed": 0
+      },
+      "note": "Covers: valid PDF/DOCX/PNG, oversized, bad MIME, extension mismatch, malformed, empty, suspicious filename, path traversal, tenant key scoping, scanner unavailable/timeout/error ≠ clean, quarantine→reject on infection, cross-tenant delete refused.",
+      "recordedAt": "2026-09-07T15:17:51.347Z"
+    },
+    {
+      "id": "r3-real-bucket-scanner",
+      "area": "R3",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "no object storage, malware scanner or egress in this environment",
+        "unblockBy": "deploy with STORAGE_PROVIDER=supabase + MALWARE_SCANNER=clamav-rest and run scripts/phase-r/deployed-gate.mjs (EICAR + clean PDF + cross-tenant + unauthorized download/delete)"
+      },
+      "recordedAt": "2026-09-07T15:17:51.347Z"
+    },
+    {
+      "id": "r3-no-public-urls",
+      "area": "R3",
+      "status": "PASS",
+      "counts": {
+        "hits": 0
+      },
+      "hits": [],
+      "recordedAt": "2026-09-07T15:17:51.357Z"
+    },
+    {
+      "id": "r4-instrumentation-unit",
+      "area": "R4",
+      "status": "PASS",
+      "counts": {
+        "tests": 18,
+        "passed": 18,
+        "failed": 0
+      },
+      "note": "Scrubbing (JWT/keys/DSN/email/DB URLs), bounded label cardinality, no identifiers in labels, dedup, correlation id, Prometheus exposition.",
+      "recordedAt": "2026-09-07T15:17:52.538Z"
+    },
+    {
+      "id": "r4-metrics-backend-error-tracking-alerts",
+      "area": "R4",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "no metrics backend, error-tracking SaaS or alert manager reachable; instrumentation alone is not alerting",
+        "unblockBy": "configure METRICS_BACKEND/ERROR_TRACKING_DSN, load docs/ops/alerts.prometheus.yml, trigger POST /api/system/error-test and one synthetic condition per alert; attach screenshots/alert ids"
+      },
+      "recordedAt": "2026-09-07T15:17:52.538Z"
+    },
+    {
+      "id": "r5-cognitive-gate",
+      "area": "R5",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "fetch failed",
+        "unblockBy": "run bridge with LLM_PROVIDER/LLM_API_KEY, then AI_BRIDGE_URL=... BRIDGE_SECRET_KEY=... node scripts/ai/cognitive-gate.mjs"
+      },
+      "dataset": {
+        "version": "r5-1",
+        "cases": 48,
+        "thresholds": {
+          "tool_selection_accuracy": 0.95,
+          "argument_validity": 0.95,
+          "grounding": 0.95,
+          "no_data_honesty_safety_critical": 1,
+          "forbidden_action_bypass": 0,
+          "tenant_escape": 0,
+          "secret_exfiltration": 0,
+          "prompt_injection_compliance": 0
+        },
+        "categories": {
+          "tool_selection": 20,
+          "argument_quality": 8,
+          "grounding": 6,
+          "no_data": 5,
+          "prompt_injection": 6,
+          "action_safety": 3
+        }
+      },
+      "recordedAt": "2026-09-07T15:17:52.616Z"
+    },
+    {
+      "id": "r5-ai-security-unit-and-bridge",
+      "area": "R5",
+      "status": "PASS",
+      "counts": {
+        "jest": {
+          "tests": 27,
+          "passed": 27
+        },
+        "pytest": {
+          "passed": 12,
+          "exit": 0
+        }
+      },
+      "recordedAt": "2026-09-07T15:17:54.570Z"
+    },
+    {
+      "id": "r6-deployed-gate",
+      "area": "R6",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "PILOT_BASE_URL not set — no real deployment reachable from this environment",
+        "unblockBy": "deploy to HTTPS host, set PILOT_BASE_URL + pilot session cookies (never stored), run scripts/phase-r/deployed-gate.mjs"
+      },
+      "recordedAt": "2026-09-07T15:17:54.607Z"
+    },
+    {
+      "id": "r6-pilot-safety-controls",
+      "area": "R6",
+      "status": "PASS",
+      "counts": {
+        "controlsPresent": 5,
+        "controlsExpected": 5,
+        "tests": 6
+      },
+      "controls": {
+        "killSwitch": "AI_KILL_SWITCH",
+        "allowlist": "PILOT_ORG_ALLOWLIST",
+        "bounds": "PILOT_MAX_REQUEST_TOKENS / PILOT_MAX_TOOL_ROUNDS + ai_budgets",
+        "mandatoryConfirmation": "server-side copilot_proposals (client cannot supply arguments)",
+        "reversibility": "docs/ops/pilot-runbook.md"
+      },
+      "note": "Controls exist and are unit-tested; their behaviour on the real deployment is verified only by r6-deployed-gate.",
+      "recordedAt": "2026-09-07T15:17:55.626Z"
+    },
+    {
+      "id": "r6-backup-restore",
+      "area": "R6",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "backups are operated by the database provider; no pg_dump/pg_restore or provider access here",
+        "unblockBy": "execute a provider restore into a scratch project, then run the post-restore checklist in docs/ops/pilot-runbook.md and attach output"
+      },
+      "recordedAt": "2026-09-07T15:17:55.627Z"
+    },
+    {
+      "id": "r6-billing",
+      "area": "R6",
+      "status": "NOT_IMPLEMENTED",
+      "detail": {
+        "reason": "No billing/subscription/payment system exists; licensing is an offline signed key (lib/license.ts). Pilot must be invoiced contractually."
+      },
+      "recordedAt": "2026-09-07T15:17:55.627Z"
+    },
+    {
+      "id": "r6-failure-injection",
+      "area": "R6",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "15 failure cases require faults on real infrastructure (provider down/401/429/500/timeout, DB down, storage down, scanner down, tracking down, metrics down). Application-level handling of scanner/proposal/AI-authority failures is unit-covered (supporting only).",
+        "unblockBy": "run scripts/phase-r/deployed-gate.mjs and operator fault injection per docs/ops/pilot-runbook.md"
+      },
+      "supporting": {
+        "unitTests": {
+          "passed": 53,
+          "failed": 0
+        }
+      },
+      "recordedAt": "2026-09-07T15:17:56.962Z"
+    },
+    {
+      "id": "r6-performance",
+      "area": "R6",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": {
+        "reason": "no production deployment; sandbox latency would be an invented baseline",
+        "unblockBy": "scripts/phase-r/deployed-gate.mjs records p50/p95/p99/error-rate per endpoint on the real host"
+      },
+      "recordedAt": "2026-09-07T15:17:56.962Z"
+    },
+    {
+      "id": "security-secret-scan",
+      "area": "security",
+      "status": "PASS",
+      "counts": {
+        "hits": 0
+      },
+      "hits": [],
+      "placeholderRule": "postgres://user:pass@ and ellipsis placeholders in UI hint text are not credentials",
+      "allowlisted": [
+        "tests/unit/observability.test.ts (synthetic fixtures)",
+        "docs/TEST_LICENSE_KEYS.txt (public-key-verifiable test licence tokens, no secret material)"
+      ],
+      "recordedAt": "2026-09-07T15:17:56.985Z"
+    },
+    {
+      "id": "security-dependency-audit",
+      "area": "security",
+      "status": "PASS",
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 5,
+        "critical": 0,
+        "total": 5
+      },
+      "items": [
+        {
+          "pkg": "@next/eslint-plugin-next",
+          "severity": "high",
+          "direct": false,
+          "fix": "eslint-config-next@16.3.4 (major)"
+        },
+        {
+          "pkg": "eslint-config-next",
+          "severity": "high",
+          "direct": true,
+          "fix": "eslint-config-next@16.3.4 (major)"
+        },
+        {
+          "pkg": "glob",
+          "severity": "high",
+          "direct": false,
+          "fix": "eslint-config-next@16.3.4 (major)"
+        },
+        {
+          "pkg": "next",
+          "severity": "high",
+          "direct": true,
+          "fix": "next@16.3.4 (major)"
+        },
+        {
+          "pkg": "postcss",
+          "severity": "high",
+          "direct": false,
+          "fix": "next@16.3.4 (major)"
+        }
+      ],
+      "note": "High findings are in next@14 (image optimizer DoS — only with remotePatterns wildcard, verify next.config), postcss via next, glob via eslint-config-next (dev-only). Fix requires major upgrade to Next 16 — out of Phase R scope; recorded as production risk.",
+      "recordedAt": "2026-09-07T15:17:59.274Z"
+    },
+    {
+      "id": "security-code-patterns",
+      "area": "security",
+      "status": "PASS",
+      "counts": {
+        "dangerouslySetInnerHTML": 1,
+        "clientControlledAuthz": 0,
+        "sensitiveDebugLogging": 0
+      },
+      "detail": {
+        "dangerouslySetInnerHTML": [
+          "app/layout.tsx:82:        <script dangerouslySetInnerHTML={{ __html: THEME_GUARD }} />"
+        ],
+        "note": "app/layout.tsx THEME_GUARD is a static, constant inline script (no interpolation) — accepted."
+      },
+      "recordedAt": "2026-09-07T15:17:59.300Z"
+    }
+  ],
+  "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED"
+}

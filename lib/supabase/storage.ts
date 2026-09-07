@@ -1,42 +1,40 @@
 "use client";
 
-import { createBrowserClient } from "@supabase/ssr";
-import { supabaseUrl, supabasePublishableKey } from "./env";
-
 /**
- * Browser-side resume upload to Supabase Storage.
+ * Browser-side resume upload.
  *
- * Files are stored under `candidate-resumes/<candidateId>/<filename>`. The
- * bucket must be created once (public) — see `supabase/storage/README.md`.
- * Returns the public URL so the caller can persist it on the candidate row.
+ * Phase R: resumes no longer go browser → public bucket. They are posted to
+ * the server pipeline (`/api/documents/upload`) which enforces authorization,
+ * file validation, quarantine → malware scan → accept/reject, tenant-scoped
+ * private keys and audit. The value persisted on the candidate row is the
+ * document id path (`/api/documents/<id>/download`), which mints a short-lived
+ * signed URL for authorized users only — never a public URL.
  */
 
-const RESUME_BUCKET = "candidate-resumes";
-
 export function storageConfigured(): boolean {
-  return Boolean(supabaseUrl() && supabasePublishableKey());
+  // The server decides whether storage is enabled; the client always offers
+  // the control and surfaces the server's error if it is not.
+  return true;
 }
 
-export async function uploadResume(
-  candidateId: string,
-  file: File,
-): Promise<string> {
-  const url = supabaseUrl();
-  const key = supabasePublishableKey();
-  if (!url || !key) {
-    throw new Error("Supabase storage is not configured.");
+export class ResumeUploadError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
   }
+}
 
-  const supabase = createBrowserClient(url, key);
-  const path = `${candidateId}/${file.name.replace(/[^\w.\-]+/g, "_")}`;
-
-  const { error } = await supabase.storage
-    .from(RESUME_BUCKET)
-    .upload(path, file, { upsert: true, cacheControl: "3600" });
-  if (error) {
-    throw new Error(`Upload failed: ${error.message}`);
+export async function uploadResume(candidateId: string, file: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("ownerType", "candidate");
+  form.append("ownerId", candidateId);
+  const res = await fetch("/api/documents/upload", { method: "POST", body: form });
+  const body = (await res.json().catch(() => null)) as { ok?: boolean; code?: string; error?: string; data?: { id: string; status: string } } | null;
+  if (!res.ok || !body?.ok || !body.data) {
+    throw new ResumeUploadError(body?.code ?? `HTTP_${res.status}`, body?.error ?? "Upload failed.");
   }
-
-  const { data } = supabase.storage.from(RESUME_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return `/api/documents/${body.data.id}/download`;
 }
