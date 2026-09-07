@@ -2,7 +2,7 @@
   "gate": "R6-deployed",
   "status": "BLOCKED_EXTERNAL",
   "reason": "PILOT_BASE_URL not set — no real deployment reachable from this environment",
-  "startedAt": "2026-09-07T15:17:54.601Z",
-  "finishedAt": "2026-09-07T15:17:54.602Z",
+  "startedAt": "2026-09-07T16:27:11.303Z",
+  "finishedAt": "2026-09-07T16:27:11.303Z",
   "checks": []
 }

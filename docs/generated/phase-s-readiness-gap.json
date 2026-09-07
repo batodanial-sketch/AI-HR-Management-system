@@ -1,0 +1,160 @@
+{
+  "phase": "S",
+  "generatedAt": "2026-09-07T16:27:25.260Z",
+  "staleGuard": {
+    "gitHead": "ca94bd6dedcd79ea22d35aa4894c1144cec5a56e",
+    "branch": "arena/01a07c94-ai-hr-management-system",
+    "buildId": "ca94bd6dedcd79ea22d35aa4894c1144cec5a56e",
+    "sourceFingerprint": {
+      "files": 664,
+      "sha256": "e3193ddea0392437798e29dd265c51abdae612fd6076939d75558182742a6041"
+    },
+    "verifyCommand": "node scripts/phase-s-evidence.mjs --verify"
+  },
+  "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+  "summary": {
+    "gates": 41,
+    "pass": 20,
+    "fail": 0,
+    "blockedExternal": 20,
+    "notImplemented": 1
+  },
+  "externalBlockers": [
+    {
+      "gate": "s1-supabase-project",
+      "area": "S1",
+      "reason": "no dedicated production/controlled-pilot Supabase project provisioned and reachable in this environment (no project URL/keys; egress to supabase.co is blocked)",
+      "unblockBy": "Provision the pilot Supabase project, set NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY + SUPABASE_PROJECT_REF, apply supabase/migrations via supabase db push, then re-run this generator"
+    },
+    {
+      "gate": "s1-auth-gate",
+      "area": "S1",
+      "reason": "Auth flows (signup/invite, login, session create/refresh/logout, expired/invalid session, unauthorized vs authorized API request) need Supabase Auth + a deployed app; neither is reachable here",
+      "unblockBy": "run the S1 auth checklist from docs/PRODUCTION_PILOT_RUNBOOK.md against the deployed pilot with HR_ADMIN/MANAGER/EMPLOYEE users and attach results"
+    },
+    {
+      "gate": "s1-rls-gate",
+      "area": "S1",
+      "reason": "RLS suite passed 3/3 against a real PostgreSQL 18.4 instance in this sandbox (canonical 17, rls 14, lifecycle 12, concurrency 6, proposal 15, storage-rls 12 = 76 checks); the brief requires this gate against the actual Supabase project (real auth.uid() via JWTs, storage schema, hosted extensions)",
+      "unblockBy": "DATABASE_URL=<supabase pooler url> node scripts/db/authz-rls-suite.mjs, then re-run this generator"
+    },
+    {
+      "gate": "s1-migrations",
+      "area": "S1",
+      "reason": "migrations were applied to a local real PostgreSQL instance (supporting only), not to the Supabase project",
+      "unblockBy": "supabase db push against the pilot project, verify supabase_migrations.schema_migrations and post-apply schema, then re-run"
+    },
+    {
+      "gate": "s2-real-bucket-suite",
+      "area": "S2",
+      "reason": "no real private bucket or storage credentials reachable from this environment",
+      "unblockBy": "deploy with STORAGE_PROVIDER=supabase + private bucket (public=false), then execute the 20-case storage security matrix below against the real bucket and record verdicts"
+    },
+    {
+      "gate": "s2-deployed-data-migration",
+      "area": "S2",
+      "reason": "legacy rows/objects created before Phase R live in the real project and cannot be enumerated from this sandbox",
+      "unblockBy": "in the Supabase project: confirm bucket public=false; migrate any pre-Phase-R resume rows to the documents registry; invalidate legacy URLs; verify unauthenticated GET denied, authorized tenant GET allowed, cross-tenant GET denied (re-run s14-deployed)"
+    },
+    {
+      "gate": "s3-real-scanner-provider",
+      "area": "S3",
+      "reason": "no malware scanning service reachable (no credentials; egress to scanner providers blocked)",
+      "unblockBy": "deploy with MALWARE_SCANNER=clamav-rest|webhook + URL/token and execute the S3 cases below against the real deployment"
+    },
+    {
+      "gate": "s4-metrics-backend",
+      "area": "S4",
+      "reason": "no metrics backend (Prometheus/OTLP) is reachable or configured with credentials here",
+      "unblockBy": "set METRICS_BACKEND=prometheus|otlp + METRICS_TOKEN / OTEL_EXPORTER_OTLP_ENDPOINT, verify actual delivery of request count/latency/status/4xx/5xx/AI count/AI latency/AI failure/tool calls/proposal creation/proposal execution failure/rate limiting/storage failures/scanner failures, then run the S4 alert gate"
+    },
+    {
+      "gate": "s4-alert-firing",
+      "area": "S4",
+      "reason": "no alert manager / metrics backend reachable to fire real alerts",
+      "unblockBy": "connect Prometheus+Alertmanager (or OTLP sink + alert engine), load docs/ops/alerts.prometheus.yml, trigger one controlled condition per rule (sustained 5xx, AI failure, AI latency, database failure, storage failure, malware scanner unavailable, rate-limit spike, proposal execution failure, application availability) and record event → metric → alert fired (alert ids) for all nine"
+    },
+    {
+      "gate": "s5-error-tracking-backend",
+      "area": "S5",
+      "reason": "no error-tracking SaaS reachable (ERROR_TRACKING_DSN/WEBHOOK unset in this environment; egress to ingest endpoints blocked)",
+      "unblockBy": "set ERROR_TRACKING_DSN (Sentry-compatible), trigger POST /api/system/error-test, verify: event + stack trace + request id + useful context arrive; secrets scrubbed; provider credentials/authorization headers/raw documents/excessive PII absent; deduplication works; synthetic events clearly marked"
+    },
+    {
+      "gate": "s6-ai-provider",
+      "area": "S6",
+      "reason": "no AI provider reachable (no LLM_API_KEY; egress to openai/groq/anthropic/gemini blocked)",
+      "unblockBy": "configure LLM_PROVIDER + LLM_API_KEY on the Python bridge, then execute the S6 provider matrix below and record results"
+    },
+    {
+      "gate": "s7-cognitive-real-model",
+      "area": "S7",
+      "reason": "the real-model 48-case cognitive run cannot execute: no AI bridge/provider reachable from this environment",
+      "unblockBy": "run the Python bridge with LLM_PROVIDER/LLM_API_KEY, then AI_BRIDGE_URL=... BRIDGE_SECRET_KEY=... node scripts/ai/cognitive-gate.mjs, then re-run this generator"
+    },
+    {
+      "gate": "s8-agent-action-deployed",
+      "area": "S8",
+      "reason": "the real agent-action matrix needs a deployed pilot org with live sessions",
+      "unblockBy": "execute the S8 matrix in docs/PRODUCTION_PILOT_RUNBOOK.md against the HTTPS deployment: read-only request, consequential request, forbidden request, cross-tenant request, forged actor, forged organization, unauthorized approver, duplicate approval, concurrent approval, duplicate execution → exactly one execution"
+    },
+    {
+      "gate": "s9-kill-switch-deployed",
+      "area": "S9",
+      "reason": "kill-switch toggling must be demonstrated against the real deployment",
+      "unblockBy": "set AI_KILL_SWITCH=1 on the deployment: every AI/agent endpoint returns 503 AI_DISABLED before any provider call and /api/ai/status reports killSwitch:true; existing completed actions remain auditable; then set back to 0 and verify recovery"
+    },
+    {
+      "gate": "s10-https-deployment",
+      "area": "S10",
+      "reason": "no real HTTPS host/domain/credentials reachable from this environment",
+      "unblockBy": "deploy the production build behind HTTPS with secure cookies + all production env vars (Supabase, private storage, malware scanner, metrics, error tracking, AI provider), then re-run this generator with PILOT_BASE_URL set and execute the S10/S12/S13/S14 deployed gates"
+    },
+    {
+      "gate": "s10-deployed-smoke",
+      "area": "S10",
+      "reason": "the 20-step external-client deployment smoke (open app → login → refresh → logout → login → dashboard → employees → recruitment → knowledge search → Intelligence/Recruitment agents → proposal create/approve/execute → receipt → audit → resume upload/scan/retrieve → unauthorized-retrieval denial) requires the HTTPS deployment and pilot users",
+      "unblockBy": "execute the 20-step smoke test in docs/PRODUCTION_PILOT_RUNBOOK.md against the real deployment and record exact statuses/results"
+    },
+    {
+      "gate": "s11-provider-backup-restore",
+      "area": "S11",
+      "reason": "backups are operated by the database provider (Supabase daily backups / PITR); no provider console access or restore capability exists in this environment, so a provider restore has NOT been executed — migration replay is not claimed as a restore",
+      "unblockBy": "in the Supabase dashboard confirm backup exists + retention configured; execute a provider restore into a scratch project; then run the post-restore checklist in docs/PRODUCTION_PILOT_RUNBOOK.md (critical schema survives, RLS survives, application reconnects, critical pilot data survives) and attach provider output"
+    },
+    {
+      "gate": "s12-performance",
+      "area": "S12",
+      "reason": "no real HTTPS deployment; a sandbox latency baseline would be invented data and is not recorded",
+      "unblockBy": "run the Phase R deployed performance harness against the real deployment and record p50/p95/p99/error rate/rate-limit behaviour per endpoint: health, AI status, governance, employees, agent, proposal, storage, upload, download"
+    },
+    {
+      "gate": "s13-failure-injection",
+      "area": "S13",
+      "reason": "the 14-case fault matrix requires fault injection against the real deployment (AI 401/429/500/timeout, database outage, storage outage, scanner outage, metrics outage, error-tracker outage, expired session, unauthorized user, cross-tenant access, duplicate approval, duplicate execution)",
+      "unblockBy": "run the S13 matrix in docs/PRODUCTION_PILOT_RUNBOOK.md against the real deployment and record safe recovery for each case"
+    },
+    {
+      "gate": "s14-deployed",
+      "area": "S14",
+      "reason": "the final security gate must run against the deployed environment (live HTTP, real bucket, real scanner, real sessions)",
+      "unblockBy": "after deployment verify and record: zero secret leakage, zero public resume access, zero cross-tenant access, zero client-controlled authorization, zero AI authorization bypass, zero proposal authorization bypass, zero malware bypass, zero scanner-unavailable acceptance, zero sensitive debug output"
+    }
+  ],
+  "internalBlockers": [],
+  "notImplemented": [
+    {
+      "gate": "s15-billing",
+      "reason": "No billing/subscription/payment system exists (licensing is an offline signed key, lib/license.ts).",
+      "decision": "PILOT IS NON-BILLING / MANUALLY CONTROLLED — the controlled pilot is contractually invoiced; automated billing is NOT required for this pilot and is therefore not silently marked complete."
+    }
+  ],
+  "productionRisks": [
+    "External infrastructure is not yet provisioned: Supabase project + auth + hosted RLS gate, private bucket + 20-case matrix, malware scanner, metrics + alert firing, error tracking, AI provider + 48-case cognitive run, HTTPS deployment, provider backup/restore, deployed performance/failure-injection/security gates. See externalBlockers; each has an executable unblock step.",
+    "Pre-existing migration drift (202608150003–0006, 4 files / 4 statements) reproduces on a from-scratch replay; reconciliation migration 20260817001200 absorbs it. Supabase project must be created from the linked project history, post-apply schema verified — drift documented, not rewritten (compatibility decision in s1-migrations).",
+    "next@14.2.x carries high-severity advisories (image optimizer DoS, postcss); remediation is a major upgrade — schedule before GA, restrict images.remotePatterns meanwhile.",
+    "Alert rules (docs/ops/alerts.prometheus.yml) are defined but unproven until a real alert fires end-to-end on the connected backend.",
+    "Cognitive thresholds are declared (unchanged) but the real-model run has not executed; no score exists and none was fabricated.",
+    "Legacy resume objects/rows created before Phase R in the real project (if any) must be migrated/invalidated before launch; the code base itself has zero public-URL paths (s2 gates PASS)."
+  ]
+}
