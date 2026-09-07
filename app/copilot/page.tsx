@@ -232,7 +232,8 @@ export default function CopilotPage() {
       body: {
         messages: Array<{ role: "user" | "assistant"; content: string }>;
         tools: string[];
-        confirmToolCall?: { name: string; arguments: Record<string, unknown> };
+        approveProposal?: string;
+        denyProposal?: string;
       },
       streamingId: string,
       controller: AbortController,
@@ -295,6 +296,7 @@ export default function CopilotPage() {
                   status: call.confirmationRequired ? "pending" : "executing",
                   confirmationRequired: call.confirmationRequired,
                   description: call.description,
+                  proposalId: call.proposalId,
                 },
               ];
             });
@@ -411,6 +413,10 @@ export default function CopilotPage() {
 
   const approveStep = React.useCallback(
     (step: ToolStepState) => {
+      if (!step.proposalId) {
+        toast({ variant: "info", title: "Cannot approve", description: "This action has no server-side proposal. Ask again." });
+        return;
+      }
       const streamingId = `msg-${Date.now()}-a`;
       setSteps((prev) =>
         prev.map((item) =>
@@ -436,13 +442,14 @@ export default function CopilotPage() {
         {
           messages: history,
           tools: COPILOT_TOOL_NAMES,
-          confirmToolCall: { name: step.name, arguments: step.arguments },
+          // Only the proposal id travels — arguments were frozen server-side.
+          approveProposal: step.proposalId,
         },
         streamingId,
         controller,
       );
     },
-    [messages, runAgentStream],
+    [messages, runAgentStream, toast],
   );
 
   const denyStep = React.useCallback(
@@ -450,6 +457,15 @@ export default function CopilotPage() {
       setSteps((prev) =>
         prev.map((item) => (item.id === step.id ? { ...item, status: "denied" } : item)),
       );
+      if (step.proposalId) {
+        // Record the human decision server-side (best-effort; the proposal
+        // expires on its own if this never arrives).
+        void fetch("/api/ai/copilot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: "deny" }], denyProposal: step.proposalId }),
+        }).catch(() => undefined);
+      }
       toast({
         variant: "info",
         title: "Action denied",

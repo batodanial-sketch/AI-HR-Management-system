@@ -420,6 +420,111 @@ async function main() {
         await Promise.all(conns.map((c) => c.end()));
       }
     }
+
+    /* ── proposal lifecycle (real functions + RLS) ─────────────────────── */
+    {
+      const create = (user, org, tool, args) =>
+        asUser(admin, user, async (c) => (await c.query("SELECT * FROM public.copilot_proposal_create($1,$2,$3::jsonb,$4)", [org, tool, JSON.stringify(args), "req-1"])).rows[0]);
+      const claim = (conn, user, id) => tryAsUser(conn, user, async (c) => (await c.query("SELECT * FROM public.copilot_proposal_claim($1)", [id])).rows[0]);
+      const finish = (user, id, ok) => tryAsUser(admin, user, async (c) => (await c.query("SELECT * FROM public.copilot_proposal_finish($1,$2,$3::jsonb,$4::jsonb)", [id, ok, "{}", JSON.stringify({ r: 1 })])).rows[0]);
+
+      const p1 = await create(ids.adminA, ids.orgA, "create_asset", { assetTag: "LT-1" });
+      record("proposal", "creation: pending row with frozen arguments + hash", p1.status === "pending" && p1.arguments_hash.length === 64 && p1.actor_id === ids.adminA);
+      const forged = await tryAsUser(admin, ids.adminA, (c) => c.query("SELECT * FROM public.copilot_proposal_create($1,$2,$3::jsonb,$4)", [ids.orgB, "create_asset", "{}", null]));
+      record("proposal", "creation for a foreign tenant is refused", !forged.ok, forged.error);
+      const direct = await tryAsUser(admin, ids.adminA, (c) => c.query("UPDATE public.copilot_proposals SET status='executed' WHERE id=$1 RETURNING id", [p1.id]));
+      record("proposal", "direct status writes are impossible for sessions (functions only)", !direct.ok || direct.value.rowCount === 0, direct.ok ? direct.value.rowCount : direct.error);
+      const seenB = await count(ids.ownerB, "SELECT count(*) n FROM public.copilot_proposals WHERE id = $1", [p1.id]);
+      record("proposal", "inspection: foreign tenant sees zero rows", seenB === 0);
+      const seenEmp = await count(ids.memberA, "SELECT count(*) n FROM public.copilot_proposals WHERE id = $1", [p1.id]);
+      record("proposal", "inspection: same-tenant EMPLOYEE cannot read another actor's proposal", seenEmp === 0);
+      const empClaim = await claim(admin, ids.memberA, p1.id);
+      record("proposal", "approval by EMPLOYEE denied", !empClaim.ok, empClaim.error);
+      const foreignClaim = await claim(admin, ids.ownerB, p1.id);
+      record("proposal", "approval by foreign owner denied", !foreignClaim.ok, foreignClaim.error);
+      const ok1 = await claim(admin, ids.adminA, p1.id);
+      record("proposal", "approval by HR_ADMIN claims (pending → executing)", ok1.ok && ok1.value.status === "executing");
+      const again = await claim(admin, ids.managerA, p1.id);
+      record("proposal", "duplicate approval refused after claim", !again.ok);
+      const fin = await finish(ids.adminA, p1.id, true);
+      record("proposal", "execution: finish writes receipt (executing → executed)", fin.ok && fin.value.status === "executed" && fin.value.receipt.r === 1);
+      const fin2 = await finish(ids.adminA, p1.id, true);
+      record("proposal", "duplicate execution refused (terminal)", !fin2.ok);
+      const finOther = await (async () => { const p = await create(ids.adminA, ids.orgA, "create_asset", {}); await claim(admin, ids.adminA, p.id); return finish(ids.managerA, p.id, true); })();
+      record("proposal", "finish by a different actor than the approver is refused", !finOther.ok);
+
+      // authorization re-check at approval time
+      const p2 = await create(ids.adminA, ids.orgA, "create_asset", {});
+      await admin.query("UPDATE public.memberships SET role='member' WHERE user_id=$1", [ids.adminA]);
+      const downgraded = await claim(admin, ids.adminA, p2.id);
+      record("proposal", "role downgrade after creation → approval denied", !downgraded.ok);
+      await admin.query("UPDATE public.memberships SET role='admin' WHERE user_id=$1", [ids.adminA]);
+      const p3 = await create(ids.adminA, ids.orgA, "create_asset", {});
+      await admin.query("DELETE FROM public.memberships WHERE user_id=$1", [ids.adminA]);
+      const revoked = await claim(admin, ids.adminA, p3.id);
+      record("proposal", "membership revoked after creation → approval denied", !revoked.ok);
+      await admin.query("INSERT INTO public.memberships (user_id, organization_id, role) VALUES ($1,$2,'admin')", [ids.adminA, ids.orgA]);
+
+      // expiry
+      const p4 = await create(ids.adminA, ids.orgA, "create_asset", {});
+      await admin.query("UPDATE public.copilot_proposals SET expires_at = now() - interval '1 second' WHERE id=$1", [p4.id]);
+      const expired = await claim(admin, ids.adminA, p4.id);
+      const p4status = (await admin.query("SELECT status FROM public.copilot_proposals WHERE id=$1", [p4.id])).rows[0].status;
+      record("proposal", "expired proposal refused (not executing) and marked expired", (!expired.ok || expired.value.status !== "executing") && p4status === "expired", { p4status });
+
+      // concurrency: N simultaneous approvals → exactly one winner
+      const p5 = await create(ids.adminA, ids.orgA, "create_asset", {});
+      const actors = [ids.adminA, ids.managerA, ids.owner, ids.adminA, ids.managerA, ids.owner];
+      const conns = await Promise.all(actors.map(() => client()));
+      try {
+        const outs = await Promise.all(conns.map((c, i) => claim(c, actors[i], p5.id)));
+        const winners = outs.filter((o) => o.ok).length;
+        record("concurrency", "simultaneous proposal approvals → exactly one winner", winners === 1, { winners });
+      } finally {
+        await Promise.all(conns.map((c) => c.end()));
+      }
+    }
+
+    /* ── document_files (private registry) RLS ─────────────────────────── */
+    {
+      const key = (org, id) => `organization/${org}/documents/${id}.pdf`;
+      const insertDoc = (user, org, id, uploadedBy = user) =>
+        tryAsUser(admin, user, (c) =>
+          c.query(
+            `INSERT INTO public.document_files (id, organization_id, uploaded_by, owner_type, original_name, content_type, size_bytes, sha256, storage_bucket, storage_key, status)
+             VALUES ($1,$2,$3,'company','cv.pdf','application/pdf',10,'abc','documents',$4,'quarantined') RETURNING id`,
+            [id, org, uploadedBy, key(org, id)],
+          ),
+        );
+      const d1 = randomUUID();
+      record("storage-rls", "MANAGER+ can register a quarantined document in own tenant", (await insertDoc(ids.managerA, ids.orgA, d1)).ok);
+      const byEmp = await insertDoc(ids.memberA, ids.orgA, randomUUID());
+      record("storage-rls", "EMPLOYEE cannot register documents", !byEmp.ok, byEmp.error);
+      const crossIns = await insertDoc(ids.ownerB, ids.orgA, randomUUID());
+      record("storage-rls", "cross-tenant document insert denied", !crossIns.ok, crossIns.error);
+      const spoofUploader = await insertDoc(ids.managerA, ids.orgA, randomUUID(), ids.owner);
+      record("storage-rls", "uploaded_by cannot be spoofed", !spoofUploader.ok, spoofUploader.error);
+      const badKey = await tryAsUser(admin, ids.managerA, (c) =>
+        c.query(
+          `INSERT INTO public.document_files (organization_id, uploaded_by, owner_type, original_name, content_type, size_bytes, sha256, storage_bucket, storage_key)
+           VALUES ($1,$2,'company','x.pdf','application/pdf',1,'a','documents',$3)`,
+          [ids.orgA, ids.managerA, key(ids.orgB, randomUUID())],
+        ),
+      );
+      record("storage-rls", "object key outside the tenant prefix is rejected (CHECK)", !badKey.ok, badKey.error);
+      record("storage-rls", "cross-tenant document read returns zero rows", (await count(ids.ownerB, "SELECT count(*) n FROM public.document_files WHERE id=$1", [d1])) === 0);
+      record("storage-rls", "same-tenant read works", (await count(ids.memberA, "SELECT count(*) n FROM public.document_files WHERE id=$1", [d1])) === 1);
+      const crossUpd = await tryAsUser(admin, ids.ownerB, (c) => c.query("UPDATE public.document_files SET status='clean' WHERE id=$1 RETURNING id", [d1]));
+      record("storage-rls", "cross-tenant update affects zero rows", !crossUpd.ok || crossUpd.value.rowCount === 0);
+      const empUpd = await tryAsUser(admin, ids.memberA, (c) => c.query("UPDATE public.document_files SET status='clean' WHERE id=$1 RETURNING id", [d1]));
+      record("storage-rls", "EMPLOYEE cannot promote quarantined → clean", !empUpd.ok || empUpd.value.rowCount === 0);
+      const mgrDel = await tryAsUser(admin, ids.managerA, (c) => c.query("DELETE FROM public.document_files WHERE id=$1 RETURNING id", [d1]));
+      record("storage-rls", "MANAGER cannot hard-delete (HR_ADMIN+ only)", !mgrDel.ok || mgrDel.value.rowCount === 0);
+      const crossDel = await tryAsUser(admin, ids.ownerB, (c) => c.query("DELETE FROM public.document_files WHERE id=$1 RETURNING id", [d1]));
+      record("storage-rls", "cross-tenant delete affects zero rows", !crossDel.ok || crossDel.value.rowCount === 0);
+      const adminDel = await tryAsUser(admin, ids.adminA, (c) => c.query("DELETE FROM public.document_files WHERE id=$1 RETURNING id", [d1]));
+      record("storage-rls", "HR_ADMIN delete in own tenant works", adminDel.ok && adminDel.value.rowCount === 1);
+    }
   } finally {
     await cleanup(admin, ids).catch((error) => console.error("cleanup failed:", error.message));
     await admin.end();

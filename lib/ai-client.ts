@@ -20,6 +20,8 @@ export interface ToolCallEvent {
   name: string;
   arguments: Record<string, unknown>;
   confirmationRequired: boolean;
+  /** Server-side proposal id for write tools (approval resends only this). */
+  proposalId?: string;
   description?: string;
   status?: "executing";
 }

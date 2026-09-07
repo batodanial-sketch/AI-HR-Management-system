@@ -33,6 +33,7 @@ export interface ToolStepState {
   data?: unknown;
   confirmationRequired?: boolean;
   description?: string;
+  proposalId?: string;
 }
 
 const TOOL_LABELS: Record<string, string> = {

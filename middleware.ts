@@ -101,7 +101,29 @@ function applyEdgeLimit(
   );
 }
 
+const REQUEST_ID_RE = /^[A-Za-z0-9._:-]{8,128}$/;
+
+/**
+ * Correlation id: honour a well-formed inbound `x-request-id` (from the edge
+ * proxy / load balancer), otherwise mint one. It is threaded to route handlers
+ * via the request headers and echoed on every response so error-tracking
+ * events, audit rows and access logs can be joined.
+ */
+function resolveRequestId(request: NextRequest): string {
+  const inbound = request.headers.get("x-request-id");
+  if (inbound && REQUEST_ID_RE.test(inbound)) return inbound;
+  return crypto.randomUUID();
+}
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const requestId = resolveRequestId(request);
+  request.headers.set("x-request-id", requestId);
+  const response = await handle(request, requestId);
+  response.headers.set("x-request-id", requestId);
+  return response;
+}
+
+async function handle(request: NextRequest, requestId: string): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   // Expose the resolved pathname to server components (root layout) so it can
@@ -109,6 +131,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // every `next()` below.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
+  requestHeaders.set("x-request-id", requestId);
   const forwarded = { request: { headers: requestHeaders } };
 
   // ── Edge Shield (IP-keyed categories — runs even in demo mode) ─────────

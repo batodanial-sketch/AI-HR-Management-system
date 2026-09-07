@@ -1,0 +1,59 @@
+# Fluxentiq — Phase R alert rules (Prometheus / Grafana Alerting compatible).
+# Metric names match lib/observability/metrics.ts. Every alert is actionable
+# and links to a runbook section in docs/ops/pilot-runbook.md.
+groups:
+  - name: fluxentiq-pilot
+    rules:
+      - alert: SustainedHttp5xx
+        expr: sum(rate(http_errors_total{family="5xx"}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001) > 0.02
+        for: 10m
+        labels: { severity: page }
+        annotations: { summary: ">2% 5xx for 10m", runbook: "pilot-runbook.md#sustained-5xx" }
+
+      - alert: AiProviderFailures
+        expr: sum(rate(ai_failures_total{reason=~"unauthorized|server_error|unavailable"}[5m])) > 0.05
+        for: 5m
+        labels: { severity: page }
+        annotations: { summary: "AI provider failing (auth/5xx/unreachable)", runbook: "pilot-runbook.md#ai-provider-failure" }
+
+      - alert: AiLatencyDegraded
+        expr: histogram_quantile(0.95, sum(rate(ai_request_duration_ms_bucket[10m])) by (le)) > 10000
+        for: 15m
+        labels: { severity: warn }
+        annotations: { summary: "AI p95 > 10s for 15m", runbook: "pilot-runbook.md#ai-latency" }
+
+      - alert: DatabaseFailure
+        expr: up{job="fluxentiq-ready"} == 0 or probe_success{job="fluxentiq-ready"} == 0
+        for: 3m
+        labels: { severity: page }
+        annotations: { summary: "/api/system/ready failing (database or dependency down)", runbook: "pilot-runbook.md#database-failure" }
+
+      - alert: StorageFailures
+        expr: sum(rate(storage_failures_total{reason=~"unavailable"}[5m])) > 0
+        for: 5m
+        labels: { severity: page }
+        annotations: { summary: "Object storage failing", runbook: "pilot-runbook.md#storage-failure" }
+
+      - alert: MalwareScannerUnavailable
+        expr: sum(rate(malware_scans_total{verdict=~"unavailable|timeout|error"}[10m])) > 0 and sum(rate(malware_scans_total{verdict="clean"}[10m])) == 0
+        for: 10m
+        labels: { severity: page }
+        annotations: { summary: "Scanner unavailable — uploads are being refused (fail closed)", runbook: "pilot-runbook.md#malware-scanner-unavailable" }
+
+      - alert: RateLimitSpike
+        expr: sum(rate(rate_limit_events_total[5m])) > 1
+        for: 10m
+        labels: { severity: warn }
+        annotations: { summary: ">1 rate-limit rejection/s for 10m", runbook: "pilot-runbook.md#rate-limit-spike" }
+
+      - alert: ProposalExecutionFailures
+        expr: sum(rate(copilot_proposal_failures_total{stage=~"execute|integrity|claim"}[15m])) > 0.01
+        for: 15m
+        labels: { severity: page }
+        annotations: { summary: "Copilot proposal executions failing", runbook: "pilot-runbook.md#proposal-failures" }
+
+      - alert: AuthzDenialSpike
+        expr: sum(rate(authz_denials_total[5m])) > 0.5
+        for: 10m
+        labels: { severity: warn }
+        annotations: { summary: "Authorization denials spiking (misconfig or probing)", runbook: "pilot-runbook.md#authz-denials" }
