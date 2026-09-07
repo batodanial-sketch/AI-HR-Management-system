@@ -9,12 +9,10 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react"],
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
+    // Every <Image> in the app is `unoptimized` (brand logos / previews), so
+    // the optimizer endpoint is disabled outright. This also removes the
+    // wildcard remotePatterns exposure (GHSA: image optimizer DoS).
+    unoptimized: true,
   },
   async headers() {
     return [

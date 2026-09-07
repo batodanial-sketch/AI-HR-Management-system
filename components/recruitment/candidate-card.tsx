@@ -38,8 +38,11 @@ export function CandidateCard({
     }
     setUploading(true);
     try {
-      const publicUrl = await uploadResume(candidate.id, file);
-      await updateCandidateResume(candidate.id, publicUrl);
+      // Server pipeline: authz → validate → quarantine → scan → accept.
+      const documentPath = await uploadResume(candidate.id, file);
+      await updateCandidateResume(candidate.id, documentPath);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Resume upload failed.");
     } finally {
       setUploading(false);
     }

@@ -80,6 +80,7 @@ export async function resetDatabase(client) {
   await client.query("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;");
   await client.query("DROP SCHEMA IF EXISTS auth CASCADE;");
   await client.query("DROP SCHEMA IF EXISTS extensions CASCADE;");
+  await client.query("DROP SCHEMA IF EXISTS supabase_migrations CASCADE;");
   await client.query("GRANT ALL ON SCHEMA public TO public;");
 }
 
@@ -138,16 +139,33 @@ export function splitSql(sql) {
  *                     file and returned (used to verify schemas whose chain
  *                     has pre-existing ordering defects).
  */
+const LEDGER_SQL = `
+CREATE SCHEMA IF NOT EXISTS supabase_migrations;
+CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (
+  version text PRIMARY KEY,
+  name text,
+  applied_at timestamptz NOT NULL DEFAULT now()
+);`;
+
 export async function applyMigrations(client, { log = () => {}, mode = "strict" } = {}) {
   await client.query(AUTH_SHIM);
+  await client.query(LEDGER_SQL);
   const applied = [];
+  const skipped = [];
   const failures = [];
+  const ledger = new Set((await client.query("SELECT version FROM supabase_migrations.schema_migrations")).rows.map((r) => r.version));
   for (const file of migrationFiles()) {
+    const version = file.split("_")[0];
+    if (ledger.has(version)) {
+      skipped.push(file);
+      continue;
+    }
     const sql = neutralizeUnavailableExtensions(readFileSync(join(MIGRATIONS_DIR, file), "utf8"));
     if (mode === "strict") {
       try {
         await client.query("BEGIN");
         await client.query(sql);
+        await client.query("INSERT INTO supabase_migrations.schema_migrations(version, name) VALUES ($1, $2)", [version, file]);
         await client.query("COMMIT");
         applied.push(file);
         log(`applied ${file}`);
@@ -166,13 +184,14 @@ export async function applyMigrations(client, { log = () => {}, mode = "strict" 
       }
     }
     applied.push(file);
+    await client.query("INSERT INTO supabase_migrations.schema_migrations(version, name) VALUES ($1, $2) ON CONFLICT DO NOTHING", [version, file]);
     if (fileFailures.length > 0) failures.push({ file, failures: fileFailures });
     log(`${fileFailures.length ? "applied-with-errors" : "applied"} ${file}`);
   }
   await client.query("GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;");
   await client.query("GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;");
   await client.query("GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;");
-  return { applied, failures };
+  return { applied, skipped, failures };
 }
 
 export async function withClient(fn) {
@@ -193,8 +212,25 @@ if (isMain) {
     if (cmd === "reset" || cmd === "migrate") {
       if (cmd === "reset") await resetDatabase(client);
       const result = await applyMigrations(client, { log: (m) => console.log(m), mode });
-      console.log(JSON.stringify({ ok: result.failures.length === 0, applied: result.applied.length, failures: result.failures }));
+      console.log(JSON.stringify({ ok: result.failures.length === 0, applied: result.applied.length, skipped: result.skipped.length, failures: result.failures }));
       if (result.failures.length > 0) process.exitCode = 2;
+    } else if (cmd === "schema-hash") {
+      // Deterministic hash over the public schema definition (tables, columns,
+      // constraints, indexes, policies, functions, triggers, grants).
+      const { rows } = await client.query(`
+        select string_agg(line, E'\n' order by line) as def from (
+          select format('col %s.%s %s %s %s', table_name, column_name, data_type, is_nullable, coalesce(column_default,'')) line from information_schema.columns where table_schema='public'
+          union all select format('con %s %s', conrelid::regclass, pg_get_constraintdef(oid)) from pg_constraint where connamespace='public'::regnamespace
+          union all select format('idx %s', indexdef) from pg_indexes where schemaname='public'
+          union all select format('pol %s %s %s %s %s %s', tablename, policyname, permissive, cmd, coalesce(qual,''), coalesce(with_check,'')) from pg_policies where schemaname='public'
+          union all select format('fn %s %s', p.oid::regprocedure, md5(pg_get_functiondef(p.oid))) from pg_proc p where p.pronamespace='public'::regnamespace and p.prokind='f'
+          union all select format('trg %s %s', tgrelid::regclass, pg_get_triggerdef(oid)) from pg_trigger where not tgisinternal and tgrelid in (select oid from pg_class where relnamespace='public'::regnamespace)
+          union all select format('rls %s %s %s', relname, relrowsecurity, relforcerowsecurity) from pg_class where relnamespace='public'::regnamespace and relkind='r'
+          union all select format('grant %s %s %s', table_name, grantee, privilege_type) from information_schema.role_table_grants where table_schema='public'
+        ) s`);
+      const { createHash } = await import("node:crypto");
+      const def = rows[0]?.def ?? "";
+      console.log(JSON.stringify({ hash: createHash("sha256").update(def).digest("hex"), lines: def ? def.split("\n").length : 0 }));
     } else {
       throw new Error(`unknown command ${cmd}`);
     }

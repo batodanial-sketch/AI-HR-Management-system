@@ -1,0 +1,97 @@
+{
+  "phase": "R",
+  "generatedAt": "2026-09-07T15:17:59.321Z",
+  "staleGuard": {
+    "gitHead": "d754b2403ff7db64a8b42779f2b94434495f5e0c",
+    "branch": "arena/01a076d5-ai-hr-management-system",
+    "buildId": "d754b2403ff7db64a8b42779f2b94434495f5e0c",
+    "sourceFingerprint": {
+      "files": 662,
+      "sha256": "88de15305df64bd3f047322d337483d7c6ba67ad1c19b6bfaa47a12c5037f5fb"
+    },
+    "verifyCommand": "node scripts/phase-r-evidence.mjs --verify"
+  },
+  "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED",
+  "externalBlockers": [
+    {
+      "gate": "r2-migrations-clean-db",
+      "area": "R2",
+      "reason": "R2 requires a real Supabase project; this run used a plain PostgreSQL instance — result recorded as supporting evidence only, not as R2 PASS",
+      "unblockBy": "supabase db push against the pilot project, then re-run"
+    },
+    {
+      "gate": "r2-migration-idempotency",
+      "area": "R2",
+      "reason": "measured on non-Supabase PostgreSQL",
+      "unblockBy": "run against the Supabase project"
+    },
+    {
+      "gate": "r2-rls-lifecycle-concurrency",
+      "area": "R2",
+      "reason": "suite passed 3/3 on non-Supabase PostgreSQL; the brief requires real Supabase (auth.uid() via real JWTs, storage schema, extensions)",
+      "unblockBy": "DATABASE_URL=<supabase pooler url> node scripts/db/authz-rls-suite.mjs"
+    },
+    {
+      "gate": "r2-supabase-auth-flows",
+      "area": "R2",
+      "reason": "login/logout/refresh/expired/invalid-session flows need the deployed app + Supabase Auth",
+      "unblockBy": "scripts/phase-r/deployed-gate.mjs covers unauthenticated/invalid/expired/logout; login+refresh via tests/e2e with PILOT credentials"
+    },
+    {
+      "gate": "r3-real-bucket-scanner",
+      "area": "R3",
+      "reason": "no object storage, malware scanner or egress in this environment",
+      "unblockBy": "deploy with STORAGE_PROVIDER=supabase + MALWARE_SCANNER=clamav-rest and run scripts/phase-r/deployed-gate.mjs (EICAR + clean PDF + cross-tenant + unauthorized download/delete)"
+    },
+    {
+      "gate": "r4-metrics-backend-error-tracking-alerts",
+      "area": "R4",
+      "reason": "no metrics backend, error-tracking SaaS or alert manager reachable; instrumentation alone is not alerting",
+      "unblockBy": "configure METRICS_BACKEND/ERROR_TRACKING_DSN, load docs/ops/alerts.prometheus.yml, trigger POST /api/system/error-test and one synthetic condition per alert; attach screenshots/alert ids"
+    },
+    {
+      "gate": "r5-cognitive-gate",
+      "area": "R5",
+      "reason": "fetch failed",
+      "unblockBy": "run bridge with LLM_PROVIDER/LLM_API_KEY, then AI_BRIDGE_URL=... BRIDGE_SECRET_KEY=... node scripts/ai/cognitive-gate.mjs"
+    },
+    {
+      "gate": "r6-deployed-gate",
+      "area": "R6",
+      "reason": "PILOT_BASE_URL not set — no real deployment reachable from this environment",
+      "unblockBy": "deploy to HTTPS host, set PILOT_BASE_URL + pilot session cookies (never stored), run scripts/phase-r/deployed-gate.mjs"
+    },
+    {
+      "gate": "r6-backup-restore",
+      "area": "R6",
+      "reason": "backups are operated by the database provider; no pg_dump/pg_restore or provider access here",
+      "unblockBy": "execute a provider restore into a scratch project, then run the post-restore checklist in docs/ops/pilot-runbook.md and attach output"
+    },
+    {
+      "gate": "r6-failure-injection",
+      "area": "R6",
+      "reason": "15 failure cases require faults on real infrastructure (provider down/401/429/500/timeout, DB down, storage down, scanner down, tracking down, metrics down). Application-level handling of scanner/proposal/AI-authority failures is unit-covered (supporting only).",
+      "unblockBy": "run scripts/phase-r/deployed-gate.mjs and operator fault injection per docs/ops/pilot-runbook.md"
+    },
+    {
+      "gate": "r6-performance",
+      "area": "R6",
+      "reason": "no production deployment; sandbox latency would be an invented baseline",
+      "unblockBy": "scripts/phase-r/deployed-gate.mjs records p50/p95/p99/error-rate per endpoint on the real host"
+    }
+  ],
+  "internalBlockers": [],
+  "notImplemented": [
+    {
+      "gate": "r6-billing",
+      "reason": "No billing/subscription/payment system exists; licensing is an offline signed key (lib/license.ts). Pilot must be invoiced contractually."
+    }
+  ],
+  "productionRisks": [
+    "next@14.2.x carries high-severity advisories (image optimizer DoS, postcss); remediation is a major upgrade to Next 16 — schedule before GA, restrict images.remotePatterns meanwhile.",
+    "Pre-existing migration drift in 202608150003–0006 on a from-scratch database; Supabase project must be created from the linked project history, not a bare replay.",
+    "Alerting is defined (docs/ops/alerts.prometheus.yml) but unproven until a real alert fires end-to-end.",
+    "R5 cognitive thresholds are declared but the real-model run has not executed; no score exists.",
+    "Legacy resume URLs stored before Phase R (public bucket paths) remain readable until the candidate-resumes bucket is made private and rows are migrated to document ids."
+  ]
+}
