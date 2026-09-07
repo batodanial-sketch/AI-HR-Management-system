@@ -51,7 +51,7 @@ function sh(cmd, args, { env = {}, timeout = 900_000 } = {}) {
   return { command: [cmd, ...args].join(" "), startedAt, durationMs: Date.now() - t0, exitCode: res.status, signal: res.signal ?? null, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
 }
 const git = (args) => sh("git", args).stdout.trim();
-const tail = (s, n = 2500) => (s.length > n ? s.slice(-n) : s);
+const tail = (s, n = 2500) => { if (!s) return ""; const t = String(s); return t.length > n ? t.slice(-n) : t; };
 const lastJson = (s) => {
   const text = s.trim();
   try { return JSON.parse(text); } catch { /* fall through */ }
@@ -187,12 +187,30 @@ function localRestoreDrill(toolsBin) {
     insert into public.users (id, email, full_name, status) values ('33333333-3333-4333-8333-333333333333','drill@r.test','Drill User','active') on conflict do nothing;
     insert into public.memberships (user_id, organization_id, role) select '33333333-3333-4333-8333-333333333333','22222222-2222-4222-8222-222222222222','owner' where not exists (select 1 from public.memberships where user_id='33333333-3333-4333-8333-333333333333' and organization_id='22222222-2222-4222-8222-222222222222');`;
   try {
+    const waitPg = (url, tries = 20) => {
+      let last = null;
+      for (let i = 0; i < tries; i += 1) {
+        const rr = step("node", ["-e", `const pg=require("pg");const c=new pg.Client({connectionString:process.env.U});c.connect().then(()=>c.query("select 1")).then(()=>{console.log("PGOK");return c.end()}).catch(e=>{console.error(e.message);process.exit(1)})`], { env: { U: url } });
+        if (rr.exitCode === 0) return { ok: true, tries: i + 1 };
+        last = tail(rr.stderr || rr.stdout, 300);
+        sh("sleep", ["1"]);
+      }
+      return { ok: false, tries, last };
+    };
     mkdirSync(d1, { recursive: true });
     push("version_check", step(pg("postgres"), ["--version"]));
     const vline = run.steps[run.steps.length - 1].stdout.trim();
     push("initdb_source", step(pg("initdb"), ["-D", d1, "-U", "postgres", "-A", "trust", "-E", "UTF8", "--no-instructions"]));
-    push("pg_ctl_start_source", step(pg("pg_ctl"), ["-D", d1, "-l", `${tmp}/pg1.log`, "-o", `-p ${port1} -k ${tmp}`, "-w", "start"]));
+    push("pg_ctl_start_source", step(pg("pg_ctl"), ["-D", d1, "-l", `${tmp}/pg1.log`, "-o", `-p ${port1} -k ${tmp} -c listen_addresses=127.0.0.1`, "-w", "start"]));
     const drillUrl = `postgres://postgres@127.0.0.1:${port1}/postgres`;
+    const ping1 = waitPg(drillUrl);
+    if (!ping1.ok) {
+      let logTail = "";
+      try { logTail = tail(readFileSync(`${tmp}/pg1.log`, "utf8"), 1200); } catch { /* no log */ }
+      push("wait_source_ready", { exitCode: 1, durationMs: 0, stdout: "", stderr: `not ready after ${ping1.tries}s: ${ping1.last}\n${logTail}` });
+      return run;
+    }
+    push("wait_source_ready", { exitCode: 0, durationMs: ping1.tries * 1000, stdout: "", stderr: "" });
     const migStep = push("migrate_reset_tolerant_source", sh("node", ["scripts/db/local-pg.mjs", "reset", "--tolerant"], { env: { DATABASE_URL: drillUrl }, timeout: 900_000 }));
     const migrated = lastJson(migStep.stdout);
     // Tolerant replay exits 0 on a clean apply and 2 when the ONLY failures are the
@@ -209,8 +227,16 @@ function localRestoreDrill(toolsBin) {
     // Consistent snapshot: clean shutdown, then copy the data directory.
     push("pg_ctl_stop_source_clean", step(pg("pg_ctl"), ["-D", d1, "-m", "fast", "-w", "stop"]));
     push("copy_data_dir_to_restore", step("cp", ["-a", d1, d2]));
-    push("pg_ctl_start_restored", step(pg("pg_ctl"), ["-D", d2, "-l", `${tmp}/pg2.log`, "-o", `-p ${port2} -k ${tmp}`, "-w", "start"]));
+    push("pg_ctl_start_restored", step(pg("pg_ctl"), ["-D", d2, "-l", `${tmp}/pg2.log`, "-o", `-p ${port2} -k ${tmp} -c listen_addresses=127.0.0.1`, "-w", "start"]));
     const restoredUrl = `postgres://postgres@127.0.0.1:${port2}/postgres`;
+    const ping2 = waitPg(restoredUrl);
+    if (!ping2.ok) {
+      let logTail = "";
+      try { logTail = tail(readFileSync(`${tmp}/pg2.log`, "utf8"), 1200); } catch { /* no log */ }
+      push("wait_restored_ready", { exitCode: 1, durationMs: 0, stdout: "", stderr: `not ready after ${ping2.tries}s: ${ping2.last}\n${logTail}` });
+      return run;
+    }
+    push("wait_restored_ready", { exitCode: 0, durationMs: ping2.tries * 1000, stdout: "", stderr: "" });
     const post = {};
     for (const t of ["public.organizations", "public.memberships", "public.users", "public.audit_logs"]) post[t] = countFor(`count_restored_${t.split(".")[1]}`, restoredUrl, `select count(*) as count from ${t}`);
     const postSchema = {};
@@ -515,7 +541,7 @@ function main() {
       return blockedExt("no local PostgreSQL 18 toolchain provided", "set PG_TOOLS_BIN to a bin directory containing initdb/pg_ctl/postgres (same major as the suite DB) and re-run");
     }
     const drill = localRestoreDrill(toolsBin);
-    const slim = (drill.steps ?? []).map((s) => ({ step: s.step, exitCode: s.exitCode, durationMs: s.durationMs, failed: s.failed, log: s.log }));
+    const slim = (drill.steps ?? []).map((s) => ({ step: s.step, exitCode: s.exitCode, durationMs: s.durationMs, failed: s.failed ?? s.exitCode !== 0, log: s.log ?? (s.exitCode !== 0 ? tail(s.stderr ?? s.stdout ?? "", 600) : undefined) }));
     return { status: drill.ok ? "PASS" : "FAIL", detail: { note: "SUPPORTING drill only — a scratch PostgreSQL 18.4 cluster is migrated (tolerant replay, pre-existing 4-file drift only), pilot rows are seeded, the cluster is cleanly stopped (consistent snapshot), the data directory is copied to a restore cluster, and the restored cluster is verified: identical row counts, identical schema/policy/RLS-enable counts and the 76-check RLS suite passing against the RESTORED database. This is NOT the provider backup gate (s11-provider-backup-restore) and does not claim a provider restore." }, counts: drill.counts ?? null, steps: slim, failures: slim.filter((s) => s.failed) };
   });
 
