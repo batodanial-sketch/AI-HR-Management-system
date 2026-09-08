@@ -295,8 +295,9 @@ function main() {
   const billingOk = billing === "NOT_IMPLEMENTED";
 
   /* V0 — repository + evidence freeze. */
-  const uOk = uRun.exitCode === 0 && uVerify.fresh === true && uVerify.headMatches === true && uVerify.legalStatuses === true && uVerify.phaseSConsistent === true
-    && tVerify.fresh === true && tVerify.headMatches === true && sVerify.fresh === true && sVerify.headMatches === true;
+  const uOk = uRun.exitCode === 0 && uVerify.fresh === true && uVerify.headMatches === true && uVerify.legalStatuses === true && uVerify.phaseTConsistent === true
+    && tVerify.fresh === true && tVerify.headMatches === true && tVerify.legalStatuses === true && tVerify.phaseSConsistent === true
+    && sVerify.fresh === true && sVerify.headMatches === true && sVerify.legalStatuses === true;
   const baseline = {
     branch, gitHead: head, remoteHead, remoteSynced: Boolean(remoteHead) && remoteHead === head, buildId, workingTree: worktreeClean(),
     evidenceHashes: { phaseS: sEv.staleGuard.sourceFingerprint.sha256, phaseT: tEv.staleGuard.sourceFingerprint.sha256, phaseU: uEv.staleGuard.sourceFingerprint.sha256 },
