@@ -1,8 +1,8 @@
 {
   "phase": "X",
   "artifact": "operator-provisioning-checklist",
-  "generatedAt": "2026-09-08T16:43:33.192Z",
-  "gitHead": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
+  "generatedAt": "2026-09-08T17:06:12.744Z",
+  "gitHead": "f4bf3c2553b01353b10f35e16dbc6dd3073bfcff",
   "note": "Machine-readable operator handoff. Contains only presence flags, env-var NAMES, commands and dashboard steps — no secret values of any kind. The evidence generator is the source of truth: re-run node scripts/phase-w-evidence.mjs after provisioning to re-evaluate the gates.",
   "items": [
     {

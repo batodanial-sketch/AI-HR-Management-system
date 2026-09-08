@@ -1,14 +1,14 @@
 {
   "phase": "R — production launch validation",
-  "generatedAt": "2026-09-08T16:45:41.962Z",
+  "generatedAt": "2026-09-08T17:08:04.534Z",
   "generator": "scripts/phase-r-evidence.mjs",
   "staleGuard": {
-    "gitHead": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
+    "gitHead": "f4bf3c2553b01353b10f35e16dbc6dd3073bfcff",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
+    "buildId": "f4bf3c2553b01353b10f35e16dbc6dd3073bfcff",
     "sourceFingerprint": {
-      "files": 672,
-      "sha256": "f9e7cf6bee2736bf9fc580e47f522ccdc8eec468608e1d9a63eb23c7e42d7c13"
+      "files": 679,
+      "sha256": "9233e3c5f1a801a9145a71b48bb081fbe19fc652f98681f7e50d64140679575e"
     },
     "verifyCommand": "node scripts/phase-r-evidence.mjs --verify"
   },
@@ -51,7 +51,7 @@
         "errors": 0
       },
       "log": "",
-      "recordedAt": "2026-09-08T16:43:51.053Z"
+      "recordedAt": "2026-09-08T17:06:18.510Z"
     },
     {
       "id": "eslint",
@@ -62,21 +62,25 @@
         "warnings": 0
       },
       "log": "\u001b[32m✔ No ESLint warnings or errors\u001b[39m\n",
-      "recordedAt": "2026-09-08T16:43:53.156Z"
+      "recordedAt": "2026-09-08T17:06:20.790Z"
     },
     {
       "id": "jest",
       "area": "unit",
       "status": "PASS",
       "counts": {
-        "suites": 8,
-        "tests": 96,
-        "passed": 96,
+        "suites": 10,
+        "tests": 105,
+        "passed": 105,
         "failed": 0
       },
       "suites": {
         "tests/unit/aiAuthority.test.ts": {
           "passed": 16,
+          "failed": 0
+        },
+        "tests/unit/httpLimit.test.ts": {
+          "passed": 4,
           "failed": 0
         },
         "tests/unit/observability.test.ts": {
@@ -87,29 +91,33 @@
           "passed": 26,
           "failed": 0
         },
+        "tests/unit/authzModel.test.ts": {
+          "passed": 22,
+          "failed": 0
+        },
         "tests/unit/proposalLifecycle.test.ts": {
           "passed": 11,
           "failed": 0
         },
-        "tests/unit/authzModel.test.ts": {
-          "passed": 22,
+        "tests/unit/csvExport.test.ts": {
+          "passed": 5,
           "failed": 0
         },
         "tests/unit/screeningService.test.ts": {
           "passed": 1,
           "failed": 0
         },
-        "tests/unit/employeeService.test.ts": {
+        "tests/unit/payrollService.test.ts": {
           "passed": 1,
           "failed": 0
         },
-        "tests/unit/payrollService.test.ts": {
+        "tests/unit/employeeService.test.ts": {
           "passed": 1,
           "failed": 0
         }
       },
-      "log": "PASS tests/unit/aiAuthority.test.ts\nPASS tests/unit/observability.test.ts\nPASS tests/unit/storagePipeline.test.ts\nPASS tests/unit/proposalLifecycle.test.ts\nPASS tests/unit/authzModel.test.ts\nPASS tests/unit/screeningService.test.ts\nPASS tests/unit/employeeService.test.ts\nPASS tests/unit/payrollService.test.ts\n\nTest Suites: 8 passed, 8 total\nTests:       96 passed, 96 total\nSnapshots:   0 total\nTime:        1.55 s, estimated 2 s\n",
-      "recordedAt": "2026-09-08T16:43:55.402Z"
+      "log": "PASS tests/unit/aiAuthority.test.ts\nPASS tests/unit/httpLimit.test.ts\nPASS tests/unit/observability.test.ts\nPASS tests/unit/storagePipeline.test.ts\nPASS tests/unit/authzModel.test.ts\nPASS tests/unit/proposalLifecycle.test.ts\nPASS tests/unit/csvExport.test.ts\nPASS tests/unit/screeningService.test.ts\nPASS tests/unit/payrollService.test.ts\nPASS tests/unit/employeeService.test.ts\n\nTest Suites: 10 passed, 10 total\nTests:       105 passed, 105 total\nSnapshots:   0 total\nTime:        1.035 s\n",
+      "recordedAt": "2026-09-08T17:06:22.522Z"
     },
     {
       "id": "pytest",
@@ -119,8 +127,8 @@
         "passed": 15,
         "failed": 0
       },
-      "log": "                                                  [100%]\u001b[0m\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /home/user/AI-HR-Management-system/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n.venv/lib/python3.11/site-packages/starlette/testclient.py:53\n  /home/user/AI-HR-Management-system/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m\u001b[32m15 passed\u001b[0m, \u001b[33m\u001b[1m2 warnings\u001b[0m\u001b[33m in 0.60s\u001b[0m\u001b[0m\n",
-      "recordedAt": "2026-09-08T16:43:56.499Z"
+      "log": "                                                  [100%]\u001b[0m\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\n.venv/lib/python3.11/site-packages/fastapi/testclient.py:1\n  /home/user/AI-HR-Management-system/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n.venv/lib/python3.11/site-packages/starlette/testclient.py:53\n  /home/user/AI-HR-Management-system/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m\u001b[32m15 passed\u001b[0m, \u001b[33m\u001b[1m2 warnings\u001b[0m\u001b[33m in 0.54s\u001b[0m\u001b[0m\n",
+      "recordedAt": "2026-09-08T17:06:23.372Z"
     },
     {
       "id": "next-build",
@@ -130,9 +138,9 @@
         "exitCode": 0,
         "routes": 143
       },
-      "buildId": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
+      "buildId": "f4bf3c2553b01353b10f35e16dbc6dd3073bfcff",
       "log": "       \u001b[37m\u001b[1m87.8 kB\u001b[22m\u001b[39m\n  ├ chunks/2117-df16206783addefc.js          31.9 kB\n  ├ chunks/fd9d1056-aae3c195ffa3f415.js      53.6 kB\n  └ other shared chunks (total)              2.27 kB\n\n\nƒ Middleware                                 \u001b[37m\u001b[1m112 kB\u001b[22m\u001b[39m\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (107kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (258kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)\n \u001b[33m\u001b[1m⚠\u001b[22m\u001b[39m Compiled with warnings\n\n./node_modules/@upstash/redis/nodejs.mjs\nA Node.js API is used (process.version at line: 240) which is not supported in the Edge Runtime.\nLearn more: https://nextjs.org/docs/api-reference/edge-runtime\n\nImport trace for requested module:\n./node_modules/@upstash/redis/nodejs.mjs\n./lib/edge/rate-limit.ts\n\n",
-      "recordedAt": "2026-09-08T16:45:22.500Z"
+      "recordedAt": "2026-09-08T17:07:52.945Z"
     },
     {
       "id": "r1-authz-duplicate-check",
@@ -142,9 +150,9 @@
         "total": 21,
         "passed": 21,
         "failed": 0,
-        "filesScanned": 386
+        "filesScanned": 388
       },
-      "recordedAt": "2026-09-08T16:45:22.626Z"
+      "recordedAt": "2026-09-08T17:07:53.068Z"
     },
     {
       "id": "r2-migrations-clean-db",
@@ -212,7 +220,7 @@
           }
         ]
       },
-      "recordedAt": "2026-09-08T16:45:23.459Z"
+      "recordedAt": "2026-09-08T17:07:54.188Z"
     },
     {
       "id": "r2-migration-idempotency",
@@ -228,7 +236,7 @@
         "unchangedOnRerun": true,
         "rerunExit": 0
       },
-      "recordedAt": "2026-09-08T16:45:23.827Z"
+      "recordedAt": "2026-09-08T17:07:54.562Z"
     },
     {
       "id": "r2-rls-lifecycle-concurrency",
@@ -281,7 +289,7 @@
           "host": "127.0.0.1:54329"
         }
       },
-      "recordedAt": "2026-09-08T16:45:25.071Z"
+      "recordedAt": "2026-09-08T17:07:55.738Z"
     },
     {
       "id": "r2-supabase-auth-flows",
@@ -291,7 +299,7 @@
         "reason": "login/logout/refresh/expired/invalid-session flows need the deployed app + Supabase Auth",
         "unblockBy": "scripts/phase-r/deployed-gate.mjs covers unauthenticated/invalid/expired/logout; login+refresh via tests/e2e with PILOT credentials"
       },
-      "recordedAt": "2026-09-08T16:45:25.071Z"
+      "recordedAt": "2026-09-08T17:07:55.738Z"
     },
     {
       "id": "r3-file-validation-and-pipeline-unit",
@@ -303,7 +311,7 @@
         "failed": 0
       },
       "note": "Covers: valid PDF/DOCX/PNG, oversized, bad MIME, extension mismatch, malformed, empty, suspicious filename, path traversal, tenant key scoping, scanner unavailable/timeout/error ≠ clean, quarantine→reject on infection, cross-tenant delete refused.",
-      "recordedAt": "2026-09-08T16:45:26.139Z"
+      "recordedAt": "2026-09-08T17:07:56.766Z"
     },
     {
       "id": "r3-real-bucket-scanner",
@@ -313,7 +321,7 @@
         "reason": "no object storage, malware scanner or egress in this environment",
         "unblockBy": "deploy with STORAGE_PROVIDER=supabase + MALWARE_SCANNER=clamav-rest and run scripts/phase-r/deployed-gate.mjs (EICAR + clean PDF + cross-tenant + unauthorized download/delete)"
       },
-      "recordedAt": "2026-09-08T16:45:26.139Z"
+      "recordedAt": "2026-09-08T17:07:56.766Z"
     },
     {
       "id": "r3-no-public-urls",
@@ -323,7 +331,7 @@
         "hits": 0
       },
       "hits": [],
-      "recordedAt": "2026-09-08T16:45:26.149Z"
+      "recordedAt": "2026-09-08T17:07:56.777Z"
     },
     {
       "id": "r4-instrumentation-unit",
@@ -335,7 +343,7 @@
         "failed": 0
       },
       "note": "Scrubbing (JWT/keys/DSN/email/DB URLs), bounded label cardinality, no identifiers in labels, dedup, correlation id, Prometheus exposition.",
-      "recordedAt": "2026-09-08T16:45:27.181Z"
+      "recordedAt": "2026-09-08T17:07:57.828Z"
     },
     {
       "id": "r4-metrics-backend-error-tracking-alerts",
@@ -345,7 +353,7 @@
         "reason": "no metrics backend, error-tracking SaaS or alert manager reachable; instrumentation alone is not alerting",
         "unblockBy": "configure METRICS_BACKEND/ERROR_TRACKING_DSN, load docs/ops/alerts.prometheus.yml, trigger POST /api/system/error-test and one synthetic condition per alert; attach screenshots/alert ids"
       },
-      "recordedAt": "2026-09-08T16:45:27.181Z"
+      "recordedAt": "2026-09-08T17:07:57.828Z"
     },
     {
       "id": "r5-cognitive-gate",
@@ -377,7 +385,7 @@
           "action_safety": 3
         }
       },
-      "recordedAt": "2026-09-08T16:45:27.246Z"
+      "recordedAt": "2026-09-08T17:07:57.897Z"
     },
     {
       "id": "r5-ai-security-unit-and-bridge",
@@ -393,7 +401,7 @@
           "exit": 0
         }
       },
-      "recordedAt": "2026-09-08T16:45:29.128Z"
+      "recordedAt": "2026-09-08T17:07:59.782Z"
     },
     {
       "id": "r6-deployed-gate",
@@ -403,7 +411,7 @@
         "reason": "PILOT_BASE_URL not set — no real deployment reachable from this environment",
         "unblockBy": "deploy to HTTPS host, set PILOT_BASE_URL + pilot session cookies (never stored), run scripts/phase-r/deployed-gate.mjs"
       },
-      "recordedAt": "2026-09-08T16:45:29.164Z"
+      "recordedAt": "2026-09-08T17:07:59.816Z"
     },
     {
       "id": "r6-pilot-safety-controls",
@@ -422,7 +430,7 @@
         "reversibility": "docs/ops/pilot-runbook.md"
       },
       "note": "Controls exist and are unit-tested; their behaviour on the real deployment is verified only by r6-deployed-gate.",
-      "recordedAt": "2026-09-08T16:45:30.140Z"
+      "recordedAt": "2026-09-08T17:08:00.806Z"
     },
     {
       "id": "r6-backup-restore",
@@ -432,7 +440,7 @@
         "reason": "backups are operated by the database provider; no pg_dump/pg_restore or provider access here",
         "unblockBy": "execute a provider restore into a scratch project, then run the post-restore checklist in docs/ops/pilot-runbook.md and attach output"
       },
-      "recordedAt": "2026-09-08T16:45:30.140Z"
+      "recordedAt": "2026-09-08T17:08:00.806Z"
     },
     {
       "id": "r6-billing",
@@ -441,7 +449,7 @@
       "detail": {
         "reason": "No billing/subscription/payment system exists; licensing is an offline signed key (lib/license.ts). Pilot must be invoiced contractually."
       },
-      "recordedAt": "2026-09-08T16:45:30.140Z"
+      "recordedAt": "2026-09-08T17:08:00.806Z"
     },
     {
       "id": "r6-failure-injection",
@@ -457,7 +465,7 @@
           "failed": 0
         }
       },
-      "recordedAt": "2026-09-08T16:45:31.393Z"
+      "recordedAt": "2026-09-08T17:08:02.179Z"
     },
     {
       "id": "r6-performance",
@@ -467,7 +475,7 @@
         "reason": "no production deployment; sandbox latency would be an invented baseline",
         "unblockBy": "scripts/phase-r/deployed-gate.mjs records p50/p95/p99/error-rate per endpoint on the real host"
       },
-      "recordedAt": "2026-09-08T16:45:31.393Z"
+      "recordedAt": "2026-09-08T17:08:02.179Z"
     },
     {
       "id": "security-secret-scan",
@@ -482,7 +490,7 @@
         "tests/unit/observability.test.ts (synthetic fixtures)",
         "docs/TEST_LICENSE_KEYS.txt (public-key-verifiable test licence tokens, no secret material)"
       ],
-      "recordedAt": "2026-09-08T16:45:31.418Z"
+      "recordedAt": "2026-09-08T17:08:02.203Z"
     },
     {
       "id": "security-dependency-audit",
@@ -529,7 +537,7 @@
         }
       ],
       "note": "High findings are in next@14 (image optimizer DoS — only with remotePatterns wildcard, verify next.config), postcss via next, glob via eslint-config-next (dev-only). Fix requires major upgrade to Next 16 — out of Phase R scope; recorded as production risk.",
-      "recordedAt": "2026-09-08T16:45:41.910Z"
+      "recordedAt": "2026-09-08T17:08:04.486Z"
     },
     {
       "id": "security-code-patterns",
@@ -546,7 +554,7 @@
         ],
         "note": "app/layout.tsx THEME_GUARD is a static, constant inline script (no interpolation) — accepted."
       },
-      "recordedAt": "2026-09-08T16:45:41.939Z"
+      "recordedAt": "2026-09-08T17:08:04.511Z"
     }
   ],
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED"
