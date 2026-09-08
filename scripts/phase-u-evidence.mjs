@@ -77,11 +77,11 @@ function sh(cmd, args, { env = {}, timeout = 1800_000 } = {}) {
 const git = (args) => sh("git", args).stdout.trim();
 const tail = (s, n = 2500) => { if (!s) return ""; const t = String(s); return t.length > n ? t.slice(-n) : t; };
 function worktreeClean() {
-  const dirty = git(["status", "--porcelain"]).split("\n").filter((l) => l && !l.includes("docs/generated/"));
+  const dirty = git(["status", "--porcelain"]).split("\n").filter((l) => l && !l.includes("docs/generated/") && !l.includes("docs/ops/operator-provisioning-checklist.json"));
   return dirty.length === 0 ? "clean" : `dirty (${dirty.length} non-evidence path(s))`;
 }
 function sourceFingerprint() {
-  const files = git(["ls-files", "--cached", "--others", "--exclude-standard"]).split("\n").filter((f) => f && !f.startsWith("docs/generated/")).sort();
+  const files = git(["ls-files", "--cached", "--others", "--exclude-standard"]).split("\n").filter((f) => f && !f.startsWith("docs/generated/") && f !== "docs/ops/operator-provisioning-checklist.json").sort();
   const h = createHash("sha256");
   for (const f of files) {
     if (!existsSync(join(ROOT, f))) continue;

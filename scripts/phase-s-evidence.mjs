@@ -61,7 +61,7 @@ const lastJson = (s) => {
 };
 
 function sourceFingerprint() {
-  const files = git(["ls-files", "--cached", "--others", "--exclude-standard"]).split("\n").filter((f) => f && !f.startsWith("docs/generated/")).sort();
+  const files = git(["ls-files", "--cached", "--others", "--exclude-standard"]).split("\n").filter((f) => f && !f.startsWith("docs/generated/") && f !== "docs/ops/operator-provisioning-checklist.json").sort();
   const h = createHash("sha256");
   for (const f of files) {
     if (!existsSync(join(ROOT, f))) continue;
