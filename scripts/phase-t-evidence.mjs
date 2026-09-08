@@ -69,6 +69,11 @@ function sh(cmd, args, { env = {}, timeout = 1200_000 } = {}) {
 }
 const git = (args) => sh("git", args).stdout.trim();
 const tail = (s, n = 2500) => { if (!s) return ""; const t = String(s); return t.length > n ? t.slice(-n) : t; };
+/** Cleanliness of the tree excluding this generator's own outputs (docs/generated). */
+function worktreeClean() {
+  const dirty = git(["status", "--porcelain"]).split("\n").filter((l) => l && !l.includes("docs/generated/"));
+  return dirty.length === 0 ? "clean" : `dirty (${dirty.length} non-evidence path(s))`;
+}
 
 function sourceFingerprint() {
   const files = git(["ls-files", "--cached", "--others", "--exclude-standard"]).split("\n").filter((f) => f && !f.startsWith("docs/generated/")).sort();
@@ -232,7 +237,7 @@ function main() {
     buildId: sEv.staleGuard.buildId,
     evidenceHash: sEv.staleGuard.sourceFingerprint.sha256,
     evidenceFiles: sEv.staleGuard.sourceFingerprint.files,
-    workingTree: git(["status", "--porcelain"]).length === 0 ? "clean" : "dirty",
+    workingTree: worktreeClean(),
     phaseS: { verdict: sEv.verdict, summary: S, verify: sVerify },
   };
   gates.push({
