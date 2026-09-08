@@ -11,6 +11,21 @@ const TRIAL_COOKIE = "fluxentiq.trial";
 const LICENSE_COOKIE = "fluxentiq.license";
 
 /**
+ * Restricts the post-auth `next` parameter to a local path. The callback
+ * redirect target is built as `${origin}${next}` (never `next` alone), but
+ * `next` is client-controlled query input — reject anything that is not a
+ * single-slash-relative path so scheme-relative (`//host`), backslash and
+ * other malformed values can never shape the Location header.
+ */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) {
+    return "/dashboard";
+  }
+  return raw;
+}
+
+/**
  * Auth callback: exchanges the OAuth/email `code` for a session and redirects
  * to the app (or the `next` parameter). Shared by Google SSO and magic-link
  * email confirmation.
@@ -21,7 +36,7 @@ const LICENSE_COOKIE = "fluxentiq.license";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNext(searchParams.get("next"));
   const wantsTrial = searchParams.get("trial") === "true";
 
   const url = supabaseUrl();
