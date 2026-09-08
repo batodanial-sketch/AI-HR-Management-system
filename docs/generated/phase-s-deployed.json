@@ -2,7 +2,7 @@
   "gate": "S10-deployed",
   "status": "BLOCKED_EXTERNAL",
   "reason": "PILOT_BASE_URL not set — no real HTTPS deployment reachable from this environment",
-  "startedAt": "2026-09-08T17:08:13.898Z",
-  "finishedAt": "2026-09-08T17:08:13.898Z",
+  "startedAt": "2026-09-08T17:20:46.425Z",
+  "finishedAt": "2026-09-08T17:20:46.425Z",
   "checks": []
 }
