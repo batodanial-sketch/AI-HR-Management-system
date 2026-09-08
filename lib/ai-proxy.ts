@@ -20,6 +20,25 @@ import { getRbacContext, rbacErrorResponse } from "@/lib/rbac";
 import { evaluatePilotAccess } from "@/lib/pilot/controls";
 import { metrics } from "@/lib/observability/metrics";
 
+/**
+ * Overall wall-clock bound for a single proxied bridge round-trip.
+ *
+ * The bridge bounds its own provider calls at 90s (httpx per-request
+ * timeout), so this cap keeps generous headroom while guaranteeing a wedged
+ * bridge (deadlocked worker, hung socket) can never pin a server connection
+ * open indefinitely. Applied as an AbortSignal on the upstream fetch; an
+ * abort surfaces as a normal fetch failure and maps to the standard
+ * `BRIDGE_UNREACHABLE` 502 path.
+ */
+export const BRIDGE_PROXY_TIMEOUT_MS = 150_000;
+
+/**
+ * Bound for direct (non-proxy) single LLM round-trips from route handlers
+ * (agentic planner calls, admin-copilot parsing): 90s bridge provider cap
+ * plus 30s headroom.
+ */
+export const BRIDGE_LLM_TIMEOUT_MS = 120_000;
+
 export function bridgeUrl(): string {
   return process.env.AI_BRIDGE_URL ?? "http://localhost:8000";
 }
@@ -151,6 +170,9 @@ export async function proxyToBridge(
       method: request.method,
       headers: bridgeHeaders(contentType, organizationId, tier),
       body,
+      // Bounded: the bridge is trusted to answer within its own 90s provider
+      // cap; never allow an upstream hang to outlive the server request.
+      signal: AbortSignal.timeout(BRIDGE_PROXY_TIMEOUT_MS),
     });
   } catch {
     metrics.increment("ai_failures_total", { feature: feature ?? "engine", reason: "unavailable" });

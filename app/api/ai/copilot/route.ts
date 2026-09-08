@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { proxyToBridge, bridgeUrl, bridgeSecret } from "@/lib/ai-proxy";
+import { proxyToBridge, bridgeUrl, bridgeSecret, BRIDGE_LLM_TIMEOUT_MS } from "@/lib/ai-proxy";
 import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
 import { getRbacContext, rbacErrorResponse } from "@/lib/rbac";
 import { getLicenseState } from "@/lib/license";
@@ -127,6 +127,8 @@ async function planWithBridge(
         tools: toolSpecsForBridge(toolNames),
         execute_tools: false,
       }),
+      // Single planner round: bounded by the bridge's 90s provider cap.
+      signal: AbortSignal.timeout(BRIDGE_LLM_TIMEOUT_MS),
     });
   } catch {
     throw new Error(`AI bridge unreachable at ${bridgeUrl()}. Is the Python server running?`);

@@ -41,8 +41,29 @@ const MARKETING_PATHS = ["/", "/pricing", "/docs"];
 // (SCIM) keep working.
 const WEBHOOK_PREFIXES = ["/api/webhooks/", "/api/desktop/", "/api/scim/"];
 
+// Operator/external endpoints that authenticate with their own credentials
+// checked inside the route handler (constant-time bearer/secret comparison,
+// failing closed when the secret env var is absent): Prometheus scrapes
+// (`METRICS_TOKEN`), hosted/systemd cron (`CRON_SECRET`) and workflow-engine
+// callbacks (`WORKFLOW_WEBHOOK_SECRET`). They must be exempt from the
+// session/license gate — a cron daemon or Prometheus scraper has no browser
+// session — while the handler-level token check remains the actual gate.
+const SELF_AUTHENTICATED_API_PREFIXES = [
+  "/api/metrics",
+  "/api/system/cron",
+  "/api/cron/",
+  "/api/workflows/webhooks",
+];
+
 function isPublic(pathname: string): boolean {
   if (WEBHOOK_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return true;
+  }
+  if (
+    SELF_AUTHENTICATED_API_PREFIXES.some((prefix) =>
+      pathname.startsWith(prefix),
+    )
+  ) {
     return true;
   }
   if (

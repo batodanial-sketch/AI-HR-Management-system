@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { bridgeUrl, bridgeSecret } from "@/lib/ai-proxy";
+import { bridgeUrl, bridgeSecret, BRIDGE_LLM_TIMEOUT_MS } from "@/lib/ai-proxy";
 import { checkRateLimit, limitForTier, orgScopedKey } from "@/lib/rate-limit";
 import { getLicenseState, requireEnterpriseTier } from "@/lib/license";
 import { requireRole, rbacErrorResponse } from "@/lib/rbac";
@@ -133,6 +133,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             }
           : null,
       }),
+      // Single parse round: bounded by the bridge's 90s provider cap.
+      signal: AbortSignal.timeout(BRIDGE_LLM_TIMEOUT_MS),
     });
   } catch {
     return NextResponse.json(

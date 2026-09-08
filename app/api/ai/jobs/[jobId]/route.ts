@@ -26,6 +26,9 @@ export async function GET(
   try {
     const upstream = await fetch(`${bridgeUrl()}/api/jobs/${jobId}`, {
       headers: secret ? { "X-Bridge-Secret": secret } : {},
+      // Job-status lookup is an in-memory registry read on the bridge; a
+      // bound keeps hot polling paths from hanging on a wedged bridge.
+      signal: AbortSignal.timeout(15_000),
     });
     return new Response(upstream.body, {
       status: upstream.status,

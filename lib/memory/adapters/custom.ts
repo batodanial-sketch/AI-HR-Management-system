@@ -3,6 +3,13 @@ import type { MemoryAdapter } from "../interface";
 import type { MemoryTestResult, Row, RowFilter } from "../types";
 
 /**
+ * Wall-clock bound for each buyer-configured PostgREST/memory request. A
+ * wedged or unresponsive buyer endpoint must not pin server connections or
+ * block AI flows that consult memory before answering.
+ */
+const CUSTOM_ENDPOINT_TIMEOUT_MS = 15_000;
+
+/**
  * Custom adapter — any PostgREST-compatible endpoint (the same REST protocol
  * Supabase exposes). Lets a buyer point Fluxentiq at their own API gateway or
  * a self-hosted PostgREST instance.
@@ -48,6 +55,7 @@ export class CustomRestAdapter implements MemoryAdapter {
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...init,
       headers: this.headers(),
+      signal: AbortSignal.timeout(CUSTOM_ENDPOINT_TIMEOUT_MS),
     });
     if (!response.ok) {
       throw new Error(

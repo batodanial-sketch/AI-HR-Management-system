@@ -21,6 +21,13 @@ export interface EmailMessage {
 
 export type EmailProvider = "console" | "smtp" | "http";
 
+/**
+ * Wall-clock bound for the outbound email relay (HTTP/SMTP-relay modes).
+ * A slow or wedged buyer-configured relay must never pin a server request;
+ * 15s covers realistic relay/Mail-API acknowledgment latency with headroom.
+ */
+const EMAIL_RELAY_TIMEOUT_MS = 15_000;
+
 export function emailProvider(): EmailProvider {
   const value = (process.env.EMAIL_PROVIDER ?? "console").toLowerCase();
   if (value === "smtp" || value === "http") {
@@ -41,6 +48,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(message),
+      signal: AbortSignal.timeout(EMAIL_RELAY_TIMEOUT_MS),
     });
     if (!response.ok) {
       throw new Error(`Email relay returned ${response.status}.`);
@@ -75,6 +83,7 @@ async function sendSmtp(message: EmailMessage): Promise<void> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...message, transport: "smtp" }),
+    signal: AbortSignal.timeout(EMAIL_RELAY_TIMEOUT_MS),
   });
   if (!response.ok) {
     throw new Error(`SMTP relay returned ${response.status}.`);
