@@ -9,6 +9,10 @@ import {
   EDGE_DEFAULT_COPILOT_LIMIT,
   type EdgeRateResult,
 } from "@/lib/edge/rate-limit";
+import {
+  advertisesBodyOverLimit,
+  INTEGRATION_BODY_LIMIT_BYTES,
+} from "@/lib/http-limit";
 
 const SUPABASE_URL = supabaseUrl();
 // Publishable key first, legacy anon key as fallback.
@@ -146,6 +150,21 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 async function handle(request: NextRequest, requestId: string): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+
+  // Integration body cap: webhook/desktop/SCIM routes buffer the full raw
+  // body for signature verification. Reject an advertised oversized body
+  // before any buffering happens (413, never a 200).
+  if (
+    (pathname.startsWith("/api/webhooks/") ||
+      pathname.startsWith("/api/desktop/") ||
+      pathname.startsWith("/api/scim/")) &&
+    advertisesBodyOverLimit(request.headers, INTEGRATION_BODY_LIMIT_BYTES)
+  ) {
+    return NextResponse.json(
+      { ok: false, error: "Request body exceeds the integration size limit." },
+      { status: 413, headers: { "x-request-id": requestId } },
+    );
+  }
 
   // Expose the resolved pathname to server components (root layout) so it can
   // skip expensive auth/license resolution on public surfaces. Threaded through

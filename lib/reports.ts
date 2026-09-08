@@ -1,6 +1,7 @@
 import "server-only";
 import { getCurrentUser } from "@/lib/auth";
 import { getEmployees, getCandidates, getLeads, getDeals, getLeaveRequests } from "@/lib/api";
+import { csvEscape, toCsv } from "@/lib/csv-export";
 
 /**
  * Server-side report/export builders.
@@ -10,15 +11,6 @@ import { getEmployees, getCandidates, getLeads, getDeals, getLeaveRequests } fro
  * client-side leads CSV, these run server-side so they can be permission- and
  * license-gated.
  */
-
-function csvEscape(value: unknown): string {
-  const text = value == null ? "" : String(value);
-  return `"${text.replace(/"/g, '""')}"`;
-}
-
-function toCsv(header: string[], rows: unknown[][]): string {
-  return [header.map(csvEscape).join(","), ...rows.map((row) => row.map(csvEscape).join(","))].join("\n");
-}
 
 export interface Report {
   filename: string;

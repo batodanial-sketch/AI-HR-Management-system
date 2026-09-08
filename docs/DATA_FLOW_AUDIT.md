@@ -121,3 +121,27 @@ Added a self-service account deletion flow:
 1. **Rotate the leaked keys** — `SUPABASE_SERVICE_ROLE_KEY` and the Groq key were pasted in chat earlier. Still outstanding.
 2. **AI data transfer notice** — consider a one-line disclosure in Settings → AI Provider that prompts (resumes, interview notes) are sent to the configured LLM vendor, so buyers can make an informed BYOK choice.
 3. **Non-Supabase memory adapters** (Postgres/SQLite/custom) return `orgFilter()` = `undefined` — single-tenant by assumption. If multi-tenant on those backends is ever needed, org scoping must be added there.
+
+---
+
+## Ultimate audit update (2026-09-08)
+
+Re-verified against the phase-advisory final state (`arena/01a07c94-ai-hr-management-system`); no new data exit points introduced.
+
+**Current data-flow map:**
+
+```
+Browser (publishable env only)
+  → Next.js (session + canonical RBAC + org-scoped getters)
+      → Supabase Auth / PostgREST / Storage (RLS-authoritative; private objects only)
+      → Python AI bridge (BRIDGE_SECRET_KEY, tenant pinned from session)
+          → LLM provider (feature prompt payloads only — never secrets)
+      → Email relay (server-derived recipients) / subscriber webhooks (HMAC-signed)
+      → Observability backends (scrubbed events; bounded, never-throwing)
+```
+
+**PII exit points and controls:** Supabase Auth (TLS, vendor), LLM provider (feature payloads only; BYOK disclosure recommended below), email relay/webhooks (server-chosen recipients, HMAC signatures, audit receipts), observability (scrub module + tests). No raw HR documents, passwords, keys, or session material cross any boundary.
+
+**Controls verified this pass:** every server-side outbound fetch is timeout-bounded (10–150 s); integration webhook/desktop/SCIM bodies capped at 5 MB with 413 before buffering; report exports neutralize spreadsheet-formula injection; audit rows org-scoped and RLS-isolated; logs carry request IDs and never message-level PII (scheduler logs message-only).
+
+**Carried recommendations (unchanged, operator/UX):** rotate any keys previously pasted in chat; add an AI data-transfer disclosure line in Settings → AI Provider; non-Supabase memory adapters remain single-tenant by documented assumption.
