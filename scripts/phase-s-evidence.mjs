@@ -173,8 +173,15 @@ function localRestoreDrill(toolsBin) {
   const tmp = `/tmp/phase-s-drill-${process.pid}`;
   const d1 = `${tmp}/cluster-source`;
   const d2 = `${tmp}/cluster-restored`;
-  const port1 = 54340;
-  const port2 = 54341;
+  // Dynamically pick two free loopback ports so a stale scratch postmaster
+  // from an earlier unclean run can never collide with this drill (fixed
+  // ports 54340/54341 were observed EADDRINUSE after a crashed cleanup).
+  let port1 = 54340;
+  let port2 = 54341;
+  try {
+    const fp = JSON.parse(step("node", ["-e", `const net=require("net");const ports=[];let left=2;const b=()=>{const s=net.createServer();s.listen(0,"127.0.0.1",()=>{ports.push(s.address().port);s.close(()=>{left-=1;if(left===0){console.log(JSON.stringify(ports));process.exit(0)}})})};b();b();`]).stdout.trim());
+    if (Array.isArray(fp) && fp.length === 2 && fp.every((p) => Number.isInteger(p) && p > 1024)) { port1 = fp[0]; port2 = fp[1]; }
+  } catch { /* keep defaults — waitPg will surface any real problem */ }
   const run = { steps: [], ports: [port1, port2] };
   const push = (label, res) => { run.steps.push({ step: label, exitCode: res.exitCode, durationMs: res.durationMs, stdout: res.stdout ?? "", stderr: res.stderr ?? "" }); return run.steps[run.steps.length - 1]; };
   const countFor = (label, url, sql) => {
