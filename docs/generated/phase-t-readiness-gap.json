@@ -1,10 +1,10 @@
 {
   "phase": "T",
-  "generatedAt": "2026-09-08T12:07:49.573Z",
+  "generatedAt": "2026-09-08T12:10:13.637Z",
   "staleGuard": {
-    "gitHead": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "gitHead": "702397029dba0fbe8e24f2456312ca072daf7496",
     "branch": "HEAD",
-    "buildId": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "buildId": "702397029dba0fbe8e24f2456312ca072daf7496",
     "sourceFingerprint": {
       "files": 665,
       "sha256": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440"
@@ -13,8 +13,8 @@
   },
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
   "baseline": {
-    "gitHead": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
-    "buildId": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "gitHead": "702397029dba0fbe8e24f2456312ca072daf7496",
+    "buildId": "702397029dba0fbe8e24f2456312ca072daf7496",
     "evidenceHash": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440",
     "evidenceFiles": 665,
     "workingTree": "dirty",
@@ -34,7 +34,7 @@
         "files": 665,
         "sha256": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440",
         "legalStatuses": true,
-        "generatedAt": "2026-09-08T12:09:39.003Z",
+        "generatedAt": "2026-09-08T12:12:02.738Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true,
         "cognitiveWritten": true,
