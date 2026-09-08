@@ -1,0 +1,563 @@
+{
+  "phase": "V",
+  "generatedAt": "2026-09-08T12:53:08.509Z",
+  "staleGuard": {
+    "gitHead": "72c5c945fe9861f91da583b9a72ce009a08fb369",
+    "branch": "arena/01a07c94-ai-hr-management-system",
+    "buildId": "72c5c945fe9861f91da583b9a72ce009a08fb369",
+    "sourceFingerprint": {
+      "files": 667,
+      "sha256": "892b27d583a258beb3fc8766fb632384a082be4d81900c8c206e190a81f223f2"
+    },
+    "verifyCommand": "node scripts/phase-v-evidence.mjs --verify"
+  },
+  "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+  "baseline": {
+    "branch": "arena/01a07c94-ai-hr-management-system",
+    "gitHead": "72c5c945fe9861f91da583b9a72ce009a08fb369",
+    "remoteHead": "d903cad407d03fc131399138e082fe3662f6e481",
+    "remoteSynced": false,
+    "buildId": "72c5c945fe9861f91da583b9a72ce009a08fb369",
+    "workingTree": "clean",
+    "evidenceHashes": {
+      "phaseS": "892b27d583a258beb3fc8766fb632384a082be4d81900c8c206e190a81f223f2",
+      "phaseT": "892b27d583a258beb3fc8766fb632384a082be4d81900c8c206e190a81f223f2",
+      "phaseU": "892b27d583a258beb3fc8766fb632384a082be4d81900c8c206e190a81f223f2"
+    },
+    "sourceFingerprint": {
+      "files": 667,
+      "sha256": "892b27d583a258beb3fc8766fb632384a082be4d81900c8c206e190a81f223f2"
+    },
+    "cognitive": {
+      "version": "r5-1",
+      "cases": 48,
+      "datasetSha256": "eb371264c8cca31d7f3583b897317e65b39186b4c507280fc99a91c920dfe527",
+      "thresholdSha256": "38b33533615972599f95f3a5b41849a1f93e6549a5f0e7075a7cf69e664e3ef2",
+      "contractMatched": true
+    },
+    "billing": {
+      "gate": "s15-billing",
+      "status": "NOT_IMPLEMENTED"
+    },
+    "phaseS": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 41,
+        "pass": 20,
+        "fail": 0,
+        "blockedExternal": 20,
+        "notImplemented": 1
+      }
+    },
+    "phaseT": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 20,
+        "pass": 3,
+        "fail": 0,
+        "blockedExternal": 17,
+        "notImplemented": 0
+      }
+    },
+    "phaseU": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 22,
+        "pass": 3,
+        "fail": 0,
+        "blockedExternal": 19,
+        "notImplemented": 0
+      }
+    }
+  },
+  "summary": {
+    "gates": 24,
+    "pass": 4,
+    "fail": 0,
+    "blockedExternal": 20,
+    "notImplemented": 0
+  },
+  "phaseSSummary": {
+    "gates": 41,
+    "pass": 20,
+    "fail": 0,
+    "blockedExternal": 20,
+    "notImplemented": 1
+  },
+  "phaseTSummary": {
+    "gates": 20,
+    "pass": 3,
+    "fail": 0,
+    "blockedExternal": 17,
+    "notImplemented": 0
+  },
+  "phaseUSummary": {
+    "gates": 22,
+    "pass": 3,
+    "fail": 0,
+    "blockedExternal": 19,
+    "notImplemented": 0
+  },
+  "externalBlockers": [
+    {
+      "gate": "V2-supabase",
+      "reason": "No dedicated pilot Supabase project provisioned and reachable from this environment (no URL/keys/ref in env; live probes supabase.co/api.supabase.com → 000).",
+      "externalDependency": "hosted Supabase project + project credentials in secure env",
+      "unblockProcedure": "Provision the project per USER_ACTIONS.supabase; set the five env vars; re-run this generator",
+      "userAction": {
+        "service": "Supabase (hosted project + Auth + PostgREST + Storage + backups)",
+        "purpose": "Real database/auth/RLS/storage/backup for the pilot (V2–V6, V17)",
+        "freePaid": "Free tier available (2 free projects) — paid only if >500 MB DB / >1 GB storage / paused projects needed",
+        "cost": "Free tier $0; Pro ~$25/mo if needed (user decision per Rule 3)",
+        "dashboard": "Create org + project at supabase.com/dashboard (region near pilot users); then copy project URL/anon key/service role key from Settings → API; keep service_role key server-side only",
+        "envVars": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY (service_role), SUPABASE_PROJECT_REF, DATABASE_URL (pooler connection string, incl. password — never in chat/evidence)",
+        "verify": "curl -sI https://<ref>.supabase.co/auth/v1/health → HTTP 200; psql/node pg connect via pooler; re-run node scripts/phase-v-evidence.mjs",
+        "unlocks": "V2 Supabase, V3 Database, V4 Auth, V5 RLS, V6 Storage, V17 Backup"
+      },
+      "supporting": {
+        "u1": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V3-supabase-database",
+      "reason": "Migrations not pushed to a real Supabase project (no V2 project). Local replay: 36 migrations, 4 documented pre-existing drift files tolerated (supporting only). Migration history preserved; drift files unmodified.",
+      "externalDependency": "V2 project + supabase CLI access",
+      "unblockProcedure": "supabase link + supabase db push from linked history; verify supabase_migrations.schema_migrations + schema (tables/columns/indexes/constraints/functions/triggers/enums); run migrations twice where safe",
+      "userAction": {
+        "service": "Supabase (hosted project + Auth + PostgREST + Storage + backups)",
+        "purpose": "Real database/auth/RLS/storage/backup for the pilot (V2–V6, V17)",
+        "freePaid": "Free tier available (2 free projects) — paid only if >500 MB DB / >1 GB storage / paused projects needed",
+        "cost": "Free tier $0; Pro ~$25/mo if needed (user decision per Rule 3)",
+        "dashboard": "Create org + project at supabase.com/dashboard (region near pilot users); then copy project URL/anon key/service role key from Settings → API; keep service_role key server-side only",
+        "envVars": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY (service_role), SUPABASE_PROJECT_REF, DATABASE_URL (pooler connection string, incl. password — never in chat/evidence)",
+        "verify": "curl -sI https://<ref>.supabase.co/auth/v1/health → HTTP 200; psql/node pg connect via pooler; re-run node scripts/phase-v-evidence.mjs",
+        "unlocks": "V2 Supabase, V3 Database, V4 Auth, V5 RLS, V6 Storage, V17 Backup"
+      },
+      "supporting": {
+        "s1Migrations": "BLOCKED_EXTERNAL",
+        "localDrill": {
+          "applied": 36,
+          "filesWithFailures": 4,
+          "expectedPreexistingDriftFiles": 4,
+          "tolerated": true
+        }
+      }
+    },
+    {
+      "gate": "V4-supabase-auth",
+      "reason": "Real Supabase Auth sessions (HR_ADMIN/MANAGER/EMPLOYEE) with login/session/logout/revocation/disabled-membership and forged-value rejection require the real project. Server identity from the authenticated session is proven locally (supporting): client actorId/organizationId/role/membership cannot establish authority.",
+      "externalDependency": "hosted Supabase Auth (V2 project)",
+      "unblockProcedure": "Create pilot org + controlled users (runbook §3); execute auth checklist + forged-value tests on the deployment",
+      "userAction": {
+        "service": "Supabase (hosted project + Auth + PostgREST + Storage + backups)",
+        "purpose": "Real database/auth/RLS/storage/backup for the pilot (V2–V6, V17)",
+        "freePaid": "Free tier available (2 free projects) — paid only if >500 MB DB / >1 GB storage / paused projects needed",
+        "cost": "Free tier $0; Pro ~$25/mo if needed (user decision per Rule 3)",
+        "dashboard": "Create org + project at supabase.com/dashboard (region near pilot users); then copy project URL/anon key/service role key from Settings → API; keep service_role key server-side only",
+        "envVars": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY (service_role), SUPABASE_PROJECT_REF, DATABASE_URL (pooler connection string, incl. password — never in chat/evidence)",
+        "verify": "curl -sI https://<ref>.supabase.co/auth/v1/health → HTTP 200; psql/node pg connect via pooler; re-run node scripts/phase-v-evidence.mjs",
+        "unlocks": "V2 Supabase, V3 Database, V4 Auth, V5 RLS, V6 Storage, V17 Backup"
+      },
+      "supporting": {
+        "s1Auth": "BLOCKED_EXTERNAL",
+        "s1Identity": "PASS"
+      }
+    },
+    {
+      "gate": "V5-production-rls",
+      "reason": "Canonical authz/RLS suite (tenant isolation over SELECT/INSERT/UPDATE/DELETE/RPC/proposal/storage-metadata, RBAC denies, membership lifecycle, agent boundaries, proposal authorization) must run against the real Supabase pooler. Local 76/76 ×3 is supporting only.",
+      "externalDependency": "V2 project database via pooler",
+      "unblockProcedure": "DATABASE_URL=<REAL_POOLER> node scripts/db/authz-rls-suite.mjs → expect PASS; any real failure is FAIL",
+      "userAction": {
+        "service": "Supabase (hosted project + Auth + PostgREST + Storage + backups)",
+        "purpose": "Real database/auth/RLS/storage/backup for the pilot (V2–V6, V17)",
+        "freePaid": "Free tier available (2 free projects) — paid only if >500 MB DB / >1 GB storage / paused projects needed",
+        "cost": "Free tier $0; Pro ~$25/mo if needed (user decision per Rule 3)",
+        "dashboard": "Create org + project at supabase.com/dashboard (region near pilot users); then copy project URL/anon key/service role key from Settings → API; keep service_role key server-side only",
+        "envVars": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY (service_role), SUPABASE_PROJECT_REF, DATABASE_URL (pooler connection string, incl. password — never in chat/evidence)",
+        "verify": "curl -sI https://<ref>.supabase.co/auth/v1/health → HTTP 200; psql/node pg connect via pooler; re-run node scripts/phase-v-evidence.mjs",
+        "unlocks": "V2 Supabase, V3 Database, V4 Auth, V5 RLS, V6 Storage, V17 Backup"
+      },
+      "supporting": {
+        "s1Rls": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V6-private-storage",
+      "reason": "Real private bucket (public=false) + full matrix (upload, authorized/unauthorized/cross-tenant/unauthenticated download, public-URL attempt) + legacy inventory/migration required. Code search: zero getPublicUrl/public-bucket/public-resume paths.",
+      "externalDependency": "Supabase Storage private bucket + deployed pipeline",
+      "unblockProcedure": "Create bucket with public=false; run the matrix; inventory/invalidate legacy resume rows; verify public URL → DENIED, cross-tenant → DENIED, unauthenticated → DENIED, authorized same-tenant → ALLOWED",
+      "userAction": {
+        "service": "Supabase (hosted project + Auth + PostgREST + Storage + backups)",
+        "purpose": "Real database/auth/RLS/storage/backup for the pilot (V2–V6, V17)",
+        "freePaid": "Free tier available (2 free projects) — paid only if >500 MB DB / >1 GB storage / paused projects needed",
+        "cost": "Free tier $0; Pro ~$25/mo if needed (user decision per Rule 3)",
+        "dashboard": "Create org + project at supabase.com/dashboard (region near pilot users); then copy project URL/anon key/service role key from Settings → API; keep service_role key server-side only",
+        "envVars": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY (service_role), SUPABASE_PROJECT_REF, DATABASE_URL (pooler connection string, incl. password — never in chat/evidence)",
+        "verify": "curl -sI https://<ref>.supabase.co/auth/v1/health → HTTP 200; psql/node pg connect via pooler; re-run node scripts/phase-v-evidence.mjs",
+        "unlocks": "V2 Supabase, V3 Database, V4 Auth, V5 RLS, V6 Storage, V17 Backup"
+      },
+      "supporting": {
+        "s2Bucket": "BLOCKED_EXTERNAL",
+        "s2Migration": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V7-malware-scanner",
+      "reason": "Real scanner required: CLEAN → accept; EICAR/TIMEOUT/UNAVAILABLE/ERROR/MALFORMED → reject/quarantine. Fail-closed contract passes in code (supporting); only explicit CLEAN permits acceptance.",
+      "externalDependency": "deployed ClamAV(-rest) or supported webhook scanner",
+      "unblockProcedure": "Deploy scanner; set MALWARE_SCANNER=clamav-rest|webhook + URL/token; execute clean/EICAR/timeout/unavailable/malformed/error cases; never retain EICAR permanently",
+      "userAction": {
+        "service": "Malware scanner (ClamAV via clamav-rest or the supported webhook receiver)",
+        "purpose": "Real malware verdicts for the upload pipeline (V7) — fail-closed requirement",
+        "freePaid": "Free (self-hosted ClamAV container or free hosted endpoint)",
+        "cost": "$0 self-hosted; paid only if a hosted scanning API is preferred",
+        "dashboard": "Deploy clamav-rest (e.g. docker run -p 3310 ... clamav/clamav) reachable from the app deployment; expose HTTPS endpoint or bridge",
+        "envVars": "MALWARE_SCANNER=clamav-rest (or webhook), MALWARE_SCANNER_URL, MALWARE_SCANNER_TOKEN",
+        "verify": "Upload clean file → accepted; EICAR string file → rejected/quarantined; stop scanner → upload rejected (fail closed)",
+        "unlocks": "V7 Scanner"
+      },
+      "supporting": {
+        "s3Provider": "BLOCKED_EXTERNAL",
+        "contract": "PASS"
+      }
+    },
+    {
+      "gate": "V8-production-deployment",
+      "reason": "No real HTTPS deployment (PILOT_BASE_URL unset; vercel/fly/render/netlify/railway probes 000; no account/credentials). Local production build + live-HTTP smoke 26/26 + endpoint semantics pass (supporting only) — localhost never satisfies this gate.",
+      "externalDependency": "HTTPS hosting platform account + deployment",
+      "unblockProcedure": "Deploy on a supported platform with full production env; set PILOT_BASE_URL; verify /api/health vs /api/system/health vs /api/system/ready vs /api/ai/status over HTTPS with secure cookies",
+      "userAction": {
+        "service": "HTTPS hosting (Vercel / Fly.io / Render / Railway — any supported platform)",
+        "purpose": "Production HTTPS deployment of the Next.js app + env (V8), and all deployed gates (V9–V20)",
+        "freePaid": "Free tiers exist on all (Vercel hobby, Render free, Fly launch, Railway trial); paid only if team/scale needs",
+        "cost": "$0 free tiers; upgrade only with user approval",
+        "dashboard": "Create account; connect the GitHub repo batodanial-sketch/AI-HR-Management-system; add the env vars from this file; deploy; obtain public HTTPS URL",
+        "envVars": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all env vars listed under supabase/scanner/metrics/error-tracking/ai entries (platform secret store — never in repo)",
+        "verify": "curl -sI https://<app-url>/api/health → 200; /api/system/health, /api/system/ready, /api/ai/status reachable over HTTPS with distinct semantics",
+        "unlocks": "V8 Deployment + every deployed gate (V9–V20)"
+      },
+      "supporting": {
+        "s10Deployment": "BLOCKED_EXTERNAL",
+        "s10Smoke": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V9-metrics-backend",
+      "reason": "Real metric delivery required: HTTP requests, 5xx, AI latency/failures, DB/storage/scanner failures, rate limiting, authz denials, proposal execution failures — with backend/metric name/timestamp/sample/delivery status per signal. Instrumentation 18/18 (supporting).",
+      "externalDependency": "reachable metrics backend (Prometheus/OTLP)",
+      "unblockProcedure": "Set METRICS_BACKEND / OTEL_* env; verify actual delivery of the named signals; record samples",
+      "userAction": {
+        "service": "Metrics backend (Prometheus + Alertmanager, or hosted OTLP endpoint)",
+        "purpose": "Real metric delivery (V9) and real alert firing with IDs (V10)",
+        "freePaid": "Free self-hosted Prometheus/Alertmanager; hosted (Grafana Cloud free tier) acceptable",
+        "cost": "$0 self-hosted; Grafana Cloud free tier $0",
+        "dashboard": "Run Prometheus + Alertmanager (or Grafana Cloud stack); scrape the deployment /metrics; load docs/ops/alerts.prometheus.yml",
+        "envVars": "METRICS_BACKEND=prometheus|otlp, METRICS_TOKEN (or OTEL_EXPORTER_OTLP_ENDPOINT + OTEL_EXPORTER_OTLP_HEADERS)",
+        "verify": "Named metrics appear with timestamps; trigger each of the nine rules and record real alert IDs + recovery",
+        "unlocks": "V9 Metrics, V10 Alerting"
+      },
+      "supporting": {
+        "s4Metrics": "BLOCKED_EXTERNAL",
+        "instrumentation": "PASS"
+      }
+    },
+    {
+      "gate": "V10-alert-delivery",
+      "reason": "Real firing of all nine rules (SustainedHttp5xx, AiProviderFailures, AiLatencyDegraded, DatabaseFailure, StorageFailures, MalwareScannerUnavailable, RateLimitSpike, ProposalExecutionFailures, AuthzDenialSpike) with real alert IDs required. No alert ID → no PASS; no IDs fabricated.",
+      "externalDependency": "Alertmanager/hosted alerts connected to the V9 backend",
+      "unblockProcedure": "Load docs/ops/alerts.prometheus.yml; trigger each rule; record alert name/ID/timestamp/recovery",
+      "userAction": {
+        "service": "Metrics backend (Prometheus + Alertmanager, or hosted OTLP endpoint)",
+        "purpose": "Real metric delivery (V9) and real alert firing with IDs (V10)",
+        "freePaid": "Free self-hosted Prometheus/Alertmanager; hosted (Grafana Cloud free tier) acceptable",
+        "cost": "$0 self-hosted; Grafana Cloud free tier $0",
+        "dashboard": "Run Prometheus + Alertmanager (or Grafana Cloud stack); scrape the deployment /metrics; load docs/ops/alerts.prometheus.yml",
+        "envVars": "METRICS_BACKEND=prometheus|otlp, METRICS_TOKEN (or OTEL_EXPORTER_OTLP_ENDPOINT + OTEL_EXPORTER_OTLP_HEADERS)",
+        "verify": "Named metrics appear with timestamps; trigger each of the nine rules and record real alert IDs + recovery",
+        "unlocks": "V9 Metrics, V10 Alerting"
+      },
+      "supporting": {
+        "s4Firing": "BLOCKED_EXTERNAL",
+        "rules": "PASS"
+      }
+    },
+    {
+      "gate": "V11-error-tracking",
+      "reason": "Real event arrival from POST /api/system/error-test with request-id/route/environment/safe-error and absence of API keys/JWTs/auth headers/DB passwords/bridge secrets/connection strings/raw resumes/PII; dedup verified; synthetic marked.",
+      "externalDependency": "Sentry-compatible DSN/webhook + deployment",
+      "unblockProcedure": "Set ERROR_TRACKING_DSN; trigger the endpoint; verify event + scrubbing + dedup; clean test events per policy",
+      "userAction": {
+        "service": "Error tracking (Sentry-compatible DSN/webhook)",
+        "purpose": "Real error event arrival + scrubbing + dedup proof (V11)",
+        "freePaid": "Sentry free tier available",
+        "cost": "$0 free tier",
+        "dashboard": "Create Sentry project; copy DSN (server-side only); set the env var; trigger POST /api/system/error-test",
+        "envVars": "ERROR_TRACKING_DSN (or ERROR_TRACKING_WEBHOOK + ERROR_TRACKING_TOKEN)",
+        "verify": "Event arrives with error/stack/request-id/safe context; contains no JWT/key/Authorization/DSN/raw resume/PII; synthetic flag set; dedup works",
+        "unlocks": "V11 Error Tracking"
+      },
+      "supporting": {
+        "s5Backend": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V12-ai-provider",
+      "reason": "No real AI provider configured or reachable (no LLM_API_KEY; provider probes 000). Protocol matrix (auth, model availability, completion, streaming, usage, timeout, 429, 500, empty) to run against the real provider. Bridge protocol suite passes (supporting). Keys never reach the browser.",
+      "externalDependency": "reachable AI provider + key in secure env (bridge-side)",
+      "unblockProcedure": "Create provider key; set LLM_PROVIDER + LLM_API_KEY on the bridge; execute the V12 protocol matrix",
+      "userAction": {
+        "service": "AI provider (OpenAI / Groq / Google Gemini / Anthropic / any OpenAI-compatible) + Python bridge deployment",
+        "purpose": "Real provider protocol matrix (V12), bridge (V13), release-blocking 48-case cognitive gate (V14), agent/performance/failure gates",
+        "freePaid": "Groq / Gemini free tiers exist; OpenAI/Anthropic paid (pay-per-token, cents-to-dollars per pilot run) — user approval per Rule 3 before any paid key",
+        "cost": "Free tiers $0; paid pay-per-token (small for 48-case run)",
+        "dashboard": "Create provider key at the provider dashboard; deploy the Python bridge (python_engine/ + bridge/) with LLM_PROVIDER/LLM_API_KEY; expose AI_BRIDGE_URL",
+        "envVars": "LLM_PROVIDER, LLM_API_KEY (bridge-side only — never browser), AI_BRIDGE_URL, BRIDGE_SECRET_KEY (shared secret between Next.js and bridge)",
+        "verify": "AI_BRIDGE_URL health OK with BRIDGE_SECRET_KEY; provider matrix (success/401/429/500/timeout/malformed/empty/usage/streaming); then AI_BRIDGE_URL=... BRIDGE_SECRET_KEY=... node scripts/ai/cognitive-gate.mjs",
+        "unlocks": "V12 Provider, V13 Bridge, V14 Cognitive, V15/V16/V18/V19"
+      },
+      "supporting": {
+        "s6Provider": "BLOCKED_EXTERNAL",
+        "protocol": "PASS"
+      }
+    },
+    {
+      "gate": "V13-ai-bridge",
+      "reason": "The Python AI bridge must be deployed and reachable (AI_BRIDGE_URL + BRIDGE_SECRET_KEY) with chain Browser → Next.js authenticated endpoint → AI bridge → real provider; no direct browser→provider path. Bridge protocol suite passes locally (supporting).",
+      "externalDependency": "deployed bridge host + shared secret",
+      "unblockProcedure": "Deploy python_engine/bridge; set AI_BRIDGE_URL/BRIDGE_SECRET_KEY in Next.js env and BRIDGE_SECRET_KEY on the bridge; verify each hop",
+      "userAction": {
+        "service": "AI provider (OpenAI / Groq / Google Gemini / Anthropic / any OpenAI-compatible) + Python bridge deployment",
+        "purpose": "Real provider protocol matrix (V12), bridge (V13), release-blocking 48-case cognitive gate (V14), agent/performance/failure gates",
+        "freePaid": "Groq / Gemini free tiers exist; OpenAI/Anthropic paid (pay-per-token, cents-to-dollars per pilot run) — user approval per Rule 3 before any paid key",
+        "cost": "Free tiers $0; paid pay-per-token (small for 48-case run)",
+        "dashboard": "Create provider key at the provider dashboard; deploy the Python bridge (python_engine/ + bridge/) with LLM_PROVIDER/LLM_API_KEY; expose AI_BRIDGE_URL",
+        "envVars": "LLM_PROVIDER, LLM_API_KEY (bridge-side only — never browser), AI_BRIDGE_URL, BRIDGE_SECRET_KEY (shared secret between Next.js and bridge)",
+        "verify": "AI_BRIDGE_URL health OK with BRIDGE_SECRET_KEY; provider matrix (success/401/429/500/timeout/malformed/empty/usage/streaming); then AI_BRIDGE_URL=... BRIDGE_SECRET_KEY=... node scripts/ai/cognitive-gate.mjs",
+        "unlocks": "V12 Provider, V13 Bridge, V14 Cognitive, V15/V16/V18/V19"
+      },
+      "supporting": {
+        "protocol": "PASS",
+        "bridgeCfg": false
+      }
+    },
+    {
+      "gate": "V14-cognitive",
+      "reason": "Release-blocking 48-case gate (r5-1) not executed against a real model: provider unreachable (V12). Dataset + thresholds hashed and unchanged; no score fabricated. Reachable-but-below-threshold would be FAIL (tool selection/argument/grounding ≥95%, no-data honesty =100%, zero forbidden bypass/tenant escape/secret exfiltration/injection compliance).",
+      "externalDependency": "real model via the deployed bridge (V12/V13)",
+      "unblockProcedure": "AI_BRIDGE_URL=<real bridge> BRIDGE_SECRET_KEY=<configured secret> node scripts/ai/cognitive-gate.mjs; record per-category scores and any failing case IDs",
+      "userAction": {
+        "service": "AI provider (OpenAI / Groq / Google Gemini / Anthropic / any OpenAI-compatible) + Python bridge deployment",
+        "purpose": "Real provider protocol matrix (V12), bridge (V13), release-blocking 48-case cognitive gate (V14), agent/performance/failure gates",
+        "freePaid": "Groq / Gemini free tiers exist; OpenAI/Anthropic paid (pay-per-token, cents-to-dollars per pilot run) — user approval per Rule 3 before any paid key",
+        "cost": "Free tiers $0; paid pay-per-token (small for 48-case run)",
+        "dashboard": "Create provider key at the provider dashboard; deploy the Python bridge (python_engine/ + bridge/) with LLM_PROVIDER/LLM_API_KEY; expose AI_BRIDGE_URL",
+        "envVars": "LLM_PROVIDER, LLM_API_KEY (bridge-side only — never browser), AI_BRIDGE_URL, BRIDGE_SECRET_KEY (shared secret between Next.js and bridge)",
+        "verify": "AI_BRIDGE_URL health OK with BRIDGE_SECRET_KEY; provider matrix (success/401/429/500/timeout/malformed/empty/usage/streaming); then AI_BRIDGE_URL=... BRIDGE_SECRET_KEY=... node scripts/ai/cognitive-gate.mjs",
+        "unlocks": "V12 Provider, V13 Bridge, V14 Cognitive, V15/V16/V18/V19"
+      },
+      "supporting": {
+        "s7Model": "BLOCKED_EXTERNAL",
+        "dataset": {
+          "version": "r5-1",
+          "cases": 48,
+          "datasetSha256": "eb371264c8cca31d7f3583b897317e65b39186b4c507280fc99a91c920dfe527",
+          "thresholdSha256": "38b33533615972599f95f3a5b41849a1f93e6549a5f0e7075a7cf69e664e3ef2",
+          "contractMatched": true
+        },
+        "committed": "PASS"
+      }
+    },
+    {
+      "gate": "V15-agent-action-matrix",
+      "reason": "Deployed matrix (read-only, write proposal, approval, execution, verification, receipt, audit + forged actor/org/role, cross-tenant, duplicate/concurrent approval, duplicate execution, replay, expired proposal) with exactly-one business execution must run on HTTPS. Local semantics pass (supporting).",
+      "externalDependency": "V8 HTTPS deployment + V2 database",
+      "unblockProcedure": "Execute the V15 matrix on the deployment; verify proposal freeze/argument hash/approval recheck/idempotency/DB concurrency and inspect production DB state",
+      "userAction": {
+        "service": "HTTPS hosting (Vercel / Fly.io / Render / Railway — any supported platform)",
+        "purpose": "Production HTTPS deployment of the Next.js app + env (V8), and all deployed gates (V9–V20)",
+        "freePaid": "Free tiers exist on all (Vercel hobby, Render free, Fly launch, Railway trial); paid only if team/scale needs",
+        "cost": "$0 free tiers; upgrade only with user approval",
+        "dashboard": "Create account; connect the GitHub repo batodanial-sketch/AI-HR-Management-system; add the env vars from this file; deploy; obtain public HTTPS URL",
+        "envVars": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all env vars listed under supabase/scanner/metrics/error-tracking/ai entries (platform secret store — never in repo)",
+        "verify": "curl -sI https://<app-url>/api/health → 200; /api/system/health, /api/system/ready, /api/ai/status reachable over HTTPS with distinct semantics",
+        "unlocks": "V8 Deployment + every deployed gate (V9–V20)"
+      },
+      "supporting": {
+        "s8Local": "PASS"
+      }
+    },
+    {
+      "gate": "V16-governance",
+      "reason": "Deployed kill switch (AI_KILL_SWITCH=1 → no provider call/tool execution/proposal execution; status killSwitch:true; restore → recovery) plus allowlist/token budget/request budget/round limit/rate limit. Request-time controls proven locally (supporting).",
+      "externalDependency": "V8 deployment with request-time env",
+      "unblockProcedure": "Set AI_KILL_SWITCH=1; verify AI endpoints blocked with zero provider calls; restore to 0; verify recovery; exercise allowlist and budgets",
+      "userAction": {
+        "service": "HTTPS hosting (Vercel / Fly.io / Render / Railway — any supported platform)",
+        "purpose": "Production HTTPS deployment of the Next.js app + env (V8), and all deployed gates (V9–V20)",
+        "freePaid": "Free tiers exist on all (Vercel hobby, Render free, Fly launch, Railway trial); paid only if team/scale needs",
+        "cost": "$0 free tiers; upgrade only with user approval",
+        "dashboard": "Create account; connect the GitHub repo batodanial-sketch/AI-HR-Management-system; add the env vars from this file; deploy; obtain public HTTPS URL",
+        "envVars": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all env vars listed under supabase/scanner/metrics/error-tracking/ai entries (platform secret store — never in repo)",
+        "verify": "curl -sI https://<app-url>/api/health → 200; /api/system/health, /api/system/ready, /api/ai/status reachable over HTTPS with distinct semantics",
+        "unlocks": "V8 Deployment + every deployed gate (V9–V20)"
+      },
+      "supporting": {
+        "s9Local": "PASS"
+      }
+    },
+    {
+      "gate": "V17-backup-restore",
+      "reason": "Provider-operated backup/restore (backup exists, retention, restore capability + timestamp, scratch restore, schema/RLS/Auth/membership/critical-data integrity, application reconnect) requires the real Supabase project. Local drill (PG 18.4, schema equal, RLS 76/76) is supporting only.",
+      "externalDependency": "Supabase project backups + restore tooling",
+      "unblockProcedure": "After V2: confirm backups + retention; perform scratch restore; run RLS suite + critical smoke + row-count checks; attach provider evidence",
+      "userAction": {
+        "service": "Supabase (hosted project + Auth + PostgREST + Storage + backups)",
+        "purpose": "Real database/auth/RLS/storage/backup for the pilot (V2–V6, V17)",
+        "freePaid": "Free tier available (2 free projects) — paid only if >500 MB DB / >1 GB storage / paused projects needed",
+        "cost": "Free tier $0; Pro ~$25/mo if needed (user decision per Rule 3)",
+        "dashboard": "Create org + project at supabase.com/dashboard (region near pilot users); then copy project URL/anon key/service role key from Settings → API; keep service_role key server-side only",
+        "envVars": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY (service_role), SUPABASE_PROJECT_REF, DATABASE_URL (pooler connection string, incl. password — never in chat/evidence)",
+        "verify": "curl -sI https://<ref>.supabase.co/auth/v1/health → HTTP 200; psql/node pg connect via pooler; re-run node scripts/phase-v-evidence.mjs",
+        "unlocks": "V2 Supabase, V3 Database, V4 Auth, V5 RLS, V6 Storage, V17 Backup"
+      },
+      "supporting": {
+        "s11Provider": "BLOCKED_EXTERNAL",
+        "localDrill": {
+          "engine": "postgres (PostgreSQL) 18.4",
+          "migrations": {
+            "applied": 36,
+            "filesWithFailures": 4,
+            "expectedPreexistingDriftFiles": 4,
+            "tolerated": true
+          },
+          "seeded": {
+            "organizations": 1,
+            "memberships": 1,
+            "users": 1
+          },
+          "schema": {
+            "source": {
+              "tables": 122,
+              "policies": 192,
+              "rlsEnabledTables": 121
+            },
+            "restored": {
+              "tables": 122,
+              "policies": 192,
+              "rlsEnabledTables": 121
+            },
+            "equal": true
+          },
+          "rowCounts": {
+            "public.organizations": {
+              "source": 1,
+              "restored": 1,
+              "equal": true
+            },
+            "public.memberships": {
+              "source": 1,
+              "restored": 1,
+              "equal": true
+            },
+            "public.users": {
+              "source": 1,
+              "restored": 1,
+              "equal": true
+            },
+            "public.audit_logs": {
+              "source": 0,
+              "restored": 0,
+              "equal": true
+            }
+          },
+          "restoredRlsSuite": {
+            "total": 76,
+            "passed": 76,
+            "failed": 0
+          }
+        }
+      }
+    },
+    {
+      "gate": "V18-performance",
+      "reason": "Real production performance (p50/p95/p99/throughput/error rate/429 rate over health, ai-status, ai-governance, employees, agents/intelligence, proposal, upload, download + region/runtime/db-region/provider/model/duration/concurrency) requires the deployment. No numbers invented.",
+      "externalDependency": "V8 deployment",
+      "unblockProcedure": "Run the deployed harness; record quantiles and environment metadata; threshold breach is FAIL",
+      "userAction": {
+        "service": "HTTPS hosting (Vercel / Fly.io / Render / Railway — any supported platform)",
+        "purpose": "Production HTTPS deployment of the Next.js app + env (V8), and all deployed gates (V9–V20)",
+        "freePaid": "Free tiers exist on all (Vercel hobby, Render free, Fly launch, Railway trial); paid only if team/scale needs",
+        "cost": "$0 free tiers; upgrade only with user approval",
+        "dashboard": "Create account; connect the GitHub repo batodanial-sketch/AI-HR-Management-system; add the env vars from this file; deploy; obtain public HTTPS URL",
+        "envVars": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all env vars listed under supabase/scanner/metrics/error-tracking/ai entries (platform secret store — never in repo)",
+        "verify": "curl -sI https://<app-url>/api/health → 200; /api/system/health, /api/system/ready, /api/ai/status reachable over HTTPS with distinct semantics",
+        "unlocks": "V8 Deployment + every deployed gate (V9–V20)"
+      },
+      "supporting": {
+        "s12": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V19-failure-injection",
+      "reason": "Controlled production failures (AI unavailable/timeout, DB/storage/scanner unavailable, scanner timeout, metrics/error-tracking unavailable, rate-limit exhaustion, proposal execution failure) with safe behavior (fail closed, no duplicate action, no corruption) and full recovery required.",
+      "externalDependency": "V8 deployment",
+      "unblockProcedure": "Inject each reversible failure; verify safety properties + recovery; restore all services",
+      "userAction": {
+        "service": "HTTPS hosting (Vercel / Fly.io / Render / Railway — any supported platform)",
+        "purpose": "Production HTTPS deployment of the Next.js app + env (V8), and all deployed gates (V9–V20)",
+        "freePaid": "Free tiers exist on all (Vercel hobby, Render free, Fly launch, Railway trial); paid only if team/scale needs",
+        "cost": "$0 free tiers; upgrade only with user approval",
+        "dashboard": "Create account; connect the GitHub repo batodanial-sketch/AI-HR-Management-system; add the env vars from this file; deploy; obtain public HTTPS URL",
+        "envVars": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all env vars listed under supabase/scanner/metrics/error-tracking/ai entries (platform secret store — never in repo)",
+        "verify": "curl -sI https://<app-url>/api/health → 200; /api/system/health, /api/system/ready, /api/ai/status reachable over HTTPS with distinct semantics",
+        "unlocks": "V8 Deployment + every deployed gate (V9–V20)"
+      },
+      "supporting": {
+        "s13": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "V20-final-security",
+      "reason": "Deployed zero-tolerance proof (secret leakage 0, tenant escape 0, auth bypass 0, public resume access 0, malware acceptance while scanner unavailable 0, duplicate consequential execution 0, kill-switch bypass 0) + re-run of secret scan/authz/RLS/proposal/storage suites on the final state. Local close-out: secret scan 0/658, authz-dup 21/21 (supporting).",
+      "externalDependency": "V8 deployment + final source state",
+      "unblockProcedure": "Execute the V20 checklist on the deployment and re-run all suites; any violation → NOT PRODUCTION PILOT READY",
+      "userAction": {
+        "service": "HTTPS hosting (Vercel / Fly.io / Render / Railway — any supported platform)",
+        "purpose": "Production HTTPS deployment of the Next.js app + env (V8), and all deployed gates (V9–V20)",
+        "freePaid": "Free tiers exist on all (Vercel hobby, Render free, Fly launch, Railway trial); paid only if team/scale needs",
+        "cost": "$0 free tiers; upgrade only with user approval",
+        "dashboard": "Create account; connect the GitHub repo batodanial-sketch/AI-HR-Management-system; add the env vars from this file; deploy; obtain public HTTPS URL",
+        "envVars": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all env vars listed under supabase/scanner/metrics/error-tracking/ai entries (platform secret store — never in repo)",
+        "verify": "curl -sI https://<app-url>/api/health → 200; /api/system/health, /api/system/ready, /api/ai/status reachable over HTTPS with distinct semantics",
+        "unlocks": "V8 Deployment + every deployed gate (V9–V20)"
+      },
+      "supporting": {
+        "s14Zero": "PASS",
+        "s14Local": "PASS"
+      }
+    },
+    {
+      "gate": "V21-controlled-pilot",
+      "reason": "Sequential after V2–V20 — 19 gate(s) not PASS",
+      "externalDependency": "V2–V20 PASS + real deployment",
+      "unblockProcedure": "Run runbook §§1/3/4; enable allowlist; execute pilot workload; attach safe records",
+      "userAction": null,
+      "supporting": null
+    }
+  ],
+  "internalBlockers": [],
+  "notImplemented": [
+    {
+      "gate": "s15-billing",
+      "decision": "NOT_IMPLEMENTED — pilot is non-billing / manually controlled; automated billing is not required for this pilot."
+    }
+  ],
+  "productionRisks": [
+    "External infrastructure not provisioned/reachable from this sandbox (18-endpoint live probe matrix: all external services 000; only npmjs/pypi/github reachable). No provider credentials present; no supabase CLI; no docker. User action required per USER_ACTIONS in this artifact.",
+    "Pre-existing migration drift (202608150003–0006, 4 files) reproduces on from-scratch replay; reconciliation 20260817001200 absorbs it; history preserved, not rewritten.",
+    "Cognitive dataset r5-1 hashed (sha256 recorded) and thresholds unchanged; no real-model score exists or was fabricated (V14).",
+    "Alert rules defined (docs/ops/alerts.prometheus.yml) but unproven until real alert IDs are recorded (V10).",
+    "Billing remains NOT_IMPLEMENTED by product decision (pilot non-billing/manually controlled); never silently converted."
+  ]
+}
