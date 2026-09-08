@@ -1,13 +1,13 @@
 {
   "phase": "S",
-  "generatedAt": "2026-09-08T15:58:46.226Z",
+  "generatedAt": "2026-09-08T16:45:51.287Z",
   "staleGuard": {
-    "gitHead": "ad79ba28b6b0b32d0e4e94898343dfb1bc0f840b",
+    "gitHead": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "ad79ba28b6b0b32d0e4e94898343dfb1bc0f840b",
+    "buildId": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
     "sourceFingerprint": {
-      "files": 670,
-      "sha256": "d6f4447ca2cf93ef85109d6a71bc3eaa0025a5b716d3ebd2e97bf6d4586efae2"
+      "files": 671,
+      "sha256": "04636cefcacca7676498ca7fcb5ccdf2967defc927e8abd92fe5b6cf3c39953b"
     },
     "verifyCommand": "node scripts/phase-s-evidence.mjs --verify"
   },

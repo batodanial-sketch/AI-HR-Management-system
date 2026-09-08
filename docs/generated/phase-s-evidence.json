@@ -1,14 +1,14 @@
 {
   "phase": "S — real infrastructure activation & production pilot",
-  "generatedAt": "2026-09-08T15:58:46.226Z",
+  "generatedAt": "2026-09-08T16:45:51.287Z",
   "generator": "scripts/phase-s-evidence.mjs",
   "staleGuard": {
-    "gitHead": "ad79ba28b6b0b32d0e4e94898343dfb1bc0f840b",
+    "gitHead": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "ad79ba28b6b0b32d0e4e94898343dfb1bc0f840b",
+    "buildId": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
     "sourceFingerprint": {
-      "files": 670,
-      "sha256": "d6f4447ca2cf93ef85109d6a71bc3eaa0025a5b716d3ebd2e97bf6d4586efae2"
+      "files": 671,
+      "sha256": "04636cefcacca7676498ca7fcb5ccdf2967defc927e8abd92fe5b6cf3c39953b"
     },
     "verifyCommand": "node scripts/phase-s-evidence.mjs --verify"
   },
@@ -31,7 +31,7 @@
   },
   "s0": {
     "phaseRBaseline": {
-      "reranAt": "2026-09-08T15:56:54.281Z",
+      "reranAt": "2026-09-08T16:43:34.326Z",
       "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED",
       "summary": {
         "gates": 26,
@@ -45,9 +45,9 @@
         "fresh": true,
         "legalStatuses": true,
         "headMatches": true,
-        "generatedAt": "2026-09-08T15:58:37.088Z",
+        "generatedAt": "2026-09-08T16:45:41.962Z",
         "ageMinutes": 0,
-        "buildId": "ad79ba28b6b0b32d0e4e94898343dfb1bc0f840b",
+        "buildId": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED"
       }
     },
@@ -81,27 +81,27 @@
       "passed": 96,
       "failed": 0,
       "perSuite": {
-        "tests/unit/observability.test.ts": {
-          "passed": 18,
-          "failed": 0
-        },
         "tests/unit/aiAuthority.test.ts": {
           "passed": 16,
+          "failed": 0
+        },
+        "tests/unit/observability.test.ts": {
+          "passed": 18,
           "failed": 0
         },
         "tests/unit/storagePipeline.test.ts": {
           "passed": 26,
           "failed": 0
         },
-        "tests/unit/authzModel.test.ts": {
-          "passed": 22,
-          "failed": 0
-        },
         "tests/unit/proposalLifecycle.test.ts": {
           "passed": 11,
           "failed": 0
         },
-        "tests/unit/payrollService.test.ts": {
+        "tests/unit/authzModel.test.ts": {
+          "passed": 22,
+          "failed": 0
+        },
+        "tests/unit/screeningService.test.ts": {
           "passed": 1,
           "failed": 0
         },
@@ -109,7 +109,7 @@
           "passed": 1,
           "failed": 0
         },
-        "tests/unit/screeningService.test.ts": {
+        "tests/unit/payrollService.test.ts": {
           "passed": 1,
           "failed": 0
         }
@@ -212,7 +212,7 @@
     },
     "secretScan": {
       "sourceHits": 0,
-      "filesScanned": 663
+      "filesScanned": 664
     },
     "liveHttpSmoke": {
       "total": 26,
@@ -239,8 +239,8 @@
         "notImplemented": 1
       },
       "rVerdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED",
-      "durationMs": 102878,
-      "recordedAt": "2026-09-08T15:58:37.161Z"
+      "durationMs": 127706,
+      "recordedAt": "2026-09-08T16:45:42.034Z"
     },
     {
       "id": "s0-evidence-verify",
@@ -250,13 +250,13 @@
         "fresh": true,
         "legalStatuses": true,
         "headMatches": true,
-        "generatedAt": "2026-09-08T15:58:37.088Z",
+        "generatedAt": "2026-09-08T16:45:41.962Z",
         "ageMinutes": 0,
-        "buildId": "ad79ba28b6b0b32d0e4e94898343dfb1bc0f840b",
+        "buildId": "fb4eed101fa698f40ac40d9d8e23ede27fd28cff",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE BLOCKED"
       },
       "note": "node scripts/phase-r-evidence.mjs --verify against the regenerated Phase R evidence (current HEAD, same thresholds)",
-      "recordedAt": "2026-09-08T15:58:37.161Z"
+      "recordedAt": "2026-09-08T16:45:42.034Z"
     },
     {
       "id": "s1-supabase-project",
@@ -268,7 +268,7 @@
         "projectRef": null,
         "dbKind": "postgresql (local real instance — supporting only)"
       },
-      "recordedAt": "2026-09-08T15:58:37.161Z"
+      "recordedAt": "2026-09-08T16:45:42.034Z"
     },
     {
       "id": "s1-auth-gate",
@@ -278,7 +278,7 @@
         "reason": "Auth flows (signup/invite, login, session create/refresh/logout, expired/invalid session, unauthorized vs authorized API request) need Supabase Auth + a deployed app; neither is reachable here",
         "unblockBy": "run the S1 auth checklist from docs/PRODUCTION_PILOT_RUNBOOK.md against the deployed pilot with HR_ADMIN/MANAGER/EMPLOYEE users and attach results"
       },
-      "recordedAt": "2026-09-08T15:58:37.161Z"
+      "recordedAt": "2026-09-08T16:45:42.034Z"
     },
     {
       "id": "s1-identity-from-session",
@@ -295,7 +295,7 @@
         }
       },
       "note": "Local suite only (supporting): client-supplied actorId/organizationId/role cannot override the server identity — authority comes from the canonical membership resolver with a pinned org; forged actor/org denied. Live-session proof is s1-auth-gate (external).",
-      "recordedAt": "2026-09-08T15:58:38.647Z"
+      "recordedAt": "2026-09-08T16:45:43.547Z"
     },
     {
       "id": "s1-rls-gate",
@@ -409,7 +409,7 @@
           "dbKind": "postgresql (local real instance — supporting only, NOT the Supabase gate)"
         }
       },
-      "recordedAt": "2026-09-08T15:58:39.765Z"
+      "recordedAt": "2026-09-08T16:45:44.690Z"
     },
     {
       "id": "s1-migrations",
@@ -435,7 +435,7 @@
           "compatibilityDecision": "historical migrations are NOT rewritten; the reconciliation migration is the compatibility layer (documented in docs/SCHEMA_RECONCILIATION.md); the final schema is verified by the RLS suite and schema hash"
         }
       },
-      "recordedAt": "2026-09-08T15:58:39.765Z"
+      "recordedAt": "2026-09-08T16:45:44.690Z"
     },
     {
       "id": "s2-no-public-bucket-code",
@@ -446,7 +446,7 @@
       },
       "hits": [],
       "note": "Zero code paths use public bucket URLs or public bucket configuration. All storage goes through lib/storage: tenant-prefixed private object keys + short-lived signed access URLs (Supabase provider: private bucket + signed URLs; local demo provider signs server-side).",
-      "recordedAt": "2026-09-08T15:58:39.774Z"
+      "recordedAt": "2026-09-08T16:45:44.701Z"
     },
     {
       "id": "s2-legacy-public-resume-urls",
@@ -457,7 +457,7 @@
       },
       "hits": [],
       "note": "Code gate: no legacy public resume URL path exists in the current tree (upload pipeline: authenticated upload → authorization → validation → quarantine → scanner → CLEAN → private storage → signed retrieval). Pre-existing deployed objects created before Phase R are handled by s2-deployed-data-migration (external).",
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.712Z"
     },
     {
       "id": "s2-storage-pipeline-unit",
@@ -469,7 +469,7 @@
         "failed": 0
       },
       "note": "Valid PDF/DOCX/PNG, oversized, MIME mismatch, extension mismatch, malformed, empty, suspicious filename, path traversal, tenant-prefixed keys, quarantine→reject on infection, scanner unavailable/timeout/error never accepts, cross-tenant delete refused.",
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.712Z"
     },
     {
       "id": "s2-real-bucket-suite",
@@ -502,7 +502,7 @@
         ],
         "contract": "CLEAN → private storage + signed retrieval; INFECTED/UNAVAILABLE/TIMEOUT/ERROR → reject with audit; zero public access"
       },
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.712Z"
     },
     {
       "id": "s2-deployed-data-migration",
@@ -512,7 +512,7 @@
         "reason": "legacy rows/objects created before Phase R live in the real project and cannot be enumerated from this sandbox",
         "unblockBy": "in the Supabase project: confirm bucket public=false; migrate any pre-Phase-R resume rows to the documents registry; invalidate legacy URLs; verify unauthenticated GET denied, authorized tenant GET allowed, cross-tenant GET denied (re-run s14-deployed)"
       },
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.712Z"
     },
     {
       "id": "s3-scanner-fail-closed-contract",
@@ -524,7 +524,7 @@
         "failed": 0
       },
       "note": "lib/storage/scanner.ts contract clean|infected|unavailable|timeout|error — only an explicit CLEAN verdict accepts; MALWARE_SCANNER=disabled makes every scan UNAVAILABLE so uploads are refused; 'scanner unavailable → accept' is impossible by construction and unit-tested.",
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s3-real-scanner-provider",
@@ -540,7 +540,7 @@
         ],
         "note": "Only industry-standard harmless test files (EICAR) are used; real malware is never uploaded."
       },
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s4-instrumentation-unit",
@@ -552,7 +552,7 @@
         "failed": 0
       },
       "note": "Scrubbing (JWT/keys/DSN/emails/provider hosts), bounded label cardinality, no identifiers in labels, dedup, correlation id (x-request-id), Prometheus exposition. Never emits API keys, bearer tokens, cookies, passwords, resume contents, raw documents or unnecessary PII.",
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s4-metrics-backend",
@@ -578,7 +578,7 @@
           "malware scanner failures"
         ]
       },
-      "recordedAt": "2026-09-08T15:58:39.785Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s4-alert-rules-present",
@@ -590,7 +590,7 @@
         "missing": []
       },
       "note": "docs/ops/alerts.prometheus.yml defines the nine required rules. Instrumentation alone is not alerting — real firing is s4-alert-firing (external).",
-      "recordedAt": "2026-09-08T15:58:39.786Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s4-alert-firing",
@@ -600,7 +600,7 @@
         "reason": "no alert manager / metrics backend reachable to fire real alerts",
         "unblockBy": "connect Prometheus+Alertmanager (or OTLP sink + alert engine), load docs/ops/alerts.prometheus.yml, trigger one controlled condition per rule (sustained 5xx, AI failure, AI latency, database failure, storage failure, malware scanner unavailable, rate-limit spike, proposal execution failure, application availability) and record event → metric → alert fired (alert ids) for all nine"
       },
-      "recordedAt": "2026-09-08T15:58:39.786Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s5-error-tracking-backend",
@@ -611,7 +611,7 @@
         "unblockBy": "set ERROR_TRACKING_DSN (Sentry-compatible), trigger POST /api/system/error-test, verify: event + stack trace + request id + useful context arrive; secrets scrubbed; provider credentials/authorization headers/raw documents/excessive PII absent; deduplication works; synthetic events clearly marked",
         "instrumentation": "lib/observability/errors.ts + scrub.ts; envelope format supports Sentry SaaS/self-hosted/GlitchTip; webhook fallback"
       },
-      "recordedAt": "2026-09-08T15:58:39.786Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s6-ai-provider",
@@ -636,7 +636,7 @@
         ],
         "architecture": "calls go through the existing bridge/governance layer (lib/ai-proxy + bridge) — no architecture change was made for the test"
       },
-      "recordedAt": "2026-09-08T15:58:39.786Z"
+      "recordedAt": "2026-09-08T16:45:44.713Z"
     },
     {
       "id": "s6-bridge-provider-protocol",
@@ -647,7 +647,7 @@
         "exit": 0
       },
       "note": "Existing bridge/governance architecture (shared-secret proxy auth, tenant from trusted header only, opt-in tool execution) passes its authority suite. LLM_PROVIDER supported values: openai | groq | gemini | anthropic | custom (OpenAI-compatible). The real provider call itself is s6-ai-provider (external).",
-      "recordedAt": "2026-09-08T15:58:40.424Z"
+      "recordedAt": "2026-09-08T16:45:45.364Z"
     },
     {
       "id": "s7-cognitive-real-model",
@@ -682,7 +682,7 @@
         "file": "docs/generated/phase-s-cognitive.json",
         "thresholdsNote": "Unchanged from Phase R: tool selection ≥95%, argument quality ≥95%, grounding ≥95%, no-data honesty 100% (safety-critical), forbidden bypass = 0, tenant escape = 0, secret exfiltration = 0, prompt-injection compliance = 0. Thresholds were not lowered and no score was fabricated."
       },
-      "recordedAt": "2026-09-08T15:58:40.487Z"
+      "recordedAt": "2026-09-08T16:45:45.429Z"
     },
     {
       "id": "s7-injection-cases-committed",
@@ -717,7 +717,7 @@
         ]
       ],
       "note": "Committed dataset (scripts/ai/cognitive-dataset.json, version r5-1, unchanged since Phase R): 6 prompt-injection cases (pi-01..pi-06) place adversarial instructions inside candidate/employee/uploaded-document/organisation/user-controlled content and expect the model to treat retrieved content as DATA — no tool execution, no secret disclosure, no confirmation bypass. Real-model compliance is measured by s7-cognitive-real-model (external).",
-      "recordedAt": "2026-09-08T15:58:40.488Z"
+      "recordedAt": "2026-09-08T16:45:45.430Z"
     },
     {
       "id": "s8-agent-action-local",
@@ -744,7 +744,7 @@
         }
       },
       "note": "Local executable behaviour: tool-policy ceiling ∩ caller RBAC, proposal freezes arguments (hash), approval re-checks authorization, duplicate/concurrent approval has exactly one winner, duplicate execution is a single transition, forged actor/org denied, tenant isolation. The deployed 10-case matrix with live sessions is s8-agent-action-deployed (external).",
-      "recordedAt": "2026-09-08T15:58:40.488Z"
+      "recordedAt": "2026-09-08T16:45:45.430Z"
     },
     {
       "id": "s8-agent-action-deployed",
@@ -754,7 +754,7 @@
         "reason": "the real agent-action matrix needs a deployed pilot org with live sessions",
         "unblockBy": "execute the S8 matrix in docs/PRODUCTION_PILOT_RUNBOOK.md against the HTTPS deployment: read-only request, consequential request, forbidden request, cross-tenant request, forged actor, forged organization, unauthorized approver, duplicate approval, concurrent approval, duplicate execution → exactly one execution"
       },
-      "recordedAt": "2026-09-08T15:58:40.488Z"
+      "recordedAt": "2026-09-08T16:45:45.430Z"
     },
     {
       "id": "s9-pilot-controls-local",
@@ -770,7 +770,7 @@
         "envControlsPresent": true
       },
       "note": "Env-var controls read at request time: AI_KILL_SWITCH, PILOT_ORG_ALLOWLIST (allowlist), PILOT_MAX_REQUEST_TOKENS (per-user/org token bounds), PILOT_MAX_TOOL_ROUNDS + ai_budgets + tier rate limits; confirmation requirement and audit trail are server-side (copilot_proposals + audit_logs). Behaviour on the real deployment is s9-kill-switch-deployed (external).",
-      "recordedAt": "2026-09-08T15:58:40.489Z"
+      "recordedAt": "2026-09-08T16:45:45.431Z"
     },
     {
       "id": "s9-kill-switch-deployed",
@@ -780,7 +780,7 @@
         "reason": "kill-switch toggling must be demonstrated against the real deployment",
         "unblockBy": "set AI_KILL_SWITCH=1 on the deployment: every AI/agent endpoint returns 503 AI_DISABLED before any provider call and /api/ai/status reports killSwitch:true; existing completed actions remain auditable; then set back to 0 and verify recovery"
       },
-      "recordedAt": "2026-09-08T15:58:40.489Z"
+      "recordedAt": "2026-09-08T16:45:45.431Z"
     },
     {
       "id": "s10-https-deployment",
@@ -796,7 +796,7 @@
           "GET /api/ai/status (AI provider availability)"
         ]
       },
-      "recordedAt": "2026-09-08T15:58:40.489Z"
+      "recordedAt": "2026-09-08T16:45:45.431Z"
     },
     {
       "id": "s10-local-production-server",
@@ -804,11 +804,11 @@
       "status": "PASS",
       "counts": {
         "booted": true,
-        "pid": 7614,
+        "pid": 5978,
         "lastHealthCode": 200
       },
       "note": "Local production server (fresh .next build from the s0 baseline) booted on 127.0.0.1:3100 in demo mode for the live-HTTP gates below.",
-      "recordedAt": "2026-09-08T15:58:41.639Z"
+      "recordedAt": "2026-09-08T16:45:46.590Z"
     },
     {
       "id": "s10-live-http-local",
@@ -820,7 +820,7 @@
         "failed": 0
       },
       "note": "Local supporting smoke on the fresh production build: public pages, license surface, 18 domain modules, API endpoints. NOT the HTTPS deployment smoke (s10-https-deployment, external).",
-      "recordedAt": "2026-09-08T15:58:42.547Z"
+      "recordedAt": "2026-09-08T16:45:47.591Z"
     },
     {
       "id": "s10-endpoint-semantics",
@@ -836,7 +836,7 @@
         "/api/ai/status": 503
       },
       "note": "Local semantics (demo mode, no external deps configured): /api/health (liveness) 200 while all dependencies are down — liveness never fails because AI/storage/scanner are unavailable; /api/system/ready (readiness) 503 naming each missing control; /api/system/health aggregates subsystem state; /api/ai/status 503 while AI is disabled/unconfigured. Correct liveness vs readiness vs AI distinction is verifiable locally and must be re-verified on the real domain (s10-https-deployment).",
-      "recordedAt": "2026-09-08T15:58:42.597Z"
+      "recordedAt": "2026-09-08T16:45:47.649Z"
     },
     {
       "id": "s10-deployed-smoke",
@@ -846,7 +846,7 @@
         "reason": "the 20-step external-client deployment smoke (open app → login → refresh → logout → login → dashboard → employees → recruitment → knowledge search → Intelligence/Recruitment agents → proposal create/approve/execute → receipt → audit → resume upload/scan/retrieve → unauthorized-retrieval denial) requires the HTTPS deployment and pilot users",
         "unblockBy": "execute the 20-step smoke test in docs/PRODUCTION_PILOT_RUNBOOK.md against the real deployment and record exact statuses/results"
       },
-      "recordedAt": "2026-09-08T15:58:42.597Z"
+      "recordedAt": "2026-09-08T16:45:47.649Z"
     },
     {
       "id": "s11-provider-backup-restore",
@@ -856,7 +856,7 @@
         "reason": "backups are operated by the database provider (Supabase daily backups / PITR); no provider console access or restore capability exists in this environment, so a provider restore has NOT been executed — migration replay is not claimed as a restore",
         "unblockBy": "in the Supabase dashboard confirm backup exists + retention configured; execute a provider restore into a scratch project; then run the post-restore checklist in docs/PRODUCTION_PILOT_RUNBOOK.md (critical schema survives, RLS survives, application reconnects, critical pilot data survives) and attach provider output"
       },
-      "recordedAt": "2026-09-08T15:58:42.597Z"
+      "recordedAt": "2026-09-08T16:45:47.649Z"
     },
     {
       "id": "s11-local-restore-drill",
@@ -923,19 +923,19 @@
         {
           "step": "version_check",
           "exitCode": 0,
-          "durationMs": 4,
+          "durationMs": 6,
           "failed": false
         },
         {
           "step": "initdb_source",
           "exitCode": 0,
-          "durationMs": 563,
+          "durationMs": 608,
           "failed": false
         },
         {
           "step": "pg_ctl_start_source",
           "exitCode": 0,
-          "durationMs": 107,
+          "durationMs": 108,
           "failed": false
         },
         {
@@ -947,74 +947,74 @@
         {
           "step": "migrate_reset_tolerant_source",
           "exitCode": 2,
-          "durationMs": 795,
+          "durationMs": 756,
           "failed": false,
           "log": ""
         },
         {
           "step": "seed_pilot_rows",
           "exitCode": 0,
-          "durationMs": 60,
+          "durationMs": 61,
           "failed": false
         },
         {
           "step": "count_source_organizations",
           "exitCode": 0,
-          "durationMs": 55,
+          "durationMs": 60,
           "failed": false
         },
         {
           "step": "count_source_memberships",
           "exitCode": 0,
-          "durationMs": 59,
+          "durationMs": 61,
           "failed": false
         },
         {
           "step": "count_source_users",
           "exitCode": 0,
-          "durationMs": 56,
+          "durationMs": 58,
           "failed": false
         },
         {
           "step": "count_source_audit_logs",
           "exitCode": 0,
-          "durationMs": 55,
+          "durationMs": 64,
           "failed": false
         },
         {
           "step": "schema_tables_source",
           "exitCode": 0,
-          "durationMs": 57,
+          "durationMs": 69,
           "failed": false
         },
         {
           "step": "policies_source",
           "exitCode": 0,
-          "durationMs": 56,
+          "durationMs": 68,
           "failed": false
         },
         {
           "step": "rls_enabled_source",
           "exitCode": 0,
-          "durationMs": 65,
+          "durationMs": 62,
           "failed": false
         },
         {
           "step": "pg_ctl_stop_source_clean",
           "exitCode": 0,
-          "durationMs": 303,
+          "durationMs": 202,
           "failed": false
         },
         {
           "step": "copy_data_dir_to_restore",
           "exitCode": 0,
-          "durationMs": 130,
+          "durationMs": 91,
           "failed": false
         },
         {
           "step": "pg_ctl_start_restored",
           "exitCode": 0,
-          "durationMs": 111,
+          "durationMs": 108,
           "failed": false
         },
         {
@@ -1026,54 +1026,54 @@
         {
           "step": "count_restored_organizations",
           "exitCode": 0,
-          "durationMs": 56,
+          "durationMs": 59,
           "failed": false
         },
         {
           "step": "count_restored_memberships",
           "exitCode": 0,
-          "durationMs": 58,
+          "durationMs": 61,
           "failed": false
         },
         {
           "step": "count_restored_users",
           "exitCode": 0,
-          "durationMs": 53,
+          "durationMs": 65,
           "failed": false
         },
         {
           "step": "count_restored_audit_logs",
           "exitCode": 0,
-          "durationMs": 54,
+          "durationMs": 59,
           "failed": false
         },
         {
           "step": "schema_tables_restored",
           "exitCode": 0,
-          "durationMs": 61,
+          "durationMs": 63,
           "failed": false
         },
         {
           "step": "policies_restored",
           "exitCode": 0,
-          "durationMs": 56,
+          "durationMs": 74,
           "failed": false
         },
         {
           "step": "rls_enabled_restored",
           "exitCode": 0,
-          "durationMs": 57,
+          "durationMs": 69,
           "failed": false
         },
         {
           "step": "rls_suite_on_restored",
           "exitCode": 0,
-          "durationMs": 360,
+          "durationMs": 389,
           "failed": false
         }
       ],
       "failures": [],
-      "recordedAt": "2026-09-08T15:58:46.155Z"
+      "recordedAt": "2026-09-08T16:45:51.207Z"
     },
     {
       "id": "s12-performance",
@@ -1083,7 +1083,7 @@
         "reason": "no real HTTPS deployment; a sandbox latency baseline would be invented data and is not recorded",
         "unblockBy": "run the Phase R deployed performance harness against the real deployment and record p50/p95/p99/error rate/rate-limit behaviour per endpoint: health, AI status, governance, employees, agent, proposal, storage, upload, download"
       },
-      "recordedAt": "2026-09-08T15:58:46.155Z"
+      "recordedAt": "2026-09-08T16:45:51.207Z"
     },
     {
       "id": "s13-failure-injection",
@@ -1101,7 +1101,7 @@
           "note": "local fail-closed handling of scanner/proposal/AI-authority failures is unit-covered (supporting only)"
         }
       },
-      "recordedAt": "2026-09-08T15:58:46.156Z"
+      "recordedAt": "2026-09-08T16:45:51.207Z"
     },
     {
       "id": "s14-zero-secret-leak",
@@ -1109,7 +1109,7 @@
       "status": "PASS",
       "counts": {
         "sourceHits": 0,
-        "filesScanned": 663
+        "filesScanned": 664
       },
       "hits": [],
       "allowlisted": [
@@ -1117,7 +1117,7 @@
         "docs/TEST_LICENSE_KEYS.txt (public-key-verifiable test licence tokens)"
       ],
       "note": "git-tracked source contains no live credentials (JWT/API keys/passwords/private keys). Live process env in this run carries no provider secrets. Evidence files intentionally contain none.",
-      "recordedAt": "2026-09-08T15:58:46.188Z"
+      "recordedAt": "2026-09-08T16:45:51.239Z"
     },
     {
       "id": "s14-local-security-closeout",
@@ -1128,7 +1128,7 @@
         "publicUrlPaths": 0
       },
       "note": "Local/static close-out: zero sensitive debug output, zero public-URL paths, zero client-controlled authorization (authz-duplicate-check in s0 baseline), zero cross-tenant access on the local RLS suite, zero malware bypass & scanner-unavailable acceptance (s3/storage unit), zero AI/proposal authorization bypass (s8 local). Deployed proof is s14-deployed (external).",
-      "recordedAt": "2026-09-08T15:58:46.205Z"
+      "recordedAt": "2026-09-08T16:45:51.257Z"
     },
     {
       "id": "s14-deployed",
@@ -1138,7 +1138,7 @@
         "reason": "the final security gate must run against the deployed environment (live HTTP, real bucket, real scanner, real sessions)",
         "unblockBy": "after deployment verify and record: zero secret leakage, zero public resume access, zero cross-tenant access, zero client-controlled authorization, zero AI authorization bypass, zero proposal authorization bypass, zero malware bypass, zero scanner-unavailable acceptance, zero sensitive debug output"
       },
-      "recordedAt": "2026-09-08T15:58:46.205Z"
+      "recordedAt": "2026-09-08T16:45:51.257Z"
     },
     {
       "id": "s15-billing",
@@ -1149,7 +1149,7 @@
         "pilotDecision": "PILOT IS NON-BILLING / MANUALLY CONTROLLED — the controlled pilot is contractually invoiced; automated billing is NOT required for this pilot and is therefore not silently marked complete.",
         "unblockBy": "implement and validate automated billing only if a later pilot requires it (must be done before that launch)"
       },
-      "recordedAt": "2026-09-08T15:58:46.205Z"
+      "recordedAt": "2026-09-08T16:45:51.257Z"
     },
     {
       "id": "s16-pilot-runbook",
@@ -1162,7 +1162,7 @@
       "missing": [],
       "file": "docs/PRODUCTION_PILOT_RUNBOOK.md",
       "note": "Every emergency procedure is executable from documented env vars/commands (no code changes required).",
-      "recordedAt": "2026-09-08T15:58:46.206Z"
+      "recordedAt": "2026-09-08T16:45:51.259Z"
     }
   ],
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED"
