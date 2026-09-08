@@ -295,7 +295,7 @@ function main() {
   const billingOk = billing === "NOT_IMPLEMENTED";
 
   /* V0 — repository + evidence freeze. */
-  const uOk = uRun.exitCode === 0 && uVerify.fresh === true && uVerify.headMatches === true && uVerify.legalStatuses === true && uVerify.phaseUConsistent === true
+  const uOk = uRun.exitCode === 0 && uVerify.fresh === true && uVerify.headMatches === true && uVerify.legalStatuses === true && uVerify.phaseSConsistent === true
     && tVerify.fresh === true && tVerify.headMatches === true && sVerify.fresh === true && sVerify.headMatches === true;
   const baseline = {
     branch, gitHead: head, remoteHead, remoteSynced: Boolean(remoteHead) && remoteHead === head, buildId, workingTree: worktreeClean(),
