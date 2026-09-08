@@ -1,22 +1,22 @@
 {
   "phase": "T",
-  "generatedAt": "2026-09-08T14:25:59.207Z",
+  "generatedAt": "2026-09-08T15:38:31.448Z",
   "generator": "scripts/phase-t-evidence.mjs",
   "staleGuard": {
-    "gitHead": "ac67f491366b755a20c8329223cd97994be64346",
+    "gitHead": "a7d915e444072ffb3f97755b8e9a3e5214e8233a",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "ac67f491366b755a20c8329223cd97994be64346",
+    "buildId": "a7d915e444072ffb3f97755b8e9a3e5214e8233a",
     "sourceFingerprint": {
-      "files": 668,
-      "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee"
+      "files": 669,
+      "sha256": "1047e7592c27a118e38909311a50928add243bb32fbbbd5ed093d101b395c2c7"
     },
     "verifyCommand": "node scripts/phase-t-evidence.mjs --verify"
   },
   "baseline": {
-    "gitHead": "ac67f491366b755a20c8329223cd97994be64346",
-    "buildId": "ac67f491366b755a20c8329223cd97994be64346",
-    "evidenceHash": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
-    "evidenceFiles": 668,
+    "gitHead": "a7d915e444072ffb3f97755b8e9a3e5214e8233a",
+    "buildId": "a7d915e444072ffb3f97755b8e9a3e5214e8233a",
+    "evidenceHash": "1047e7592c27a118e38909311a50928add243bb32fbbbd5ed093d101b395c2c7",
+    "evidenceFiles": 669,
     "workingTree": "clean",
     "phaseS": {
       "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
@@ -31,10 +31,10 @@
         "fresh": true,
         "headMatches": true,
         "buildIdSet": false,
-        "files": 668,
-        "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
+        "files": 669,
+        "sha256": "1047e7592c27a118e38909311a50928add243bb32fbbbd5ed093d101b395c2c7",
         "legalStatuses": true,
-        "generatedAt": "2026-09-08T14:27:36.747Z",
+        "generatedAt": "2026-09-08T15:40:41.893Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true,
         "cognitiveWritten": true,
@@ -93,10 +93,10 @@
       "fresh": true,
       "headMatches": true,
       "buildIdSet": false,
-      "files": 668,
-      "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
+      "files": 669,
+      "sha256": "1047e7592c27a118e38909311a50928add243bb32fbbbd5ed093d101b395c2c7",
       "legalStatuses": true,
-      "generatedAt": "2026-09-08T14:27:36.747Z",
+      "generatedAt": "2026-09-08T15:40:41.893Z",
       "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
       "gap": true,
       "cognitiveWritten": true,
@@ -108,8 +108,8 @@
       "id": "T0-baseline",
       "area": "T0",
       "status": "PASS",
-      "startedAt": "2026-09-08T14:27:36.803Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.964Z",
+      "finishedAt": "2026-09-08T15:40:41.970Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -135,8 +135,8 @@
       "id": "T1-supabase",
       "area": "T1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.970Z",
+      "finishedAt": "2026-09-08T15:40:41.970Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -197,8 +197,8 @@
       "id": "T2-auth-rls",
       "area": "T2",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.970Z",
+      "finishedAt": "2026-09-08T15:40:41.970Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -255,8 +255,8 @@
       "id": "T3-storage",
       "area": "T3",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.970Z",
+      "finishedAt": "2026-09-08T15:40:41.970Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -308,8 +308,8 @@
       "id": "T4-scanner",
       "area": "T4",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -348,8 +348,8 @@
       "id": "T5-metrics-alerts",
       "area": "T5",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -395,8 +395,8 @@
       "id": "T6-error-tracking",
       "area": "T6",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -435,8 +435,8 @@
       "id": "T7-ai-provider",
       "area": "T7",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -479,8 +479,8 @@
       "id": "T8-cognitive",
       "area": "T8",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -543,8 +543,8 @@
       "id": "T9-https-deployment",
       "area": "T9",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -596,8 +596,8 @@
       "id": "T10-agent-actions",
       "area": "T10",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -637,8 +637,8 @@
       "id": "T11-governance",
       "area": "T11",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -678,8 +678,8 @@
       "id": "T12-backup-restore",
       "area": "T12",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -767,8 +767,8 @@
       "id": "T13-performance",
       "area": "T13",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -799,8 +799,8 @@
       "id": "T14-failure-injection",
       "area": "T14",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -831,8 +831,8 @@
       "id": "T15-security",
       "area": "T15",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -878,8 +878,8 @@
       "id": "T16-pilot-onboarding",
       "area": "T16",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -910,8 +910,8 @@
       "id": "T17-pilot-operation",
       "area": "T17",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.808Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.971Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -942,8 +942,8 @@
       "id": "T18-evidence",
       "area": "T18",
       "status": "PASS",
-      "startedAt": "2026-09-08T14:27:36.808Z",
-      "finishedAt": "2026-09-08T14:27:36.823Z",
+      "startedAt": "2026-09-08T15:40:41.971Z",
+      "finishedAt": "2026-09-08T15:40:41.991Z",
       "environment": {
         "cfg": {
           "supabaseUrl": false,
@@ -971,10 +971,10 @@
           "fresh": true,
           "headMatches": true,
           "buildIdSet": false,
-          "files": 668,
-          "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
+          "files": 669,
+          "sha256": "1047e7592c27a118e38909311a50928add243bb32fbbbd5ed093d101b395c2c7",
           "legalStatuses": true,
-          "generatedAt": "2026-09-08T14:27:36.747Z",
+          "generatedAt": "2026-09-08T15:40:41.893Z",
           "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
           "gap": true,
           "cognitiveWritten": true,
@@ -987,15 +987,15 @@
           "blockedExternal": 20,
           "notImplemented": 1
         },
-        "durationMs": 97478
+        "durationMs": 130317
       }
     },
     {
       "id": "T19-verdict",
       "area": "T19",
       "status": "PASS",
-      "startedAt": "2026-09-08T14:27:36.824Z",
-      "finishedAt": "2026-09-08T14:27:36.824Z",
+      "startedAt": "2026-09-08T15:40:41.991Z",
+      "finishedAt": "2026-09-08T15:40:41.991Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1024,7 +1024,7 @@
           "blockedExternal": 17,
           "notImplemented": 0
         },
-        "durationMs": 97617
+        "durationMs": 130543
       }
     }
   ],
