@@ -1,7 +1,7 @@
 {
-  "phase": "V",
-  "generatedAt": "2026-09-08T13:05:25.363Z",
-  "generator": "scripts/phase-v-evidence.mjs",
+  "phase": "W",
+  "generatedAt": "2026-09-08T13:05:24.786Z",
+  "generator": "scripts/phase-w-evidence.mjs",
   "staleGuard": {
     "gitHead": "3d91918a79bddaf6654da0e6269eff748f43c266",
     "branch": "arena/01a07c94-ai-hr-management-system",
@@ -10,7 +10,7 @@
       "files": 668,
       "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574"
     },
-    "verifyCommand": "node scripts/phase-v-evidence.mjs --verify"
+    "verifyCommand": "node scripts/phase-w-evidence.mjs --verify"
   },
   "baseline": {
     "branch": "arena/01a07c94-ai-hr-management-system",
@@ -22,11 +22,8 @@
     "evidenceHashes": {
       "phaseS": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
       "phaseT": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
-      "phaseU": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574"
-    },
-    "sourceFingerprint": {
-      "files": 668,
-      "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574"
+      "phaseU": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
+      "phaseV": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574"
     },
     "cognitive": {
       "version": "r5-1",
@@ -68,6 +65,16 @@
         "blockedExternal": 19,
         "notImplemented": 0
       }
+    },
+    "phaseV": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 24,
+        "pass": 4,
+        "fail": 0,
+        "blockedExternal": 20,
+        "notImplemented": 0
+      }
     }
   },
   "environment": {
@@ -92,15 +99,15 @@
       "code": "000"
     },
     {
-      "host": "api.anthropic.com",
-      "code": "000"
-    },
-    {
       "host": "api.groq.com",
       "code": "000"
     },
     {
       "host": "generativelanguage.googleapis.com",
+      "code": "000"
+    },
+    {
+      "host": "api.anthropic.com",
       "code": "000"
     },
     {
@@ -175,13 +182,35 @@
       "gap": true
     }
   },
+  "phaseV": {
+    "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+    "summary": {
+      "gates": 24,
+      "pass": 4,
+      "fail": 0,
+      "blockedExternal": 20,
+      "notImplemented": 0
+    },
+    "verify": {
+      "fresh": true,
+      "headMatches": true,
+      "buildIdSet": false,
+      "files": 668,
+      "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
+      "legalStatuses": true,
+      "phaseUConsistent": true,
+      "generatedAt": "2026-09-08T13:05:25.363Z",
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "gap": true
+    }
+  },
   "gates": [
     {
-      "id": "V0-freeze",
-      "area": "V0",
+      "id": "W0-baseline",
+      "area": "W0",
       "status": "PASS",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -191,12 +220,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "scripts/phase-v-evidence.mjs --verify",
         "scripts/phase-u-evidence.mjs --verify",
         "scripts/phase-t-evidence.mjs --verify",
         "scripts/phase-s-evidence.mjs --verify",
         "/home/user/AI-HR-Management-system/scripts/ai/cognitive-dataset.json"
       ],
-      "safeSummary": "Repository/evidence freeze: S+T+U regenerated fresh and verified at the current HEAD; dataset r5-1 + thresholds hashed and unchanged; billing NOT_IMPLEMENTED; remote in sync.",
+      "safeSummary": "Repository/evidence freeze: full S→T→U→V chain regenerated fresh at the current HEAD and verified; dataset r5-1 (48 cases) + threshold hashes recorded and unchanged; billing NOT_IMPLEMENTED.",
       "detail": {
         "phaseS": {
           "fresh": true,
@@ -235,6 +265,18 @@
           "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
           "gap": true
         },
+        "phaseV": {
+          "fresh": true,
+          "headMatches": true,
+          "buildIdSet": false,
+          "files": 668,
+          "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
+          "legalStatuses": true,
+          "phaseUConsistent": true,
+          "generatedAt": "2026-09-08T13:05:25.363Z",
+          "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+          "gap": true
+        },
         "dataset": {
           "version": "r5-1",
           "cases": 48,
@@ -246,11 +288,11 @@
       }
     },
     {
-      "id": "V1-inventory",
-      "area": "V1",
+      "id": "W1-infrastructure-stack",
+      "area": "W1",
       "status": "PASS",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -260,123 +302,69 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
-        "this gate"
+        "W1-stack",
+        "docs/PRODUCTION_PILOT_RUNBOOK.md"
       ],
-      "safeSummary": "Executed infrastructure inventory at 2026-09-08T13:07:20.746Z: configuration presence + live probes. 13 of 13 items MISSING/BLOCKED; none provisioned.",
+      "safeSummary": "Recommended stack recorded (Supabase; Vercel/Render/Railway/Fly; Supabase Storage private; ClamAV; Prometheus+Alertmanager or Grafana Cloud; Sentry; Groq/Gemini preferred; existing bridge deployed unchanged). Provisioning is operator action — nothing is provisioned or spent without user approval (Rule 3).",
       "detail": {
-        "inventory": {
-          "Supabase project": {
-            "available": false,
-            "reachable": false,
-            "status": "MISSING — USER ACTION REQUIRED"
+        "stack": {
+          "databaseAuth": {
+            "service": "Supabase (Auth + PostgREST + PostgreSQL + Storage + backups)",
+            "free": "2 free projects",
+            "paid": "Pro ~$25/mo (only if free tier insufficient)",
+            "chosen": "Supabase"
           },
-          "Supabase URL": {
-            "available": false,
-            "status": "MISSING"
+          "deployment": {
+            "service": "HTTPS hosting for Next.js 14",
+            "free": "Vercel Hobby / Render free / Railway trial / Fly launch",
+            "paid": "Team plans (only with user approval)",
+            "chosen": "Vercel or Render — decision requires user confirmation",
+            "rationale": "Next.js 14 native support, env secret stores, HTTPS by default, reliable deploys"
           },
-          "Supabase project ref": {
-            "available": false,
-            "status": "MISSING"
+          "storage": {
+            "service": "Supabase Storage private bucket",
+            "free": "1 GB included in free project",
+            "paid": "Pro storage add-on",
+            "chosen": "Supabase Storage (public=false)"
           },
-          "Supabase database connection": {
-            "available": false,
-            "status": "MISSING (local PG supporting only)"
+          "scanner": {
+            "service": "ClamAV (private server-side)",
+            "free": "self-hosted ClamAV $0",
+            "paid": "hosted scanning API if preferred",
+            "chosen": "ClamAV via clamav-rest (or supported webhook)"
           },
-          "Deployment account/platform": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED (platform unreachable from sandbox, no account/creds)"
+          "metrics": {
+            "service": "Metrics + alerting",
+            "free": "Grafana Cloud free tier; Prometheus+Alertmanager self-hosted $0",
+            "paid": "Grafana paid plans",
+            "chosen": "Prometheus + Alertmanager (or Grafana Cloud free)"
           },
-          "Object storage": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED"
+          "errorTracking": {
+            "service": "Error tracking",
+            "free": "Sentry free tier",
+            "paid": "Sentry Team",
+            "chosen": "Sentry"
           },
-          "Malware scanner": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED"
+          "ai": {
+            "service": "AI provider (bridge-side key)",
+            "free": "Groq / Google Gemini free tiers",
+            "paid": "OpenAI/Anthropic pay-per-token (only with user approval)",
+            "chosen": "Groq or Gemini first; provider-agnostic via existing abstraction"
           },
-          "Metrics backend": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED"
-          },
-          "Error tracking": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED"
-          },
-          "AI provider": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED"
-          },
-          "AI model": {
-            "available": false,
-            "status": "MISSING (provider-level)"
-          },
-          "AI bridge host": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED"
-          },
-          "Backup access": {
-            "available": false,
-            "status": "MISSING — USER ACTION REQUIRED (requires Supabase project)"
+          "bridge": {
+            "service": "Existing Python AI bridge (bridge/ + python_engine/)",
+            "chosen": "deploy unchanged"
           }
         },
-        "egress": {
-          "reachable": [
-            "registry.npmjs.org",
-            "pypi.org",
-            "github.com"
-          ],
-          "blocked": [
-            "supabase.co",
-            "api.supabase.com",
-            "api.openai.com",
-            "api.anthropic.com",
-            "api.groq.com",
-            "generativelanguage.googleapis.com",
-            "sentry.io"
-          ]
-        },
-        "probes": [
-          {
-            "host": "supabase.co",
-            "code": "000"
-          },
-          {
-            "host": "api.supabase.com",
-            "code": "000"
-          },
-          {
-            "host": "api.openai.com",
-            "code": "000"
-          },
-          {
-            "host": "api.anthropic.com",
-            "code": "000"
-          },
-          {
-            "host": "api.groq.com",
-            "code": "000"
-          },
-          {
-            "host": "generativelanguage.googleapis.com",
-            "code": "000"
-          },
-          {
-            "host": "sentry.io",
-            "code": "000"
-          }
-        ],
-        "summary": {
-          "items": 13,
-          "missing": 13
-        }
+        "decision": "OPERATOR DECISION REQUIRED — no service selected/paid automatically"
       }
     },
     {
-      "id": "V2-supabase",
-      "area": "V2",
+      "id": "W2-supabase",
+      "area": "W2",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -386,11 +374,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V2-supabase",
         "U1-supabase",
         "s1-supabase-project"
       ],
       "safeSummary": "No secret values recorded — presence flags only.",
       "detail": {
+        "vGate": "V2-supabase",
         "reason": "No dedicated pilot Supabase project provisioned and reachable from this environment (no URL/keys/ref in env; live probes supabase.co/api.supabase.com → 000).",
         "externalDependency": "hosted Supabase project + project credentials in secure env",
         "unblockProcedure": "Provision the project per USER_ACTIONS.supabase; set the five env vars; re-run this generator",
@@ -410,11 +400,11 @@
       }
     },
     {
-      "id": "V3-supabase-database",
-      "area": "V3",
+      "id": "W3-supabase-database",
+      "area": "W3",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -424,11 +414,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V3-supabase-database",
         "s1-migrations",
         "s11-local-restore-drill"
       ],
       "safeSummary": "Idempotency: second execution must not corrupt schema.",
       "detail": {
+        "vGate": "V3-supabase-database",
         "reason": "Migrations not pushed to a real Supabase project (no V2 project). Local replay: 36 migrations, 4 documented pre-existing drift files tolerated (supporting only). Migration history preserved; drift files unmodified.",
         "externalDependency": "V2 project + supabase CLI access",
         "unblockProcedure": "supabase link + supabase db push from linked history; verify supabase_migrations.schema_migrations + schema (tables/columns/indexes/constraints/functions/triggers/enums); run migrations twice where safe",
@@ -454,11 +446,11 @@
       }
     },
     {
-      "id": "V4-supabase-auth",
-      "area": "V4",
+      "id": "W4-supabase-auth",
+      "area": "W4",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -468,11 +460,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V4-supabase-auth",
         "s1-auth-gate",
         "s1-identity-from-session"
       ],
       "safeSummary": "Forged values must be DENIED/IGNORED — never authoritative.",
       "detail": {
+        "vGate": "V4-supabase-auth",
         "reason": "Real Supabase Auth sessions (HR_ADMIN/MANAGER/EMPLOYEE) with login/session/logout/revocation/disabled-membership and forged-value rejection require the real project. Server identity from the authenticated session is proven locally (supporting): client actorId/organizationId/role/membership cannot establish authority.",
         "externalDependency": "hosted Supabase Auth (V2 project)",
         "unblockProcedure": "Create pilot org + controlled users (runbook §3); execute auth checklist + forged-value tests on the deployment",
@@ -493,11 +487,11 @@
       }
     },
     {
-      "id": "V5-production-rls",
-      "area": "V5",
+      "id": "W5-production-rls",
+      "area": "W5",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -507,11 +501,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V5-production-rls",
         "s1-rls-gate",
         "scripts/db/authz-rls-suite.mjs"
       ],
       "safeSummary": "A real RLS/tenant-isolation failure is FAIL, never BLOCKED.",
       "detail": {
+        "vGate": "V5-production-rls",
         "reason": "Canonical authz/RLS suite (tenant isolation over SELECT/INSERT/UPDATE/DELETE/RPC/proposal/storage-metadata, RBAC denies, membership lifecycle, agent boundaries, proposal authorization) must run against the real Supabase pooler. Local 76/76 ×3 is supporting only.",
         "externalDependency": "V2 project database via pooler",
         "unblockProcedure": "DATABASE_URL=<REAL_POOLER> node scripts/db/authz-rls-suite.mjs → expect PASS; any real failure is FAIL",
@@ -531,11 +527,11 @@
       }
     },
     {
-      "id": "V6-private-storage",
-      "area": "V6",
+      "id": "W6-private-storage",
+      "area": "W6",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -545,6 +541,7 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V6-private-storage",
         "s2-real-bucket-suite",
         "s2-deployed-data-migration",
         "s2-no-public-bucket-code",
@@ -552,6 +549,7 @@
       ],
       "safeSummary": "Public resume access is a hard blocker.",
       "detail": {
+        "vGate": "V6-private-storage",
         "reason": "Real private bucket (public=false) + full matrix (upload, authorized/unauthorized/cross-tenant/unauthenticated download, public-URL attempt) + legacy inventory/migration required. Code search: zero getPublicUrl/public-bucket/public-resume paths.",
         "externalDependency": "Supabase Storage private bucket + deployed pipeline",
         "unblockProcedure": "Create bucket with public=false; run the matrix; inventory/invalidate legacy resume rows; verify public URL → DENIED, cross-tenant → DENIED, unauthenticated → DENIED, authorized same-tenant → ALLOWED",
@@ -572,11 +570,11 @@
       }
     },
     {
-      "id": "V7-malware-scanner",
-      "area": "V7",
+      "id": "W7-malware-scanner",
+      "area": "W7",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -586,11 +584,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V7-malware-scanner",
         "s3-real-scanner-provider",
         "s3-scanner-fail-closed-contract"
       ],
       "safeSummary": "Unavailable must never mean clean.",
       "detail": {
+        "vGate": "V7-malware-scanner",
         "reason": "Real scanner required: CLEAN → accept; EICAR/TIMEOUT/UNAVAILABLE/ERROR/MALFORMED → reject/quarantine. Fail-closed contract passes in code (supporting); only explicit CLEAN permits acceptance.",
         "externalDependency": "deployed ClamAV(-rest) or supported webhook scanner",
         "unblockProcedure": "Deploy scanner; set MALWARE_SCANNER=clamav-rest|webhook + URL/token; execute clean/EICAR/timeout/unavailable/malformed/error cases; never retain EICAR permanently",
@@ -611,11 +611,11 @@
       }
     },
     {
-      "id": "V8-production-deployment",
-      "area": "V8",
+      "id": "W8-production-deployment",
+      "area": "W8",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -625,6 +625,7 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V8-production-deployment",
         "s10-https-deployment",
         "s10-deployed-smoke",
         "s10-local-production-server",
@@ -633,6 +634,7 @@
       ],
       "safeSummary": "No localhost result counts.",
       "detail": {
+        "vGate": "V8-production-deployment",
         "reason": "No real HTTPS deployment (PILOT_BASE_URL unset; vercel/fly/render/netlify/railway probes 000; no account/credentials). Local production build + live-HTTP smoke 26/26 + endpoint semantics pass (supporting only) — localhost never satisfies this gate.",
         "externalDependency": "HTTPS hosting platform account + deployment",
         "unblockProcedure": "Deploy on a supported platform with full production env; set PILOT_BASE_URL; verify /api/health vs /api/system/health vs /api/system/ready vs /api/ai/status over HTTPS with secure cookies",
@@ -653,11 +655,11 @@
       }
     },
     {
-      "id": "V9-metrics-backend",
-      "area": "V9",
+      "id": "W9-metrics-backend",
+      "area": "W9",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -667,11 +669,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V9-metrics-backend",
         "s4-metrics-backend",
         "s4-instrumentation-unit"
       ],
       "safeSummary": "No local-only PASS.",
       "detail": {
+        "vGate": "V9-metrics-backend",
         "reason": "Real metric delivery required: HTTP requests, 5xx, AI latency/failures, DB/storage/scanner failures, rate limiting, authz denials, proposal execution failures — with backend/metric name/timestamp/sample/delivery status per signal. Instrumentation 18/18 (supporting).",
         "externalDependency": "reachable metrics backend (Prometheus/OTLP)",
         "unblockProcedure": "Set METRICS_BACKEND / OTEL_* env; verify actual delivery of the named signals; record samples",
@@ -692,11 +696,11 @@
       }
     },
     {
-      "id": "V10-alert-delivery",
-      "area": "V10",
+      "id": "W10-alert-delivery",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -706,12 +710,14 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V10-alert-delivery",
         "s4-alert-firing",
         "s4-alert-rules-present",
         "docs/ops/alerts.prometheus.yml"
       ],
       "safeSummary": "Reachable-but-not-firing is FAIL.",
       "detail": {
+        "vGate": "V10-alert-delivery",
         "reason": "Real firing of all nine rules (SustainedHttp5xx, AiProviderFailures, AiLatencyDegraded, DatabaseFailure, StorageFailures, MalwareScannerUnavailable, RateLimitSpike, ProposalExecutionFailures, AuthzDenialSpike) with real alert IDs required. No alert ID → no PASS; no IDs fabricated.",
         "externalDependency": "Alertmanager/hosted alerts connected to the V9 backend",
         "unblockProcedure": "Load docs/ops/alerts.prometheus.yml; trigger each rule; record alert name/ID/timestamp/recovery",
@@ -732,11 +738,11 @@
       }
     },
     {
-      "id": "V11-error-tracking",
-      "area": "V11",
+      "id": "W11-error-tracking",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -746,11 +752,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V11-error-tracking",
         "s5-error-tracking-backend",
         "s4-instrumentation-unit"
       ],
       "safeSummary": "Synthetic events clearly marked.",
       "detail": {
+        "vGate": "V11-error-tracking",
         "reason": "Real event arrival from POST /api/system/error-test with request-id/route/environment/safe-error and absence of API keys/JWTs/auth headers/DB passwords/bridge secrets/connection strings/raw resumes/PII; dedup verified; synthetic marked.",
         "externalDependency": "Sentry-compatible DSN/webhook + deployment",
         "unblockProcedure": "Set ERROR_TRACKING_DSN; trigger the endpoint; verify event + scrubbing + dedup; clean test events per policy",
@@ -770,11 +778,11 @@
       }
     },
     {
-      "id": "V12-ai-provider",
-      "area": "V12",
+      "id": "W12-ai-provider",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.042Z",
+      "finishedAt": "2026-09-08T13:07:21.042Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -784,11 +792,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V12-ai-provider",
         "s6-ai-provider",
         "s6-bridge-provider-protocol"
       ],
       "safeSummary": "Provider-agnostic; failures stay safe.",
       "detail": {
+        "vGate": "V12-ai-provider",
         "reason": "No real AI provider configured or reachable (no LLM_API_KEY; provider probes 000). Protocol matrix (auth, model availability, completion, streaming, usage, timeout, 429, 500, empty) to run against the real provider. Bridge protocol suite passes (supporting). Keys never reach the browser.",
         "externalDependency": "reachable AI provider + key in secure env (bridge-side)",
         "unblockProcedure": "Create provider key; set LLM_PROVIDER + LLM_API_KEY on the bridge; execute the V12 protocol matrix",
@@ -809,11 +819,11 @@
       }
     },
     {
-      "id": "V13-ai-bridge",
-      "area": "V13",
+      "id": "W13-ai-bridge",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -823,11 +833,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V13-ai-bridge",
         "s6-bridge-provider-protocol",
         "s6-ai-provider"
       ],
       "safeSummary": "No browser→provider path.",
       "detail": {
+        "vGate": "V13-ai-bridge",
         "reason": "The Python AI bridge must be deployed and reachable (AI_BRIDGE_URL + BRIDGE_SECRET_KEY) with chain Browser → Next.js authenticated endpoint → AI bridge → real provider; no direct browser→provider path. Bridge protocol suite passes locally (supporting).",
         "externalDependency": "deployed bridge host + shared secret",
         "unblockProcedure": "Deploy python_engine/bridge; set AI_BRIDGE_URL/BRIDGE_SECRET_KEY in Next.js env and BRIDGE_SECRET_KEY on the bridge; verify each hop",
@@ -848,11 +860,11 @@
       }
     },
     {
-      "id": "V14-cognitive",
-      "area": "V14",
+      "id": "W14-cognitive",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -862,6 +874,7 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V14-cognitive",
         "s7-cognitive-real-model",
         "s7-injection-cases-committed",
         "scripts/ai/cognitive-gate.mjs",
@@ -869,6 +882,7 @@
       ],
       "safeSummary": "Classification: unreachable → BLOCKED_EXTERNAL; reachable & fails → FAIL.",
       "detail": {
+        "vGate": "V14-cognitive",
         "reason": "Release-blocking 48-case gate (r5-1) not executed against a real model: provider unreachable (V12). Dataset + thresholds hashed and unchanged; no score fabricated. Reachable-but-below-threshold would be FAIL (tool selection/argument/grounding ≥95%, no-data honesty =100%, zero forbidden bypass/tenant escape/secret exfiltration/injection compliance).",
         "externalDependency": "real model via the deployed bridge (V12/V13)",
         "unblockProcedure": "AI_BRIDGE_URL=<real bridge> BRIDGE_SECRET_KEY=<configured secret> node scripts/ai/cognitive-gate.mjs; record per-category scores and any failing case IDs",
@@ -896,11 +910,11 @@
       }
     },
     {
-      "id": "V15-agent-action-matrix",
-      "area": "V15",
+      "id": "W15-agent-action-matrix",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -910,11 +924,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V15-agent-action-matrix",
         "s8-agent-action-deployed",
         "s8-agent-action-local"
       ],
       "safeSummary": "Exactly one successful execution.",
       "detail": {
+        "vGate": "V15-agent-action-matrix",
         "reason": "Deployed matrix (read-only, write proposal, approval, execution, verification, receipt, audit + forged actor/org/role, cross-tenant, duplicate/concurrent approval, duplicate execution, replay, expired proposal) with exactly-one business execution must run on HTTPS. Local semantics pass (supporting).",
         "externalDependency": "V8 HTTPS deployment + V2 database",
         "unblockProcedure": "Execute the V15 matrix on the deployment; verify proposal freeze/argument hash/approval recheck/idempotency/DB concurrency and inspect production DB state",
@@ -934,11 +950,11 @@
       }
     },
     {
-      "id": "V16-governance",
-      "area": "V16",
+      "id": "W16-governance",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -948,11 +964,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V16-governance",
         "s9-kill-switch-deployed",
         "s9-pilot-controls-local"
       ],
       "safeSummary": "Kill switch: zero exceptions.",
       "detail": {
+        "vGate": "V16-governance",
         "reason": "Deployed kill switch (AI_KILL_SWITCH=1 → no provider call/tool execution/proposal execution; status killSwitch:true; restore → recovery) plus allowlist/token budget/request budget/round limit/rate limit. Request-time controls proven locally (supporting).",
         "externalDependency": "V8 deployment with request-time env",
         "unblockProcedure": "Set AI_KILL_SWITCH=1; verify AI endpoints blocked with zero provider calls; restore to 0; verify recovery; exercise allowlist and budgets",
@@ -972,11 +990,11 @@
       }
     },
     {
-      "id": "V17-backup-restore",
-      "area": "V17",
+      "id": "W17-backup-restore",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -986,11 +1004,13 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V17-backup-restore",
         "s11-provider-backup-restore",
         "s11-local-restore-drill"
       ],
       "safeSummary": "Local replay alone is not PASS.",
       "detail": {
+        "vGate": "V17-backup-restore",
         "reason": "Provider-operated backup/restore (backup exists, retention, restore capability + timestamp, scratch restore, schema/RLS/Auth/membership/critical-data integrity, application reconnect) requires the real Supabase project. Local drill (PG 18.4, schema equal, RLS 76/76) is supporting only.",
         "externalDependency": "Supabase project backups + restore tooling",
         "unblockProcedure": "After V2: confirm backups + retention; perform scratch restore; run RLS suite + critical smoke + row-count checks; attach provider evidence",
@@ -1064,11 +1084,11 @@
       }
     },
     {
-      "id": "V18-performance",
-      "area": "V18",
+      "id": "W18-performance",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1078,10 +1098,12 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V18-performance",
         "s12-performance"
       ],
       "safeSummary": "No invented baselines.",
       "detail": {
+        "vGate": "V18-performance",
         "reason": "Real production performance (p50/p95/p99/throughput/error rate/429 rate over health, ai-status, ai-governance, employees, agents/intelligence, proposal, upload, download + region/runtime/db-region/provider/model/duration/concurrency) requires the deployment. No numbers invented.",
         "externalDependency": "V8 deployment",
         "unblockProcedure": "Run the deployed harness; record quantiles and environment metadata; threshold breach is FAIL",
@@ -1101,11 +1123,11 @@
       }
     },
     {
-      "id": "V19-failure-injection",
-      "area": "V19",
+      "id": "W19-failure-injection",
+      "area": "W1",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1115,10 +1137,12 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V19-failure-injection",
         "s13-failure-injection"
       ],
       "safeSummary": "Restore everything afterward.",
       "detail": {
+        "vGate": "V19-failure-injection",
         "reason": "Controlled production failures (AI unavailable/timeout, DB/storage/scanner unavailable, scanner timeout, metrics/error-tracking unavailable, rate-limit exhaustion, proposal execution failure) with safe behavior (fail closed, no duplicate action, no corruption) and full recovery required.",
         "externalDependency": "V8 deployment",
         "unblockProcedure": "Inject each reversible failure; verify safety properties + recovery; restore all services",
@@ -1138,11 +1162,11 @@
       }
     },
     {
-      "id": "V20-final-security",
-      "area": "V20",
+      "id": "W20-final-security",
+      "area": "W2",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1152,12 +1176,14 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "V20-final-security",
         "s14-deployed",
         "s14-zero-secret-leak",
         "s14-local-security-closeout"
       ],
       "safeSummary": "Any violation ends the phase.",
       "detail": {
+        "vGate": "V20-final-security",
         "reason": "Deployed zero-tolerance proof (secret leakage 0, tenant escape 0, auth bypass 0, public resume access 0, malware acceptance while scanner unavailable 0, duplicate consequential execution 0, kill-switch bypass 0) + re-run of secret scan/authz/RLS/proposal/storage suites on the final state. Local close-out: secret scan 0/658, authz-dup 21/21 (supporting).",
         "externalDependency": "V8 deployment + final source state",
         "unblockProcedure": "Execute the V20 checklist on the deployment and re-run all suites; any violation → NOT PRODUCTION PILOT READY",
@@ -1178,11 +1204,11 @@
       }
     },
     {
-      "id": "V21-controlled-pilot",
-      "area": "V21",
+      "id": "W21-pilot-onboarding",
+      "area": "W21",
       "status": "BLOCKED_EXTERNAL",
-      "startedAt": "2026-09-08T13:07:20.746Z",
-      "finishedAt": "2026-09-08T13:07:20.746Z",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1192,24 +1218,24 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
-        "V2-supabase..V20-final-security",
+        "W2-supabase..W20-final-security",
         "docs/PRODUCTION_PILOT_RUNBOOK.md"
       ],
-      "safeSummary": "Onboard a dedicated pilot organisation (HR_ADMIN/MANAGER/EMPLOYEE) with kill switch/rate limits/budgets/approval gates/audit/monitoring/error tracking active; run the pilot workload (HR, recruitment, security, storage) capturing only request/run/proposal IDs, audit events, timestamps, latency, provider status, results.",
+      "safeSummary": "Create one dedicated pilot organisation (HR_ADMIN/MANAGER/EMPLOYEE), enable only that organisation, keep kill switch/rate limits/token budgets/approval gates/audit/metrics/error tracking enabled.",
       "detail": {
-        "reason": "Sequential after V2–V20 — 19 gate(s) not PASS",
-        "externalDependency": "V2–V20 PASS + real deployment",
-        "unblockProcedure": "Run runbook §§1/3/4; enable allowlist; execute pilot workload; attach safe records",
+        "reason": "Sequential after W2–W20 — 19 gate(s) not PASS",
+        "externalDependency": "W2–W20 PASS + real deployment",
+        "unblockProcedure": "Run runbook §§1/3/4 on the real deployment; attach onboarding evidence",
         "userAction": null,
         "supporting": null
       }
     },
     {
-      "id": "V22-final-evidence",
-      "area": "V22",
-      "status": "PASS",
-      "startedAt": "2026-09-08T13:07:20.765Z",
-      "finishedAt": "2026-09-08T13:07:20.765Z",
+      "id": "W22-pilot-operation",
+      "area": "W22",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T13:07:21.043Z",
+      "finishedAt": "2026-09-08T13:07:21.043Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1219,12 +1245,40 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
+        "W21-pilot-onboarding",
+        "docs/PRODUCTION_PILOT_RUNBOOK.md"
+      ],
+      "safeSummary": "Execute real workflows (HR lookup/knowledge/capacity/leave; recruitment search→evaluation→evidence→proposal→approval→execution→verification→receipt→audit; security injection/no-data/unauthorized/cross-tenant/forged; storage clean/malware upload + download checks), recording only safe identifiers.",
+      "detail": {
+        "reason": "Sequential after W21 (no pilot organisation onboarded)",
+        "externalDependency": "W21 onboarding executed",
+        "unblockProcedure": "Run the pilot workload matrix; capture request/run/proposal/audit IDs, timestamps, latency, provider status, result — never secrets or raw documents",
+        "userAction": null,
+        "supporting": null
+      }
+    },
+    {
+      "id": "W23-final-evidence",
+      "area": "W23",
+      "status": "PASS",
+      "startedAt": "2026-09-08T13:07:21.061Z",
+      "finishedAt": "2026-09-08T13:07:21.061Z",
+      "environment": {
+        "kind": "sandbox without external-provider egress (live probes unreachable)",
+        "node": "v22.22.3",
+        "database": {
+          "kind": "postgresql (local real instance — supporting only)"
+        },
+        "deployment": "no PILOT_BASE_URL"
+      },
+      "evidenceReference": [
+        "scripts/phase-v-evidence.mjs",
         "scripts/phase-u-evidence.mjs",
         "scripts/phase-t-evidence.mjs",
         "scripts/phase-s-evidence.mjs",
-        "scripts/phase-v-evidence.mjs"
+        "scripts/phase-w-evidence.mjs"
       ],
-      "safeSummary": "Stale Phase V evidence deleted; full S→T→U chain regenerated fresh inside this run; verifiers fresh/headMatches/legal/consistent; every PASS carries executed evidence; every BLOCKED carries reason/dependency/unblock/userAction; every FAIL would carry failure/rootCause/impact/fixRequired (none this run).",
+      "safeSummary": "Stale Phase W evidence deleted; full S→T→U→V→W chain regenerated fresh inside this run; verifiers fresh/headMatches/legal/consistent; every PASS carries executed evidence; every BLOCKED carries reason/externalDependency/unblockProcedure (+userAction); every FAIL would carry failure/rootCause/impact/requiredFix (none this run).",
       "detail": {
         "phaseS": {
           "gates": 41,
@@ -1247,15 +1301,22 @@
           "blockedExternal": 19,
           "notImplemented": 0
         },
-        "durationMs": 115056
+        "phaseV": {
+          "gates": 24,
+          "pass": 4,
+          "fail": 0,
+          "blockedExternal": 20,
+          "notImplemented": 0
+        },
+        "durationMs": 115863
       }
     },
     {
-      "id": "V23-final-verdict",
-      "area": "V23",
+      "id": "W24-final-verdict",
+      "area": "W24",
       "status": "PASS",
-      "startedAt": "2026-09-08T13:07:20.765Z",
-      "finishedAt": "2026-09-08T13:07:20.765Z",
+      "startedAt": "2026-09-08T13:07:21.061Z",
+      "finishedAt": "2026-09-08T13:07:21.061Z",
       "environment": {
         "kind": "sandbox without external-provider egress (live probes unreachable)",
         "node": "v22.22.3",
@@ -1265,7 +1326,7 @@
         "deployment": "no PILOT_BASE_URL"
       },
       "evidenceReference": [
-        "docs/generated/phase-v-evidence.json"
+        "docs/generated/phase-w-evidence.json"
       ],
       "safeSummary": "Verdict computed deterministically from executed gate results; no gate status altered to fit a verdict.",
       "detail": {
@@ -1292,20 +1353,27 @@
           "notImplemented": 0
         },
         "phaseV": {
-          "pass": 3,
+          "gates": 24,
+          "pass": 4,
           "fail": 0,
           "blockedExternal": 20,
           "notImplemented": 0
         },
-        "durationMs": 115401
+        "phaseW": {
+          "pass": 3,
+          "fail": 0,
+          "blockedExternal": 21,
+          "notImplemented": 0
+        },
+        "durationMs": 116275
       }
     }
   ],
   "summary": {
-    "gates": 24,
+    "gates": 25,
     "pass": 4,
     "fail": 0,
-    "blockedExternal": 20,
+    "blockedExternal": 21,
     "notImplemented": 0
   },
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED"
