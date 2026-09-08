@@ -1,22 +1,22 @@
 {
   "phase": "U",
-  "generatedAt": "2026-09-08T13:05:25.557Z",
+  "generatedAt": "2026-09-08T14:25:59.047Z",
   "staleGuard": {
-    "gitHead": "3d91918a79bddaf6654da0e6269eff748f43c266",
+    "gitHead": "ac67f491366b755a20c8329223cd97994be64346",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "3d91918a79bddaf6654da0e6269eff748f43c266",
+    "buildId": "ac67f491366b755a20c8329223cd97994be64346",
     "sourceFingerprint": {
       "files": 668,
-      "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574"
+      "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee"
     },
     "verifyCommand": "node scripts/phase-u-evidence.mjs --verify"
   },
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
   "baseline": {
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "gitHead": "3d91918a79bddaf6654da0e6269eff748f43c266",
-    "buildId": "3d91918a79bddaf6654da0e6269eff748f43c266",
-    "evidenceHash": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
+    "gitHead": "ac67f491366b755a20c8329223cd97994be64346",
+    "buildId": "ac67f491366b755a20c8329223cd97994be64346",
+    "evidenceHash": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
     "evidenceFiles": 668,
     "workingTree": "clean",
     "phaseS": {
@@ -33,9 +33,9 @@
         "headMatches": true,
         "buildIdSet": false,
         "files": 668,
-        "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
+        "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
         "legalStatuses": true,
-        "generatedAt": "2026-09-08T13:07:20.257Z",
+        "generatedAt": "2026-09-08T14:27:36.747Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true,
         "cognitiveWritten": true,
@@ -56,10 +56,10 @@
         "headMatches": true,
         "buildIdSet": false,
         "files": 668,
-        "sha256": "063b10758277a6190275391505ef9c917bd9ea387a7bca8c62e7a0d193a71574",
+        "sha256": "6d7e70e815230ba1547b3d02a6c4a5359eecab668e1cc1701b747424de58fbee",
         "legalStatuses": true,
         "phaseSConsistent": true,
-        "generatedAt": "2026-09-08T13:05:25.725Z",
+        "generatedAt": "2026-09-08T14:25:59.207Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true
       }

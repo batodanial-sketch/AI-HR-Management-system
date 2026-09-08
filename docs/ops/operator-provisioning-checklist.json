@@ -1,0 +1,93 @@
+{
+  "phase": "X",
+  "artifact": "operator-provisioning-checklist",
+  "generatedAt": "2026-09-08T14:25:58.321Z",
+  "gitHead": "ac67f491366b755a20c8329223cd97994be64346",
+  "note": "Machine-readable operator handoff. Contains only presence flags, env-var NAMES, commands and dashboard steps — no secret values of any kind. The evidence generator is the source of truth: re-run node scripts/phase-w-evidence.mjs after provisioning to re-evaluate the gates.",
+  "items": [
+    {
+      "service": "Supabase (hosted project: Auth + PostgREST + PostgreSQL + Storage + backups)",
+      "purpose": "Real database/auth/RLS/storage/backup for the pilot (W2–W6, W17)",
+      "free_or_paid": "Free tier (2 free projects) — paid Pro ~$25/mo only if needed (Rule 3 approval)",
+      "estimated_cost": "$0 free; Pro ~$25/mo only with user approval",
+      "dashboard_action": "Create org + project at supabase.com/dashboard; Settings → API for URL/keys; service_role key stays server-side",
+      "required_env_var_names": "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_PROJECT_REF, DATABASE_URL",
+      "secret_storage_location": ".env.local / deployment secret store / CI secret store — never in git, evidence or chat",
+      "verification_command": "curl -sI https://<ref>.supabase.co/auth/v1/health  # expect HTTP 200; then node scripts/phase-w-evidence.mjs",
+      "dependent_gates": "W2, W3, W4, W5, W6, W17",
+      "status": "MISSING — USER ACTION REQUIRED"
+    },
+    {
+      "service": "HTTPS deployment (Vercel / Render / Railway / Fly.io — Next.js 14 compatible)",
+      "purpose": "Production HTTPS deployment + env store (W8) and every deployed gate (W9–W20)",
+      "free_or_paid": "Free tiers on all; paid only with user approval",
+      "estimated_cost": "$0 free tiers",
+      "dashboard_action": "Create account; connect GitHub repo batodanial-sketch/AI-HR-Management-system; add env vars in the platform secret store; deploy; note HTTPS URL",
+      "required_env_var_names": "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all application/provider variables above",
+      "secret_storage_location": "platform secret store — never in git, evidence or chat",
+      "verification_command": "curl -sI https://<app>/api/health  # expect 200; verify /api/health vs /api/system/health vs /api/system/ready vs /api/ai/status stay distinct over HTTPS",
+      "dependent_gates": "W8, W9, W10, W11, W12, W13, W14, W15, W16, W18, W19, W20",
+      "status": "MISSING — USER ACTION REQUIRED"
+    },
+    {
+      "service": "Malware scanner (ClamAV via clamav-rest, or supported webhook)",
+      "purpose": "Real malware verdicts for the upload pipeline (W7), fail-closed",
+      "free_or_paid": "Free self-hosted",
+      "estimated_cost": "$0",
+      "dashboard_action": "Deploy clamav-rest reachable from the app deployment",
+      "required_env_var_names": "MALWARE_SCANNER=clamav-rest|webhook, MALWARE_SCANNER_URL, MALWARE_SCANNER_TOKEN",
+      "secret_storage_location": ".env.local / deployment secret store — never in git, evidence or chat",
+      "verification_command": "clean file → accepted; EICAR → rejected; scanner stopped → upload rejected (fail closed); then node scripts/phase-w-evidence.mjs",
+      "dependent_gates": "W7",
+      "status": "MISSING — USER ACTION REQUIRED"
+    },
+    {
+      "service": "Metrics backend (Prometheus + Alertmanager, or Grafana Cloud free / OTLP)",
+      "purpose": "Real metric delivery (W9) and alert firing with real IDs (W10)",
+      "free_or_paid": "Free (self-hosted or Grafana Cloud free tier)",
+      "estimated_cost": "$0",
+      "dashboard_action": "Run backend; scrape deployment /metrics; load docs/ops/alerts.prometheus.yml",
+      "required_env_var_names": "METRICS_BACKEND, METRICS_TOKEN (or OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS) — only the names actually consumed by lib/metrics",
+      "secret_storage_location": ".env.local / deployment secret store — never in git, evidence or chat",
+      "verification_command": "scrape /metrics; load docs/ops/alerts.prometheus.yml; trigger each of the nine rules and capture real alert IDs + recovery; then node scripts/phase-w-evidence.mjs",
+      "dependent_gates": "W9, W10",
+      "status": "MISSING — USER ACTION REQUIRED"
+    },
+    {
+      "service": "Error tracking (Sentry free tier, or supported webhook)",
+      "purpose": "Real error event arrival + scrubbing + dedup (W11)",
+      "free_or_paid": "Sentry free tier",
+      "estimated_cost": "$0",
+      "dashboard_action": "Create project; copy DSN (server-side only)",
+      "required_env_var_names": "ERROR_TRACKING_DSN (or ERROR_TRACKING_WEBHOOK, ERROR_TRACKING_TOKEN)",
+      "secret_storage_location": ".env.local / deployment secret store — never in git, evidence or chat",
+      "verification_command": "POST /api/system/error-test → event arrives, synthetic-marked, scrubbed (no JWT/key/Authorization/DSN/raw document/PII); dedup verified",
+      "dependent_gates": "W11",
+      "status": "MISSING — USER ACTION REQUIRED"
+    },
+    {
+      "service": "AI provider (Groq / Gemini free tier preferred; OpenAI/Anthropic only with user approval)",
+      "purpose": "Provider protocol matrix (W12), bridge (W13), release-blocking cognitive gate (W14), agent/perf/failure gates",
+      "free_or_paid": "Groq/Gemini free tiers; paid keys only with user approval (Rule 3)",
+      "estimated_cost": "$0 free tiers; paid pay-per-token only with approval",
+      "dashboard_action": "Create provider key at provider dashboard; deploy bridge (bridge/ + python_engine/) with LLM_PROVIDER/LLM_API_KEY; expose AI_BRIDGE_URL",
+      "required_env_var_names": "bridge-side: LLM_PROVIDER, LLM_API_KEY; app-side: AI_BRIDGE_URL, BRIDGE_SECRET_KEY",
+      "secret_storage_location": "bridge secret store (.env on the bridge host) + app secret store — never in git, evidence, chat or browser",
+      "verification_command": "bridge health with valid BRIDGE_SECRET_KEY; invalid secret → HTTP 401 with no provider call; then AI_BRIDGE_URL=… BRIDGE_SECRET_KEY=… node scripts/ai/cognitive-gate.mjs",
+      "dependent_gates": "W12, W13, W14, W15, W16, W18, W19",
+      "status": "MISSING — USER ACTION REQUIRED"
+    },
+    {
+      "service": "Custom domain / DNS (optional)",
+      "purpose": "Branded pilot URL only — the platform HTTPS URL satisfies all gates",
+      "free_or_paid": "Free (platform subdomain) — custom domain is a paid option requiring approval",
+      "estimated_cost": "$0 platform URL; ~$10/yr custom domain (optional)",
+      "dashboard_action": "Platform → Settings → Domains",
+      "required_env_var_names": "PILOT_BASE_URL",
+      "secret_storage_location": "n/a",
+      "verification_command": "curl -sI https://<url>/api/health  # expect 200",
+      "dependent_gates": "none (PILOT_BASE_URL only)",
+      "status": "OPTIONAL"
+    }
+  ]
+}
