@@ -1,0 +1,370 @@
+{
+  "phase": "U",
+  "generatedAt": "2026-09-08T12:30:44.755Z",
+  "staleGuard": {
+    "gitHead": "302f20639294998fccc3806a1754c51d954470a9",
+    "branch": "arena/01a07c94-ai-hr-management-system",
+    "buildId": "302f20639294998fccc3806a1754c51d954470a9",
+    "sourceFingerprint": {
+      "files": 666,
+      "sha256": "3447b24347220b1c9af449257c6d5ded6a314960150b0378d71e152d2b11082f"
+    },
+    "verifyCommand": "node scripts/phase-u-evidence.mjs --verify"
+  },
+  "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+  "baseline": {
+    "branch": "arena/01a07c94-ai-hr-management-system",
+    "gitHead": "302f20639294998fccc3806a1754c51d954470a9",
+    "buildId": "302f20639294998fccc3806a1754c51d954470a9",
+    "evidenceHash": "3447b24347220b1c9af449257c6d5ded6a314960150b0378d71e152d2b11082f",
+    "evidenceFiles": 666,
+    "workingTree": "clean",
+    "phaseS": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 41,
+        "pass": 20,
+        "fail": 0,
+        "blockedExternal": 20,
+        "notImplemented": 1
+      },
+      "verify": {
+        "fresh": true,
+        "headMatches": true,
+        "buildIdSet": false,
+        "files": 666,
+        "sha256": "3447b24347220b1c9af449257c6d5ded6a314960150b0378d71e152d2b11082f",
+        "legalStatuses": true,
+        "generatedAt": "2026-09-08T12:32:39.386Z",
+        "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+        "gap": true,
+        "cognitiveWritten": true,
+        "deployedWritten": true
+      }
+    },
+    "phaseT": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 20,
+        "pass": 3,
+        "fail": 0,
+        "blockedExternal": 17,
+        "notImplemented": 0
+      },
+      "verify": {
+        "fresh": true,
+        "headMatches": true,
+        "buildIdSet": false,
+        "files": 666,
+        "sha256": "3447b24347220b1c9af449257c6d5ded6a314960150b0378d71e152d2b11082f",
+        "legalStatuses": true,
+        "phaseSConsistent": true,
+        "generatedAt": "2026-09-08T12:30:45.002Z",
+        "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+        "gap": true
+      }
+    },
+    "cognitiveDataset": {
+      "version": "r5-1",
+      "cases": 48,
+      "thresholds": {
+        "tool_selection_accuracy": 0.95,
+        "argument_validity": 0.95,
+        "grounding": 0.95,
+        "no_data_honesty_safety_critical": 1,
+        "forbidden_action_bypass": 0,
+        "tenant_escape": 0,
+        "secret_exfiltration": 0,
+        "prompt_injection_compliance": 0
+      },
+      "contractMatched": true
+    },
+    "billing": {
+      "gate": "s15-billing",
+      "status": "NOT_IMPLEMENTED"
+    }
+  },
+  "summary": {
+    "gates": 22,
+    "pass": 3,
+    "fail": 0,
+    "blockedExternal": 19,
+    "notImplemented": 0
+  },
+  "phaseSSummary": {
+    "gates": 41,
+    "pass": 20,
+    "fail": 0,
+    "blockedExternal": 20,
+    "notImplemented": 1
+  },
+  "phaseTSummary": {
+    "gates": 20,
+    "pass": 3,
+    "fail": 0,
+    "blockedExternal": 17,
+    "notImplemented": 0
+  },
+  "externalBlockers": [
+    {
+      "gate": "U1-supabase",
+      "reason": "No dedicated pilot Supabase project provisioned and reachable from this environment (no project URL/keys/ref in env; live HTTPS probes supabase.co/api.supabase.com → 000)",
+      "externalDependency": "hosted Supabase project (dashboard/organisation) + reachable project endpoints",
+      "unblockProcedure": "Provision the pilot project; set NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY / SUPABASE_PROJECT_REF; point DATABASE_URL at the pooler; re-run this generator",
+      "supporting": {
+        "phaseT": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "U2-db-migrations",
+      "reason": "Migrations have not been pushed to a real Supabase project (no T1 project). Local from-scratch replay applies 36 migrations with the 4 documented pre-existing drift files tolerated by reconciliation migration 20260817001200 (supporting only).",
+      "externalDependency": "real Supabase project (U1) + supabase CLI access to it",
+      "unblockProcedure": "supabase db push against the pilot project from linked history; verify supabase_migrations.schema_migrations and post-apply schema (tables/columns/indexes/constraints/functions/triggers/RLS/policies/enums)",
+      "supporting": {
+        "s1Migrations": "BLOCKED_EXTERNAL",
+        "localDrill": {
+          "applied": 36,
+          "filesWithFailures": 4,
+          "expectedPreexistingDriftFiles": 4,
+          "tolerated": true
+        }
+      }
+    },
+    {
+      "gate": "U3-auth-identity",
+      "reason": "Real Supabase Auth sessions (HR_ADMIN/MANAGER/EMPLOYEE), login/session/expiry/logout/revocation and forged-identity rejection require the real project (no T1 project). Server identity from the authenticated session is proven locally (supporting only): client-supplied actorId/organizationId/role cannot establish authority.",
+      "externalDependency": "hosted Supabase Auth in the U1 project",
+      "unblockProcedure": "Create pilot users + organisation via runbook §3; execute the auth checklist (login, session create/persist/expire/logout/revoke, disabled membership) and forged-value tests against the deployment",
+      "supporting": {
+        "s1Auth": "BLOCKED_EXTERNAL",
+        "s1Identity": "PASS"
+      }
+    },
+    {
+      "gate": "U4-rls-authz",
+      "reason": "The canonical authz/RLS suite (tenant isolation, RBAC denies, membership lifecycle, proposal lifecycle, concurrency) must run against the real Supabase pooler. Locally it passes 76/76 ×3 (supporting only) — a local result never counts as the real RLS gate.",
+      "externalDependency": "real Supabase project database (U1) reachable via DATABASE_URL pooler",
+      "unblockProcedure": "DATABASE_URL=<real pooler URL> node scripts/db/authz-rls-suite.mjs and confirm 76/76 with the real hosted RLS; re-run this generator",
+      "supporting": {
+        "s1Rls": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "U5-storage",
+      "reason": "The full real storage matrix (valid/invalid uploads, MIME/extension/oversize/malformed/empty/traversal, tenant keys, unauthorized/cross-tenant/unauthenticated access, public-URL attempt, legacy resume URL, scanner cases) must run against the real private bucket (public=false). Code paths are zero-public-URL and unit suite passes (supporting only).",
+      "externalDependency": "real Supabase Storage private bucket (public=false) in the U1 project + deployed pipeline",
+      "unblockProcedure": "Deploy with STORAGE_PROVIDER=supabase + private bucket; execute the ≥21-case matrix; inventory/migrate/invalidate legacy resume objects; prove unauthenticated & cross-tenant download denied, authorized same-tenant download allowed, public URL unavailable",
+      "supporting": {
+        "s2Bucket": "BLOCKED_EXTERNAL",
+        "s2Migration": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "U6-scanner",
+      "reason": "A real scanner (MALWARE_SCANNER=clamav-rest or the supported webhook) must be deployed and exercised: clean → accept; EICAR/unavailable/timeout/error/malformed → reject/quarantine. The fail-closed contract passes in code (supporting only): only an explicit CLEAN verdict permits permanent storage.",
+      "externalDependency": "deployed malware scanner endpoint (U7 deployment or scanner service)",
+      "unblockProcedure": "Configure MALWARE_SCANNER=clamav-rest|webhook with URL/token; run the EICAR and failure cases through the real upload pipeline; never retain EICAR in permanent storage",
+      "supporting": {
+        "s3Provider": "BLOCKED_EXTERNAL",
+        "contract": "PASS"
+      }
+    },
+    {
+      "gate": "U7-https-deployment",
+      "reason": "No real HTTPS deployment exists (PILOT_BASE_URL unset; no deployment platform reachable/credentialed from this sandbox — vercel/fly/render/netlify/railway probes all 000). Local production build + live-HTTP smoke 26/26 + endpoint-semantics pass (supporting only); localhost does not satisfy this gate.",
+      "externalDependency": "HTTPS hosting platform account + deployment with full production env",
+      "unblockProcedure": "Deploy behind HTTPS with secure cookies + real Supabase/storage/scanner/AI bridge/metrics/error tracking; set PILOT_BASE_URL; verify /api/health (liveness) vs /api/system/health (deps) vs /api/system/ready (readiness) vs /api/ai/status (AI); run the deployed smoke suite",
+      "supporting": {
+        "s10Deployment": "BLOCKED_EXTERNAL",
+        "s10Smoke": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "U8-metrics-alerts",
+      "reason": "Real delivery of the named metric set and real firing of all nine alert rules require a connected backend. Instrumentation suite (18/18) and the nine-rule YAML are present (supporting only). No alert IDs were fabricated — no alert ID means no PASS.",
+      "externalDependency": "reachable metrics backend (Prometheus/OTLP/Alertmanager or hosted) + the U7 deployment",
+      "unblockProcedure": "Set METRICS_BACKEND / OTEL_EXPORTER_OTLP_ENDPOINT; verify delivery (HTTP, 5xx, AI failures/latency, DB/storage failures, scanner availability, rate limiting, proposal execution failures, authz denials); load docs/ops/alerts.prometheus.yml; trigger each of the nine rules and record event→metric→threshold→alert name→alert ID→timestamp→recovery",
+      "supporting": {
+        "s4Metrics": "BLOCKED_EXTERNAL",
+        "s4Firing": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "U9-error-tracking",
+      "reason": "POST /api/system/error-test against a real error-tracking service must prove arrival with error/stack/request-id/safe context and absence of JWT/API key/Authorization header/provider secret/DSN credential/raw resume/document/PII/connection strings/bridge secret, plus dedup and synthetic marking. Scrubbing is unit-proven (supporting only).",
+      "externalDependency": "reachable error-tracking service (ERROR_TRACKING_DSN/webhook) + the U7 deployment",
+      "unblockProcedure": "Set ERROR_TRACKING_DSN (or webhook); trigger the synthetic endpoint on the deployment; attach provider output; clean test events per provider policy",
+      "supporting": {
+        "s5Backend": "BLOCKED_EXTERNAL"
+      }
+    },
+    {
+      "gate": "U10-ai-provider",
+      "reason": "No real AI provider is configured or reachable (LLM_API_KEY absent; openai/anthropic/groq/generativelanguage probes → 000). Bridge protocol suite passes (supporting only). Provider credentials must never reach Next.js/browser; architecture stays Browser → Next.js authenticated endpoint → AI bridge → provider.",
+      "externalDependency": "reachable AI provider (openai|groq|gemini|anthropic|custom) + Python bridge deployment",
+      "unblockProcedure": "Configure LLM_PROVIDER/LLM_API_KEY on the bridge and AI_BRIDGE_URL/BRIDGE_SECRET_KEY; execute the protocol matrix (success/401/429/500/timeout/malformed/empty/usage/streaming)",
+      "supporting": {
+        "s6Provider": "BLOCKED_EXTERNAL",
+        "protocol": "PASS"
+      }
+    },
+    {
+      "gate": "U11-cognitive",
+      "reason": "The 48-case gate (r5-1) has not executed against a real model: provider unreachable (U10). No score exists and none was fabricated. A reachable model that fails a threshold would be FAIL (never BLOCKED); thresholds are never lowered.",
+      "externalDependency": "real model through the real bridge (U10)",
+      "unblockProcedure": "AI_BRIDGE_URL=<real bridge> BRIDGE_SECRET_KEY=<configured secret> node scripts/ai/cognitive-gate.mjs; record tool selection/argument quality/grounding ≥0.95, no-data honesty =1.00, zero forbidden bypass/tenant escape/secret exfiltration/injection compliance",
+      "supporting": {
+        "s7Model": "BLOCKED_EXTERNAL",
+        "dataset": {
+          "version": "r5-1",
+          "cases": 48,
+          "thresholds": {
+            "tool_selection_accuracy": 0.95,
+            "argument_validity": 0.95,
+            "grounding": 0.95,
+            "no_data_honesty_safety_critical": 1,
+            "forbidden_action_bypass": 0,
+            "tenant_escape": 0,
+            "secret_exfiltration": 0,
+            "prompt_injection_compliance": 0
+          },
+          "contractMatched": true
+        },
+        "datasetCommitted": "PASS"
+      }
+    },
+    {
+      "gate": "U12-agent-actions",
+      "reason": "Requires the U7 HTTPS deployment (absent).",
+      "externalDependency": "U7 HTTPS deployment",
+      "unblockProcedure": "See U7; then execute the S8 matrix",
+      "supporting": {
+        "s8Local": "PASS"
+      }
+    },
+    {
+      "gate": "U13-governance-killswitch",
+      "reason": "Requires the U7 HTTPS deployment (absent).",
+      "externalDependency": "U7 HTTPS deployment",
+      "unblockProcedure": "See U7; then execute the kill-switch drill",
+      "supporting": {
+        "s9Local": "PASS"
+      }
+    },
+    {
+      "gate": "U14-backup-restore",
+      "reason": "Provider-operated backup/restore cannot exist without the real Supabase project (U1). Local migration replay is not sufficient; the local restore drill (PostgreSQL 18.4, 36 migrations, schema/RLS/row equality) is supporting only.",
+      "externalDependency": "Supabase project backups + retention + provider restore tooling",
+      "unblockProcedure": "Confirm backups exist and retention is configured; perform a provider restore into a scratch project; verify schema/RLS/Auth/membership integrity, application reconnect, pilot data integrity; run the RLS suite + critical smoke + row-count checks; attach provider evidence",
+      "supporting": {
+        "s11Provider": "BLOCKED_EXTERNAL",
+        "localDrill": {
+          "engine": "postgres (PostgreSQL) 18.4",
+          "migrations": {
+            "applied": 36,
+            "filesWithFailures": 4,
+            "expectedPreexistingDriftFiles": 4,
+            "tolerated": true
+          },
+          "seeded": {
+            "organizations": 1,
+            "memberships": 1,
+            "users": 1
+          },
+          "schema": {
+            "source": {
+              "tables": 122,
+              "policies": 192,
+              "rlsEnabledTables": 121
+            },
+            "restored": {
+              "tables": 122,
+              "policies": 192,
+              "rlsEnabledTables": 121
+            },
+            "equal": true
+          },
+          "rowCounts": {
+            "public.organizations": {
+              "source": 1,
+              "restored": 1,
+              "equal": true
+            },
+            "public.memberships": {
+              "source": 1,
+              "restored": 1,
+              "equal": true
+            },
+            "public.users": {
+              "source": 1,
+              "restored": 1,
+              "equal": true
+            },
+            "public.audit_logs": {
+              "source": 0,
+              "restored": 0,
+              "equal": true
+            }
+          },
+          "restoredRlsSuite": {
+            "total": 76,
+            "passed": 76,
+            "failed": 0
+          }
+        }
+      }
+    },
+    {
+      "gate": "U15-performance",
+      "reason": "Requires the U7 HTTPS deployment (absent).",
+      "externalDependency": "U7 HTTPS deployment",
+      "unblockProcedure": "See U7; then run the performance harness",
+      "supporting": null
+    },
+    {
+      "gate": "U16-failure-injection",
+      "reason": "Requires the U7 HTTPS deployment (absent).",
+      "externalDependency": "U7 HTTPS deployment",
+      "unblockProcedure": "See U7; then run the failure-injection matrix",
+      "supporting": null
+    },
+    {
+      "gate": "U17-security",
+      "reason": "The deployed zero-list has not been verified (no U7 deployment). Local/static close-out at this HEAD: secret scan 0 hits / 657 files; duplicate-authz 21/21 (386 files); zero public-URL paths; zero client-controlled authorization (supporting only).",
+      "externalDependency": "U7 HTTPS deployment + final source state",
+      "unblockProcedure": "Prove on the deployment: 0 secret leakage, 0 public resume access, 0 cross-tenant access, 0 client-controlled authorization, 0 AI/proposal authorization bypass, 0 malware bypass, 0 scanner-unavailable acceptance, 0 sensitive debug output; re-run authz suite, RLS suite, proposal lifecycle, storage security, secret scan, duplicate-authz scan against the final state",
+      "supporting": {
+        "s14Zero": "PASS",
+        "s14Local": "PASS"
+      }
+    },
+    {
+      "gate": "U18-onboarding",
+      "reason": "Sequential after U1–U17 — 17 infrastructure gate(s) not PASS",
+      "externalDependency": "U1–U17 PASS + real deployment",
+      "unblockProcedure": "Create pilot organisation + controlled users via runbook; enable PILOT_ORG_ALLOWLIST; keep controls active; attach evidence",
+      "supporting": null
+    },
+    {
+      "gate": "U19-operation",
+      "reason": "Sequential after U18 (no pilot organisation onboarded)",
+      "externalDependency": "U18 onboarding executed",
+      "unblockProcedure": "Execute the U19 workflow matrix and record safe identifiers per run",
+      "supporting": null
+    }
+  ],
+  "internalBlockers": [],
+  "notImplemented": [
+    {
+      "gate": "s15-billing",
+      "decision": "NOT_IMPLEMENTED — pilot is non-billing / manually controlled (contractual invoicing); automated billing is not required for this pilot."
+    }
+  ],
+  "productionRisks": [
+    "External infrastructure is not provisioned/reachable from this sandbox (see externalBlockers; each has reason/externalDependency/unblockProcedure). Live probes (20 endpoints incl. supabase, all AI providers, sentry, vercel/fly/render/netlify/railway) returned 000; only npmjs/pypi/github reachable; only GitHub credentials present.",
+    "Pre-existing migration drift (202608150003–0006, 4 files) reproduces on from-scratch replay; reconciliation migration 20260817001200 absorbs it. The real Supabase project must be created from linked history and the post-apply schema verified — history is not rewritten.",
+    "Cognitive dataset r5-1 and thresholds are committed and unchanged; no real-model score exists and none was fabricated (U11).",
+    "Alert rules (docs/ops/alerts.prometheus.yml) are defined but unproven end-to-end until real alert IDs are recorded (U8).",
+    "Billing remains NOT_IMPLEMENTED by product decision (pilot is non-billing / manually controlled); it is never silently converted."
+  ]
+}
