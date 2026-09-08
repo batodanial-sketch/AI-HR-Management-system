@@ -58,7 +58,10 @@ export async function enqueuePythonJob<TPayload extends Record<string, unknown>>
         'x-fluxentiq-python-token': config.data.token
       },
       body: JSON.stringify({ organization_id: request.organizationId, requested_by: request.requestedBy || null, payload: request.payload }),
-      cache: 'no-store'
+      cache: 'no-store',
+      // Bounded: a wedged bridge must not pin server sockets on the live
+      // screening/workflow paths that use this legacy client.
+      signal: AbortSignal.timeout(30_000)
     })
     return readResponse<PythonBridgeJob<TPayload>>(response)
   } catch (error) {
@@ -73,7 +76,8 @@ export async function getPythonJob<TPayload extends Record<string, unknown>>(job
     const response = await fetch(`${config.data.baseUrl}/internal/jobs/${encodeURIComponent(jobId)}`, {
       method: 'GET',
       headers: { 'x-fluxentiq-python-token': config.data.token },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15_000)
     })
     return readResponse<PythonBridgeJob<TPayload>>(response)
   } catch (error) {
@@ -88,7 +92,8 @@ export async function getPythonBridgeHealth(): Promise<PythonBridgeResponse<{ se
     const response = await fetch(`${config.data.baseUrl}/internal/health`, {
       method: 'GET',
       headers: { 'x-fluxentiq-python-token': config.data.token },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10_000)
     })
     return readResponse(response)
   } catch (error) {
