@@ -50,6 +50,8 @@ const U_EVIDENCE = join(OUT_DIR, "phase-u-evidence.json");
 const T_EVIDENCE = join(OUT_DIR, "phase-t-evidence.json");
 const S_EVIDENCE = join(OUT_DIR, "phase-s-evidence.json");
 const DATASET_FILE = join(ROOT, "scripts", "ai", "cognitive-dataset.json");
+/** Phase X STEP 1 artifact — machine-readable operator provisioning checklist. */
+const CHECKLIST_FILE = join(ROOT, "docs", "ops", "operator-provisioning-checklist.json");
 const STATUSES = new Set(["PASS", "FAIL", "BLOCKED_EXTERNAL", "NOT_IMPLEMENTED"]);
 const VERDICTS = [
   "PRODUCTION PILOT VALIDATED",
@@ -465,7 +467,106 @@ function main() {
   };
   writeFileSync(GAP, JSON.stringify(gap, null, 2) + "\n");
 
-  console.log(JSON.stringify({ verdict, summary, phaseSSummary: S, phaseTSummary: T, phaseUSummary: U, phaseVSummary: V, w0Ok, durationMs, evidence: "docs/generated/phase-w-evidence.json", gap: "docs/generated/phase-w-readiness-gap.json" }, null, 2));
+  /* Phase X STEP 1 — machine-readable operator provisioning checklist.
+   * Field names follow the operator handoff contract; values are presence
+   * flags, env-var NAMES, commands and dashboard steps — never secret values. */
+  const supabaseReadyNow = CFG.supabaseUrl && CFG.supabasePublishableKey && CFG.supabaseSecretKey && CFG.supabaseProjectRef && CFG.databaseIsSupabase && supabaseOk;
+  const checklistItems = [
+    {
+      service: "Supabase (hosted project: Auth + PostgREST + PostgreSQL + Storage + backups)",
+      purpose: USER_ACTIONS.supabase.purpose,
+      free_or_paid: USER_ACTIONS.supabase.freePaid,
+      estimated_cost: USER_ACTIONS.supabase.cost,
+      dashboard_action: USER_ACTIONS.supabase.dashboard,
+      required_env_var_names: USER_ACTIONS.supabase.envVars,
+      secret_storage_location: ".env.local / deployment secret store / CI secret store — never in git, evidence or chat",
+      verification_command: "curl -sI https://<ref>.supabase.co/auth/v1/health  # expect HTTP 200; then node scripts/phase-w-evidence.mjs",
+      dependent_gates: "W2, W3, W4, W5, W6, W17",
+      status: supabaseReadyNow ? "READY" : "MISSING — USER ACTION REQUIRED",
+    },
+    {
+      service: "HTTPS deployment (Vercel / Render / Railway / Fly.io — Next.js 14 compatible)",
+      purpose: USER_ACTIONS.deployment.purpose,
+      free_or_paid: USER_ACTIONS.deployment.freePaid,
+      estimated_cost: USER_ACTIONS.deployment.cost,
+      dashboard_action: USER_ACTIONS.deployment.dashboard,
+      required_env_var_names: "PILOT_BASE_URL, PILOT_DEPLOYMENT_ID + all application/provider variables above",
+      secret_storage_location: "platform secret store — never in git, evidence or chat",
+      verification_command: "curl -sI https://<app>/api/health  # expect 200; verify /api/health vs /api/system/health vs /api/system/ready vs /api/ai/status stay distinct over HTTPS",
+      dependent_gates: "W8, W9, W10, W11, W12, W13, W14, W15, W16, W18, W19, W20",
+      status: CFG.pilotBaseUrl ? "READY" : "MISSING — USER ACTION REQUIRED",
+    },
+    {
+      service: "Malware scanner (ClamAV via clamav-rest, or supported webhook)",
+      purpose: USER_ACTIONS.scanner.purpose,
+      free_or_paid: USER_ACTIONS.scanner.freePaid,
+      estimated_cost: USER_ACTIONS.scanner.cost,
+      dashboard_action: USER_ACTIONS.scanner.dashboard,
+      required_env_var_names: USER_ACTIONS.scanner.envVars,
+      secret_storage_location: ".env.local / deployment secret store — never in git, evidence or chat",
+      verification_command: "clean file → accepted; EICAR → rejected; scanner stopped → upload rejected (fail closed); then node scripts/phase-w-evidence.mjs",
+      dependent_gates: "W7",
+      status: CFG.malwareScanner ? "READY" : "MISSING — USER ACTION REQUIRED",
+    },
+    {
+      service: "Metrics backend (Prometheus + Alertmanager, or Grafana Cloud free / OTLP)",
+      purpose: USER_ACTIONS.metrics.purpose,
+      free_or_paid: USER_ACTIONS.metrics.freePaid,
+      estimated_cost: USER_ACTIONS.metrics.cost,
+      dashboard_action: USER_ACTIONS.metrics.dashboard,
+      required_env_var_names: "METRICS_BACKEND, METRICS_TOKEN (or OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS) — only the names actually consumed by lib/metrics",
+      secret_storage_location: ".env.local / deployment secret store — never in git, evidence or chat",
+      verification_command: "scrape /metrics; load docs/ops/alerts.prometheus.yml; trigger each of the nine rules and capture real alert IDs + recovery; then node scripts/phase-w-evidence.mjs",
+      dependent_gates: "W9, W10",
+      status: CFG.metrics ? "READY" : "MISSING — USER ACTION REQUIRED",
+    },
+    {
+      service: "Error tracking (Sentry free tier, or supported webhook)",
+      purpose: USER_ACTIONS.errorTracking.purpose,
+      free_or_paid: USER_ACTIONS.errorTracking.freePaid,
+      estimated_cost: USER_ACTIONS.errorTracking.cost,
+      dashboard_action: USER_ACTIONS.errorTracking.dashboard,
+      required_env_var_names: "ERROR_TRACKING_DSN (or ERROR_TRACKING_WEBHOOK, ERROR_TRACKING_TOKEN)",
+      secret_storage_location: ".env.local / deployment secret store — never in git, evidence or chat",
+      verification_command: "POST /api/system/error-test → event arrives, synthetic-marked, scrubbed (no JWT/key/Authorization/DSN/raw document/PII); dedup verified",
+      dependent_gates: "W11",
+      status: CFG.errorTracking ? "READY" : "MISSING — USER ACTION REQUIRED",
+    },
+    {
+      service: "AI provider (Groq / Gemini free tier preferred; OpenAI/Anthropic only with user approval)",
+      purpose: USER_ACTIONS.ai.purpose,
+      free_or_paid: USER_ACTIONS.ai.freePaid,
+      estimated_cost: USER_ACTIONS.ai.cost,
+      dashboard_action: USER_ACTIONS.ai.dashboard,
+      required_env_var_names: "bridge-side: LLM_PROVIDER, LLM_API_KEY; app-side: AI_BRIDGE_URL, BRIDGE_SECRET_KEY",
+      secret_storage_location: "bridge secret store (.env on the bridge host) + app secret store — never in git, evidence, chat or browser",
+      verification_command: "bridge health with valid BRIDGE_SECRET_KEY; invalid secret → HTTP 401 with no provider call; then AI_BRIDGE_URL=… BRIDGE_SECRET_KEY=… node scripts/ai/cognitive-gate.mjs",
+      dependent_gates: "W12, W13, W14, W15, W16, W18, W19",
+      status: CFG.aiProvider && CFG.bridge ? "READY" : "MISSING — USER ACTION REQUIRED",
+    },
+    {
+      service: "Custom domain / DNS (optional)",
+      purpose: "Branded pilot URL only — the platform HTTPS URL satisfies all gates",
+      free_or_paid: "Free (platform subdomain) — custom domain is a paid option requiring approval",
+      estimated_cost: "$0 platform URL; ~$10/yr custom domain (optional)",
+      dashboard_action: "Platform → Settings → Domains",
+      required_env_var_names: "PILOT_BASE_URL",
+      secret_storage_location: "n/a",
+      verification_command: "curl -sI https://<url>/api/health  # expect 200",
+      dependent_gates: "none (PILOT_BASE_URL only)",
+      status: "OPTIONAL",
+    },
+  ];
+  writeFileSync(CHECKLIST_FILE, JSON.stringify({
+    phase: "X",
+    artifact: "operator-provisioning-checklist",
+    generatedAt,
+    gitHead: head,
+    note: "Machine-readable operator handoff. Contains only presence flags, env-var NAMES, commands and dashboard steps — no secret values of any kind. The evidence generator is the source of truth: re-run node scripts/phase-w-evidence.mjs after provisioning to re-evaluate the gates.",
+    items: checklistItems,
+  }, null, 2) + "\n");
+
+  console.log(JSON.stringify({ verdict, summary, phaseSSummary: S, phaseTSummary: T, phaseUSummary: U, phaseVSummary: V, w0Ok, durationMs, evidence: "docs/generated/phase-w-evidence.json", gap: "docs/generated/phase-w-readiness-gap.json", checklist: CHECKLIST_FILE }, null, 2));
   process.exit(0);
 }
 
