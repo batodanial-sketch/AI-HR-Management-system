@@ -1,10 +1,10 @@
 {
   "phase": "R",
-  "generatedAt": "2026-09-07T16:35:16.064Z",
+  "generatedAt": "2026-09-08T12:02:41.214Z",
   "staleGuard": {
-    "gitHead": "502dcccb5f4d848a27dc05ceb8a935c2899640b3",
-    "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "502dcccb5f4d848a27dc05ceb8a935c2899640b3",
+    "gitHead": "970bd5f0f76422fdfcafc73389be010243108f1b",
+    "branch": "HEAD",
+    "buildId": "970bd5f0f76422fdfcafc73389be010243108f1b",
     "sourceFingerprint": {
       "files": 664,
       "sha256": "6ab3f9c52153eb8d1fea897e182a4db50db58f150da190b1f8a7317af240d25f"
