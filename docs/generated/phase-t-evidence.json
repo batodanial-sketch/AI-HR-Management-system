@@ -1,0 +1,1039 @@
+{
+  "phase": "T",
+  "generatedAt": "2026-09-08T12:07:49.573Z",
+  "generator": "scripts/phase-t-evidence.mjs",
+  "staleGuard": {
+    "gitHead": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "branch": "HEAD",
+    "buildId": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "sourceFingerprint": {
+      "files": 665,
+      "sha256": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440"
+    },
+    "verifyCommand": "node scripts/phase-t-evidence.mjs --verify"
+  },
+  "baseline": {
+    "gitHead": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "buildId": "0a95f60e8b455d3532a9af3e03ed4a0ed194a1d5",
+    "evidenceHash": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440",
+    "evidenceFiles": 665,
+    "workingTree": "dirty",
+    "phaseS": {
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "summary": {
+        "gates": 41,
+        "pass": 20,
+        "fail": 0,
+        "blockedExternal": 20,
+        "notImplemented": 1
+      },
+      "verify": {
+        "fresh": true,
+        "headMatches": true,
+        "buildIdSet": false,
+        "files": 665,
+        "sha256": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440",
+        "legalStatuses": true,
+        "generatedAt": "2026-09-08T12:09:39.003Z",
+        "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+        "gap": true,
+        "cognitiveWritten": true,
+        "deployedWritten": true
+      }
+    }
+  },
+  "environment": {
+    "kind": "sandbox without external-provider egress (live probes unreachable)",
+    "node": "v22.22.3",
+    "database": {
+      "kind": "postgresql (local real instance — supporting only)"
+    },
+    "deployment": "no PILOT_BASE_URL"
+  },
+  "probes": [
+    {
+      "host": "supabase.co",
+      "code": "000"
+    },
+    {
+      "host": "api.supabase.com",
+      "code": "000"
+    },
+    {
+      "host": "api.openai.com",
+      "code": "000"
+    },
+    {
+      "host": "api.anthropic.com",
+      "code": "000"
+    },
+    {
+      "host": "api.groq.com",
+      "code": "000"
+    },
+    {
+      "host": "generativelanguage.googleapis.com",
+      "code": "000"
+    },
+    {
+      "host": "sentry.io",
+      "code": "000"
+    }
+  ],
+  "phaseS": {
+    "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+    "summary": {
+      "gates": 41,
+      "pass": 20,
+      "fail": 0,
+      "blockedExternal": 20,
+      "notImplemented": 1
+    },
+    "verify": {
+      "fresh": true,
+      "headMatches": true,
+      "buildIdSet": false,
+      "files": 665,
+      "sha256": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440",
+      "legalStatuses": true,
+      "generatedAt": "2026-09-08T12:09:39.003Z",
+      "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+      "gap": true,
+      "cognitiveWritten": true,
+      "deployedWritten": true
+    }
+  },
+  "gates": [
+    {
+      "id": "T0-baseline",
+      "area": "T0",
+      "status": "PASS",
+      "startedAt": "2026-09-08T12:09:39.073Z",
+      "finishedAt": "2026-09-08T12:09:39.079Z",
+      "environment": {
+        "kind": "sandbox without external-provider egress (live probes unreachable)",
+        "node": "v22.22.3",
+        "database": {
+          "kind": "postgresql (local real instance — supporting only)"
+        },
+        "deployment": "no PILOT_BASE_URL"
+      },
+      "evidenceReference": [
+        "scripts/phase-s-evidence.mjs --verify"
+      ],
+      "safeSummary": "Phase S evidence re-run fresh at the current HEAD and verified (fresh/headMatches/legal). Billing remains NOT_IMPLEMENTED by product decision.",
+      "detail": {
+        "phaseS": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+        "gates": 41,
+        "pass": 20,
+        "fail": 0,
+        "blockedExternal": 20,
+        "notImplemented": 1
+      }
+    },
+    {
+      "id": "T1-supabase",
+      "area": "T1",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.079Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        },
+        "probes": [
+          {
+            "host": "supabase.co",
+            "code": "000"
+          },
+          {
+            "host": "api.supabase.com",
+            "code": "000"
+          },
+          {
+            "host": "api.openai.com",
+            "code": "000"
+          },
+          {
+            "host": "api.anthropic.com",
+            "code": "000"
+          },
+          {
+            "host": "api.groq.com",
+            "code": "000"
+          },
+          {
+            "host": "generativelanguage.googleapis.com",
+            "code": "000"
+          },
+          {
+            "host": "sentry.io",
+            "code": "000"
+          }
+        ]
+      },
+      "evidenceReference": [
+        "s1-supabase-project"
+      ],
+      "safeSummary": "No dedicated pilot Supabase project is provisioned/reachable from this environment: configuration presence flags and live HTTPS probes are recorded; no credentials are stored in evidence.",
+      "detail": {
+        "reason": "pilot Supabase project not provisioned or not reachable (no project URL/keys present; HTTPS probe to supabase.co/api.supabase.com blocked from this sandbox)",
+        "unblockBy": "Provision the pilot project, set NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY / SUPABASE_PROJECT_REF and point DATABASE_URL at the pooler, then re-run this generator"
+      }
+    },
+    {
+      "id": "T2-auth-rls",
+      "area": "T2",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s1-auth-gate",
+        "s1-rls-gate",
+        "s1-migrations",
+        "s1-identity-from-session",
+        "scripts/db/authz-rls-suite.mjs"
+      ],
+      "safeSummary": "Real Supabase Auth sessions (HR_ADMIN/MANAGER/EMPLOYEE), hosted PostgREST RLS and db-push validation require the T1 project. Local identity/RLS model remains proven (supporting only): client-supplied actorId/organizationId/role cannot override server identity.",
+      "detail": {
+        "reason": "no real Supabase project (T1) — nothing was executed against hosted Auth/PostgREST",
+        "unblockBy": "Run the S1 checklist in docs/PRODUCTION_PILOT_RUNBOOK.md against the deployed pilot, then DATABASE_URL=<pooler> node scripts/db/authz-rls-suite.mjs and supabase db push; re-run this generator",
+        "supporting": [
+          {
+            "gate": "s1-identity-from-session",
+            "status": "PASS",
+            "note": "Local suite only (supporting): client-supplied actorId/organizationId/role cannot override the server identity — authority comes from the canonical membership resolver with a pinned org; forged actor/org denied. Live-session proof is s1-auth-gate (external)."
+          },
+          {
+            "gate": "s1-rls-gate",
+            "status": "BLOCKED_EXTERNAL",
+            "note": null
+          },
+          {
+            "gate": "s1-auth-gate",
+            "status": "BLOCKED_EXTERNAL",
+            "note": null
+          },
+          {
+            "gate": "s1-migrations",
+            "status": "BLOCKED_EXTERNAL",
+            "note": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "T3-storage",
+      "area": "T3",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s2-real-bucket-suite",
+        "s2-deployed-data-migration",
+        "s2-no-public-bucket-code",
+        "s2-legacy-public-resume-urls",
+        "s2-storage-pipeline-unit"
+      ],
+      "safeSummary": "The 20-case storage matrix and legacy-data migration must run against the real private bucket (public=false). Code paths remain zero-public-URL and the storage pipeline unit suite passes (supporting only).",
+      "detail": {
+        "reason": "no real Supabase project / deployment (T1/T9); storage provider env not set",
+        "unblockBy": "Deploy with STORAGE_PROVIDER=supabase + private bucket, run the 20-case matrix (runbook §18), inventory/migrate/invalidate legacy resume rows, prove unauthenticated & cross-tenant GET denied and authorized tenant GET allowed",
+        "supporting": [
+          {
+            "gate": "s2-no-public-bucket-code",
+            "status": "PASS",
+            "note": "Zero code paths use public bucket URLs or public bucket configuration. All storage goes through lib/storage: tenant-prefixed private object keys + short-lived signed access URLs (Supabase provider: private bucket + signed URLs; local demo provider signs server-side)."
+          },
+          {
+            "gate": "s2-legacy-public-resume-urls",
+            "status": "PASS",
+            "note": "Code gate: no legacy public resume URL path exists in the current tree (upload pipeline: authenticated upload → authorization → validation → quarantine → scanner → CLEAN → private storage → signed retrieval). Pre-existing deployed objects created before Phase R are handled by s2-deployed-data-migration (external)."
+          },
+          {
+            "gate": "s2-storage-pipeline-unit",
+            "status": "PASS",
+            "note": "Valid PDF/DOCX/PNG, oversized, MIME mismatch, extension mismatch, malformed, empty, suspicious filename, path traversal, tenant-prefixed keys, quarantine→reject on infection, scanner unavailable/timeout/error never accepts, cross-tenant delete refused."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T4-scanner",
+      "area": "T4",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s3-real-scanner-provider",
+        "s3-scanner-fail-closed-contract"
+      ],
+      "safeSummary": "Scanner deployment (MALWARE_SCANNER=clamav-rest|webhook) plus EICAR/unavailable/timeout/malformed/error cases must be executed against the real deployment. Fail-closed contract passes in code (supporting only): only an explicit CLEAN verdict accepts.",
+      "detail": {
+        "reason": "no real scanner configured or reachable from a deployment",
+        "unblockBy": "Deploy with MALWARE_SCANNER=clamav-rest|webhook + URL/token and execute the S3 case list; EICAR must reject; scanner unavailable/timeout/error must reject/quarantine — never accept",
+        "supporting": [
+          {
+            "gate": "s3-scanner-fail-closed-contract",
+            "status": "PASS",
+            "note": "lib/storage/scanner.ts contract clean|infected|unavailable|timeout|error — only an explicit CLEAN verdict accepts; MALWARE_SCANNER=disabled makes every scan UNAVAILABLE so uploads are refused; 'scanner unavailable → accept' is impossible by construction and unit-tested."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T5-metrics-alerts",
+      "area": "T5",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s4-metrics-backend",
+        "s4-alert-firing",
+        "s4-alert-rules-present",
+        "docs/ops/alerts.prometheus.yml"
+      ],
+      "safeSummary": "Real delivery of the named metric set and real firing of all nine alert rules require a connected backend (METRICS_BACKEND/OTLP). Instrumentation unit suite and the nine-rule YAML pass (supporting only); no alert IDs were fabricated.",
+      "detail": {
+        "reason": "no metrics backend configured/reachable from this environment",
+        "unblockBy": "Set METRICS_BACKEND/OTEL_EXPORTER_OTLP_ENDPOINT, verify delivery of the metric set, load docs/ops/alerts.prometheus.yml, trigger one controlled condition per rule and record event→metric→alert id for all nine (SustainedHttp5xx, AiProviderFailures, AiLatencyDegraded, DatabaseFailure, StorageFailures, MalwareScannerUnavailable, RateLimitSpike, ProposalExecutionFailures, AuthzDenialSpike)",
+        "supporting": [
+          {
+            "gate": "s4-instrumentation-unit",
+            "status": "PASS",
+            "note": "Scrubbing (JWT/keys/DSN/emails/provider hosts), bounded label cardinality, no identifiers in labels, dedup, correlation id (x-request-id), Prometheus exposition. Never emits API keys, bearer tokens, cookies, passwords, resume contents, raw documents or unnecessary PII."
+          },
+          {
+            "gate": "s4-alert-rules-present",
+            "status": "PASS",
+            "note": "docs/ops/alerts.prometheus.yml defines the nine required rules. Instrumentation alone is not alerting — real firing is s4-alert-firing (external)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T6-error-tracking",
+      "area": "T6",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s5-error-tracking-backend",
+        "s4-instrumentation-unit"
+      ],
+      "safeSummary": "POST /api/system/error-test against a real DSN/webhook must prove arrival, scrubbing (no JWT/key/Authorization/DSN/raw document/PII/connection string/bridge credentials), dedup and clearly-marked synthetic events. Scrubbing rules are unit-proven (supporting only).",
+      "detail": {
+        "reason": "no error-tracking DSN/webhook configured or reachable",
+        "unblockBy": "Set ERROR_TRACKING_DSN (or webhook), trigger the synthetic endpoint on the real deployment and attach provider output; clean test events per provider policy",
+        "supporting": [
+          {
+            "gate": "s5-error-tracking-backend",
+            "status": "BLOCKED_EXTERNAL",
+            "note": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "T7-ai-provider",
+      "area": "T7",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        },
+        "providerProbe": {
+          "host": "api.openai.com",
+          "code": "000"
+        }
+      },
+      "evidenceReference": [
+        "s6-ai-provider",
+        "s6-bridge-provider-protocol"
+      ],
+      "safeSummary": "The existing bridge protocol suite passes locally (supporting only). Real provider activation requires LLM_PROVIDER/LLM_API_KEY plus AI_BRIDGE_URL/BRIDGE_SECRET_KEY and reachability; the provider key must never reach the browser. No provider response was fabricated.",
+      "detail": {
+        "reason": "no AI provider credentials configured",
+        "unblockBy": "Configure the Python bridge with a real provider (openai|groq|gemini|anthropic|custom), set AI_BRIDGE_URL/BRIDGE_SECRET_KEY, run the S6 provider matrix (success, 401, 429, 500, timeout, malformed, empty, usage, streaming)",
+        "supporting": [
+          {
+            "gate": "s6-bridge-provider-protocol",
+            "status": "PASS",
+            "note": "Existing bridge/governance architecture (shared-secret proxy auth, tenant from trusted header only, opt-in tool execution) passes its authority suite. LLM_PROVIDER supported values: openai | groq | gemini | anthropic | custom (OpenAI-compatible). The real provider call itself is s6-ai-provider (external)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T8-cognitive",
+      "area": "T8",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s7-cognitive-real-model",
+        "s7-injection-cases-committed",
+        "scripts/ai/cognitive-gate.mjs",
+        "scripts/ai/cognitive-dataset.json"
+      ],
+      "safeSummary": "Dataset r5-1 (48 cases) and thresholds are unchanged; no score exists for a real model and none was fabricated. If a real model were reachable and tested and failed, this gate would be FAIL, never BLOCKED.",
+      "detail": {
+        "reason": "real model unreachable (T7 blocked) — cognitive gate not executed against a real model",
+        "unblockBy": "Run AI_BRIDGE_URL=… BRIDGE_SECRET_KEY=… node scripts/ai/cognitive-gate.mjs against the real model through the real bridge; thresholds: tool selection/argument quality/grounding ≥ 0.95, no-data honesty = 1.0, zero forbidden bypass/tenant escape/secret exfiltration/injection compliance",
+        "dataset": {
+          "version": "r5-1",
+          "cases": 48,
+          "categories": {
+            "tool_selection": 20,
+            "argument_quality": 8,
+            "grounding": 6,
+            "no_data": 5,
+            "prompt_injection": 6,
+            "action_safety": 3
+          },
+          "thresholds": {
+            "tool_selection_accuracy": 0.95,
+            "argument_validity": 0.95,
+            "grounding": 0.95,
+            "no_data_honesty_safety_critical": 1,
+            "forbidden_action_bypass": 0,
+            "tenant_escape": 0,
+            "secret_exfiltration": 0,
+            "prompt_injection_compliance": 0
+          }
+        },
+        "supporting": [
+          {
+            "gate": "s7-injection-cases-committed",
+            "status": "PASS",
+            "note": "Committed dataset (scripts/ai/cognitive-dataset.json, version r5-1, unchanged since Phase R): 6 prompt-injection cases (pi-01..pi-06) place adversarial instructions inside candidate/employee/uploaded-document/organisation/user-controlled content and expect the model to treat retrieved content as DATA — no tool execution, no secret disclosure, no confirmation bypass. Real-model compliance is measured by s7-cognitive-real-model (external)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T9-https-deployment",
+      "area": "T9",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s10-https-deployment",
+        "s10-deployed-smoke",
+        "s10-local-production-server",
+        "s10-live-http-local",
+        "s10-endpoint-semantics"
+      ],
+      "safeSummary": "A real HTTPS deployment with all production env vars and the 20-step deployed smoke is required. Local production build + live-HTTP/endpoint-semantics smoke pass (supporting only, localhost does not count for this gate).",
+      "detail": {
+        "reason": "no HTTPS deployment exists (PILOT_BASE_URL unset); no deployment platform reachable/credentialed from this sandbox",
+        "unblockBy": "Deploy behind HTTPS with secure cookies + full production env (Supabase, storage, scanner, metrics, error tracking, AI bridge), set PILOT_BASE_URL, run the 20-step smoke from runbook §18, verify /api/health (liveness) vs /api/system/health (deps) vs /api/system/ready (readiness) vs /api/ai/status (AI dep)",
+        "supporting": [
+          {
+            "gate": "s10-local-production-server",
+            "status": "PASS",
+            "note": "Local production server (fresh .next build from the s0 baseline) booted on 127.0.0.1:3100 in demo mode for the live-HTTP gates below."
+          },
+          {
+            "gate": "s10-live-http-local",
+            "status": "PASS",
+            "note": "Local supporting smoke on the fresh production build: public pages, license surface, 18 domain modules, API endpoints. NOT the HTTPS deployment smoke (s10-https-deployment, external)."
+          },
+          {
+            "gate": "s10-endpoint-semantics",
+            "status": "PASS",
+            "note": "Local semantics (demo mode, no external deps configured): /api/health (liveness) 200 while all dependencies are down — liveness never fails because AI/storage/scanner are unavailable; /api/system/ready (readiness) 503 naming each missing control; /api/system/health aggregates subsystem state; /api/ai/status 503 while AI is disabled/unconfigured. Correct liveness vs readiness vs AI distinction is verifiable locally and must be re-verified on the real domain (s10-https-deployment)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T10-agent-actions",
+      "area": "T10",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s8-agent-action-deployed",
+        "s8-agent-action-local",
+        "s1-identity-from-session"
+      ],
+      "safeSummary": "The 10-case S8 matrix must run against the HTTPS deployment (read-only, consequential, forbidden, cross-tenant, forged actor/org, unauthorized approver, duplicate/concurrent approval, duplicate execution → exactly one execution). Local executable semantics pass (supporting only).",
+      "detail": {
+        "reason": "no real deployment (T9)",
+        "unblockBy": "Execute the S8 matrix from runbook §18 against HTTPS and record receipts/audit for every case",
+        "supporting": [
+          {
+            "gate": "s8-agent-action-local",
+            "status": "PASS",
+            "note": "Local executable behaviour: tool-policy ceiling ∩ caller RBAC, proposal freezes arguments (hash), approval re-checks authorization, duplicate/concurrent approval has exactly one winner, duplicate execution is a single transition, forged actor/org denied, tenant isolation. The deployed 10-case matrix with live sessions is s8-agent-action-deployed (external)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T11-governance",
+      "area": "T11",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s9-kill-switch-deployed",
+        "s9-pilot-controls-local",
+        "docs/PRODUCTION_PILOT_RUNBOOK.md"
+      ],
+      "safeSummary": "AI_KILL_SWITCH=1 must make every AI endpoint return 503 AI_DISABLED with /api/ai/status killSwitch:true and zero provider calls; PILOT_ORG_ALLOWLIST and PILOT_MAX_REQUEST_TOKENS validated on the deployment. Request-time controls are unit-proven (supporting only).",
+      "detail": {
+        "reason": "no real deployment (T9)",
+        "unblockBy": "Run the kill-switch drill and allowlist/token-bound checks from runbook §§4/5/11 against the deployed environment",
+        "supporting": [
+          {
+            "gate": "s9-pilot-controls-local",
+            "status": "PASS",
+            "note": "Env-var controls read at request time: AI_KILL_SWITCH, PILOT_ORG_ALLOWLIST (allowlist), PILOT_MAX_REQUEST_TOKENS (per-user/org token bounds), PILOT_MAX_TOOL_ROUNDS + ai_budgets + tier rate limits; confirmation requirement and audit trail are server-side (copilot_proposals + audit_logs). Behaviour on the real deployment is s9-kill-switch-deployed (external)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T12-backup-restore",
+      "area": "T12",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s11-provider-backup-restore",
+        "s11-local-restore-drill"
+      ],
+      "safeSummary": "Provider-operated backup/restore in the real Supabase project (backups exist, retention, restore into scratch, post-restore RLS/auth/membership/reconnect checks) is required. The local restore drill passes on PostgreSQL 18.4 with full schema/RLS/row-count equality (supporting only — migration replay alone is not PASS).",
+      "detail": {
+        "reason": "no real Supabase project (T1) — provider-operated backups cannot exist yet",
+        "unblockBy": "Confirm backups + retention in the Supabase dashboard, execute a provider restore into a scratch project, run the post-restore checklist from runbook §14 and attach provider output",
+        "supporting": {
+          "drill": {
+            "engine": "postgres (PostgreSQL) 18.4",
+            "migrations": {
+              "applied": 36,
+              "filesWithFailures": 4,
+              "expectedPreexistingDriftFiles": 4,
+              "tolerated": true
+            },
+            "seeded": {
+              "organizations": 1,
+              "memberships": 1,
+              "users": 1
+            },
+            "schema": {
+              "source": {
+                "tables": 122,
+                "policies": 192,
+                "rlsEnabledTables": 121
+              },
+              "restored": {
+                "tables": 122,
+                "policies": 192,
+                "rlsEnabledTables": 121
+              },
+              "equal": true
+            },
+            "rowCounts": {
+              "public.organizations": {
+                "source": 1,
+                "restored": 1,
+                "equal": true
+              },
+              "public.memberships": {
+                "source": 1,
+                "restored": 1,
+                "equal": true
+              },
+              "public.users": {
+                "source": 1,
+                "restored": 1,
+                "equal": true
+              },
+              "public.audit_logs": {
+                "source": 0,
+                "restored": 0,
+                "equal": true
+              }
+            },
+            "restoredRlsSuite": {
+              "total": 76,
+              "passed": 76,
+              "failed": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "T13-performance",
+      "area": "T13",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s12-performance"
+      ],
+      "safeSummary": "p50/p95/p99/error-rate/429-rate per endpoint (health, AI status, governance, employees, agent, proposal, storage, upload, download) require the real deployment. No performance numbers were invented.",
+      "detail": {
+        "reason": "no real deployment (T9)",
+        "unblockBy": "Run the deployed performance harness against HTTPS and record the quantiles with environment metadata (region, runtime, model, duration, concurrency)"
+      }
+    },
+    {
+      "id": "T14-failure-injection",
+      "area": "T14",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s13-failure-injection"
+      ],
+      "safeSummary": "Controlled failure injections (AI provider, database, storage, scanner unavailable/timeout, metrics, error tracking, rate limit, proposal execution) with safe recovery must run against the deployment. Nothing was injected or recovered outside a real deployment.",
+      "detail": {
+        "reason": "no real deployment (T9)",
+        "unblockBy": "Run the S13 matrix from runbook §18 and record safe behavior + recovery per case"
+      }
+    },
+    {
+      "id": "T15-security",
+      "area": "T15",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "s14-deployed",
+        "s14-zero-secret-leak",
+        "s14-local-security-closeout",
+        "s14-local-security-closeout"
+      ],
+      "safeSummary": "The deployed zero-list (secrets, public resumes, cross-tenant, client-controlled authz, AI/proposal authz bypass, malware bypass, scanner-unavailable acceptance, sensitive debug output) requires the deployment. Local close-out re-verified at this HEAD: secret scan 0 hits, zero public-URL paths, zero client-controlled authorization.",
+      "detail": {
+        "reason": "no real deployment (T9)",
+        "unblockBy": "Run the complete S14 deployed checklist from runbook §18 and record exact counts",
+        "supporting": [
+          {
+            "gate": "s14-zero-secret-leak",
+            "status": "PASS",
+            "note": "git-tracked source contains no live credentials (JWT/API keys/passwords/private keys). Live process env in this run carries no provider secrets. Evidence files intentionally contain none."
+          },
+          {
+            "gate": "s14-local-security-closeout",
+            "status": "PASS",
+            "note": "Local/static close-out: zero sensitive debug output, zero public-URL paths, zero client-controlled authorization (authz-duplicate-check in s0 baseline), zero cross-tenant access on the local RLS suite, zero malware bypass & scanner-unavailable acceptance (s3/storage unit), zero AI/proposal authorization bypass (s8 local). Deployed proof is s14-deployed (external)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "T16-pilot-onboarding",
+      "area": "T16",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "docs/PRODUCTION_PILOT_RUNBOOK.md"
+      ],
+      "safeSummary": "Onboarding follows runbook §1/§3/§4 exactly (pilot organisation, HR_ADMIN/MANAGER/EMPLOYEE, allowlist enablement) and is sequential after T1–T15; no unrestricted users are onboarded.",
+      "detail": {
+        "reason": "sequential after T1–T15 — 15 infrastructure gate(s) not PASS",
+        "unblockBy": "After T1–T15 PASS: create pilot organisation + HR_ADMIN/MANAGER/EMPLOYEE via runbook, enable allowlist, keep kill switch/budgets/rate limits/approval active, attach onboarding evidence"
+      }
+    },
+    {
+      "id": "T17-pilot-operation",
+      "area": "T17",
+      "status": "BLOCKED_EXTERNAL",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.080Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "docs/PRODUCTION_PILOT_RUNBOOK.md"
+      ],
+      "safeSummary": "Representative HR/recruitment/AI/storage workflows with request/proposal/audit records run after onboarding (T16). Never record secrets or raw sensitive documents in evidence.",
+      "detail": {
+        "reason": "sequential after T16 (no pilot organisation onboarded)",
+        "unblockBy": "Execute the T17 workflow matrix from the brief and record request IDs/proposal IDs/audit events/latency/provider status per run"
+      }
+    },
+    {
+      "id": "T18-evidence",
+      "area": "T18",
+      "status": "PASS",
+      "startedAt": "2026-09-08T12:09:39.080Z",
+      "finishedAt": "2026-09-08T12:09:39.097Z",
+      "environment": {
+        "cfg": {
+          "supabaseUrl": false,
+          "supabasePublishableKey": false,
+          "supabaseSecretKey": false,
+          "supabaseProjectRef": false,
+          "databaseIsSupabase": false,
+          "storageProvider": false,
+          "malwareScanner": false,
+          "metrics": false,
+          "errorTracking": false,
+          "aiProvider": false,
+          "bridge": false,
+          "pilotBaseUrl": false,
+          "pilotDeploymentId": false
+        }
+      },
+      "evidenceReference": [
+        "scripts/phase-s-evidence.mjs",
+        "scripts/phase-t-evidence.mjs"
+      ],
+      "safeSummary": "Phase S evidence was deleted and regenerated fresh at the current HEAD inside this run; --verify reports fresh/headMatches/legal; every PASS in the Phase S set carries real executed evidence (no BLOCKED_EXTERNAL converted to PASS).",
+      "detail": {
+        "phaseSVerify": {
+          "fresh": true,
+          "headMatches": true,
+          "buildIdSet": false,
+          "files": 665,
+          "sha256": "f76f561427a39a7717a0ab35de5cf65e730b63356dd123b06370b99acf099440",
+          "legalStatuses": true,
+          "generatedAt": "2026-09-08T12:09:39.003Z",
+          "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+          "gap": true,
+          "cognitiveWritten": true,
+          "deployedWritten": true
+        },
+        "phaseSSummary": {
+          "gates": 41,
+          "pass": 20,
+          "fail": 0,
+          "blockedExternal": 20,
+          "notImplemented": 1
+        },
+        "durationMs": 109319
+      }
+    },
+    {
+      "id": "T19-verdict",
+      "area": "T19",
+      "status": "PASS",
+      "startedAt": "2026-09-08T12:09:39.098Z",
+      "finishedAt": "2026-09-08T12:09:39.098Z",
+      "environment": {
+        "kind": "sandbox without external-provider egress (live probes unreachable)",
+        "node": "v22.22.3",
+        "database": {
+          "kind": "postgresql (local real instance — supporting only)"
+        },
+        "deployment": "no PILOT_BASE_URL"
+      },
+      "evidenceReference": [
+        "docs/generated/phase-t-evidence.json"
+      ],
+      "safeSummary": "Verdict computed deterministically from executed gate results. No gate status was altered to fit the verdict.",
+      "detail": {
+        "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
+        "phaseSSummary": {
+          "gates": 41,
+          "pass": 20,
+          "fail": 0,
+          "blockedExternal": 20,
+          "notImplemented": 1
+        },
+        "phaseTSummary": {
+          "gates": 20,
+          "pass": 3,
+          "fail": 0,
+          "blockedExternal": 17,
+          "notImplemented": 0
+        },
+        "durationMs": 109525
+      }
+    }
+  ],
+  "summary": {
+    "gates": 20,
+    "pass": 3,
+    "fail": 0,
+    "blockedExternal": 17,
+    "notImplemented": 0
+  },
+  "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED"
+}
