@@ -3,8 +3,8 @@
   "status": "BLOCKED_EXTERNAL",
   "reason": "bridge_unreachable",
   "detail": "fetch failed",
-  "startedAt": "2026-09-08T17:20:40.377Z",
-  "finishedAt": "2026-09-08T17:20:40.410Z",
+  "startedAt": "2026-09-09T11:46:08.113Z",
+  "finishedAt": "2026-09-09T11:46:08.146Z",
   "datasetVersion": "r5-1",
   "cases": 48,
   "thresholds": {

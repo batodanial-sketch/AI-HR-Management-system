@@ -1,22 +1,22 @@
 {
   "phase": "T",
-  "generatedAt": "2026-09-08T17:18:38.595Z",
+  "generatedAt": "2026-09-09T11:44:04.630Z",
   "staleGuard": {
-    "gitHead": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
+    "gitHead": "d40c09daf7c7748787d480de456dc8300e8343e5",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
+    "buildId": "d40c09daf7c7748787d480de456dc8300e8343e5",
     "sourceFingerprint": {
-      "files": 679,
-      "sha256": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb"
+      "files": 682,
+      "sha256": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2"
     },
     "verifyCommand": "node scripts/phase-t-evidence.mjs --verify"
   },
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
   "baseline": {
-    "gitHead": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
-    "buildId": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
-    "evidenceHash": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb",
-    "evidenceFiles": 679,
+    "gitHead": "d40c09daf7c7748787d480de456dc8300e8343e5",
+    "buildId": "d40c09daf7c7748787d480de456dc8300e8343e5",
+    "evidenceHash": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
+    "evidenceFiles": 682,
     "workingTree": "clean",
     "phaseS": {
       "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
@@ -31,10 +31,10 @@
         "fresh": true,
         "headMatches": true,
         "buildIdSet": false,
-        "files": 679,
-        "sha256": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb",
+        "files": 682,
+        "sha256": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
         "legalStatuses": true,
-        "generatedAt": "2026-09-08T17:20:46.425Z",
+        "generatedAt": "2026-09-09T11:46:14.850Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true,
         "cognitiveWritten": true,

@@ -1,29 +1,29 @@
 {
   "phase": "W",
-  "generatedAt": "2026-09-08T17:18:37.614Z",
+  "generatedAt": "2026-09-09T11:44:03.626Z",
   "staleGuard": {
-    "gitHead": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
+    "gitHead": "d40c09daf7c7748787d480de456dc8300e8343e5",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
+    "buildId": "d40c09daf7c7748787d480de456dc8300e8343e5",
     "sourceFingerprint": {
-      "files": 679,
-      "sha256": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb"
+      "files": 682,
+      "sha256": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2"
     },
     "verifyCommand": "node scripts/phase-w-evidence.mjs --verify"
   },
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
   "baseline": {
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "gitHead": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
-    "remoteHead": "b8ad72672b1ae1f653bc6e1abd6b8007383ad466",
+    "gitHead": "d40c09daf7c7748787d480de456dc8300e8343e5",
+    "remoteHead": "9cefa47bae975b62e7f8edddd54d15a4703170c7",
     "remoteSynced": false,
-    "buildId": "e72a29fb6bf0836453bab1d6bbaced93b6452747",
+    "buildId": "d40c09daf7c7748787d480de456dc8300e8343e5",
     "workingTree": "clean",
     "evidenceHashes": {
-      "phaseS": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb",
-      "phaseT": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb",
-      "phaseU": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb",
-      "phaseV": "8e2bdf13ed16388db10bd9223d388f237d87fe87ec298d8522df27fa9cf20fbb"
+      "phaseS": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
+      "phaseT": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
+      "phaseU": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
+      "phaseV": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2"
     },
     "cognitive": {
       "version": "r5-1",
