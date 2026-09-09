@@ -1,23 +1,23 @@
 {
   "phase": "U",
-  "generatedAt": "2026-09-09T11:44:04.433Z",
+  "generatedAt": "2026-09-09T11:54:35.588Z",
   "staleGuard": {
-    "gitHead": "d40c09daf7c7748787d480de456dc8300e8343e5",
+    "gitHead": "d2d7076ea87453516e6a4a9c773eb231b6e0b200",
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "buildId": "d40c09daf7c7748787d480de456dc8300e8343e5",
+    "buildId": "d2d7076ea87453516e6a4a9c773eb231b6e0b200",
     "sourceFingerprint": {
-      "files": 682,
-      "sha256": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2"
+      "files": 684,
+      "sha256": "46184f761269b13c0405ec56730175fe68ace2662ffd6ffaf82bb22b4544bc6b"
     },
     "verifyCommand": "node scripts/phase-u-evidence.mjs --verify"
   },
   "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
   "baseline": {
     "branch": "arena/01a07c94-ai-hr-management-system",
-    "gitHead": "d40c09daf7c7748787d480de456dc8300e8343e5",
-    "buildId": "d40c09daf7c7748787d480de456dc8300e8343e5",
-    "evidenceHash": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
-    "evidenceFiles": 682,
+    "gitHead": "d2d7076ea87453516e6a4a9c773eb231b6e0b200",
+    "buildId": "d2d7076ea87453516e6a4a9c773eb231b6e0b200",
+    "evidenceHash": "46184f761269b13c0405ec56730175fe68ace2662ffd6ffaf82bb22b4544bc6b",
+    "evidenceFiles": 684,
     "workingTree": "clean",
     "phaseS": {
       "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
@@ -32,10 +32,10 @@
         "fresh": true,
         "headMatches": true,
         "buildIdSet": false,
-        "files": 682,
-        "sha256": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
+        "files": 684,
+        "sha256": "46184f761269b13c0405ec56730175fe68ace2662ffd6ffaf82bb22b4544bc6b",
         "legalStatuses": true,
-        "generatedAt": "2026-09-09T11:46:14.850Z",
+        "generatedAt": "2026-09-09T11:56:39.291Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true,
         "cognitiveWritten": true,
@@ -55,11 +55,11 @@
         "fresh": true,
         "headMatches": true,
         "buildIdSet": false,
-        "files": 682,
-        "sha256": "79c1f1365f74a776834eac640e3e014bd65584020fb0e95b4d56da00705123a2",
+        "files": 684,
+        "sha256": "46184f761269b13c0405ec56730175fe68ace2662ffd6ffaf82bb22b4544bc6b",
         "legalStatuses": true,
         "phaseSConsistent": true,
-        "generatedAt": "2026-09-09T11:44:04.630Z",
+        "generatedAt": "2026-09-09T11:54:35.773Z",
         "verdict": "PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED",
         "gap": true
       }
