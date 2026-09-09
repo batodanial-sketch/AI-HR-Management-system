@@ -1,64 +1,53 @@
 # FLUXENTIQ AI — PHASE XIII REPORT
 
 **Date:** 2026-09-09 · **Phase:** XIII — Operator Infrastructure Activation (real deployment + external gate verification)
-**Canonical branch:** `arena/01a07c94-ai-hr-management-system` · **Baseline release:** `b8ad726` · **Phase XIII anchor/carrier:** see §Evidence
-**Governing rule honored:** §71 master principle — infrastructure was freshly and honestly re-measured (not assumed from Phase XII); it remains unavailable; therefore nothing was faked, simulated, or claimed, and the deterministic verdict is preserved. Zero application code changes were made (nothing real exposed a defect; §43/§44).
+**Canonical branch:** `arena/01a07c94-ai-hr-management-system` · **Baseline release:** `b8ad726` → **New audited release:** `4368523` (see §Release Identity and change record)
+**Governing rules honored:** §71 (reality measured fresh, nothing faked/simulated) and §43/§45 (a real defect was discovered by the official gate — the live dependency audit — and fixed with a deliberate, fully validated dependency update + regression tests; the affected release path was stopped, fixed, re-validated, and re-anchored).
 
 ---
 
 ## 1. Phase XIII-A — current state verification (fresh, 2026-09-09)
 
-The sandbox had reset the local repository to the base commit (`8ac7770`, 51 dirty files) while origin retained the full chain. Recovery performed exactly as in earlier phases: fetched the canonical branch from origin and hard-reset to the origin tip.
+The sandbox had reset the local repository to the base commit (`8ac7770`, 51 dirty files) while origin retained the full chain. Recovery: fetched the canonical branch from origin and hard-reset to the origin tip.
 
 | Check | Result |
 |---|---|
 | CURRENT_BRANCH | `arena/01a07c94-ai-hr-management-system` ✅ |
-| HEAD after recovery | `9cefa47bae975b62e7f8edddd54d15a4703170c7` == origin tip (tree hash `d3a70098…` identical on both) |
-| Working tree | CLEAN (0 dirty files), byte-identical to HEAD |
-| Evidence chain | `b83ebd9 → f4bf3c2 → b8ad726 → e72a29f → 9cefa47` intact on origin |
-| RELEASE_SHA | `b8ad726` (untouched; no code modified before attempting deployment) |
-| Operator checklist | `docs/ops/operator-provisioning-checklist.json` present at carrier `9cefa47` — all infra items `MISSING — USER ACTION REQUIRED` |
+| HEAD after recovery | `9cefa47…` == origin tip (tree hash identical) |
+| Working tree after recovery | CLEAN, byte-identical to HEAD |
+| Evidence chain recovered | `b83ebd9 → f4bf3c2 → b8ad726 → e72a29f → 9cefa47` intact on origin |
 
-Sandbox-instability record: local reset events are environmental (observed at Phase XI and XIII starts); release integrity was never at risk because the canonical branch on origin is the source of truth and was byte-verified after recovery.
+Sandbox-instability record: local reset events are environmental (observed at Phase XI and XIII starts); release integrity was never at risk — the canonical branch on origin is the source of truth and was byte-verified after recovery.
 
-## 2. Phase XIII-B — environment + secret delivery reality check (fresh)
+## 2. Phase XIII-B/C — environment + network reality check (fresh)
 
-Method: environment-variable **names**, credential-file existence, CLI presence, repo env files. Values never inspected or printed.
+Method: env-var **names**, credential-file existence, CLI presence; per-provider DNS→TCP→TLS→HTTP probes with controls. No values printed.
 
 | Item | Status |
 |---|---|
-| Infrastructure credentials (Supabase, DB, AI providers, bridge, Sentry, metrics, email, webhooks, cron, SCIM, deployment platforms) | **MISSING** (env contains only `GH_TOKEN`/`GITHUB_TOKEN` — GitHub bot scope, not infrastructure) |
-| Infra CLIs (vercel, supabase, docker, kubectl, aws, gcloud, flyctl, rail, render, netlify, sst) | **MISSING** (only `gh` present) |
-| Credential files (`~/.config/vercel/auth.json`, `~/.aws/*`, `~/.kube/config`, gcloud ADC, docker, gh hosts) | **ABSENT** |
-| Repo env files | `.env.example` only (documented variable **names**, dev defaults commented; no values) |
-| Secret delivery mechanism | **MISSING** (no deployment platform to host a secret store) |
+| Infrastructure credentials (all 14 checklist categories) | **MISSING** (env: `GH_TOKEN`/`GITHUB_TOKEN` only — GitHub scope) |
+| Infra CLIs (vercel, supabase, docker, kubectl, aws, gcloud, flyctl, rail, render, netlify, sst) | **MISSING** (only `gh`) |
+| Credential files / repo env files | **ABSENT** / `.env.example` only |
+| Provider network (Supabase, Vercel/Render/Railway/Fly, ClamAV, Sentry, Groq/OpenAI/Anthropic/Gemini, Datadog/Grafana/PagerDuty, SendGrid/Resend/Postmark, Slack, n8n, Neon, Planetscale) | **UNREACHABLE** — 22/22 `curl (35) SSL_ERROR_SYSCALL`, HTTP `000` |
+| Controls (github.com, registry.npmjs.org, pypi.org) | REACHABLE (200) |
 
-**No infrastructure of any of the 14 checklist categories has been provisioned since Phase XII.**
+**No checklist category has been provisioned since Phase XII. No deployment target exists.** Per §59 no external gate may move to PASS; nothing attributable to the system failed — except the dependency audit described below, which was a real defect and was fixed.
 
-## 3. Phase XIII-C — network verification (fresh, 2026-09-09T11:17Z)
+## 3. Phase XIII discovery — real defect found and fixed (change-discipline record, §43/§63/§45)
 
-Per-service probes: DNS → TCP → TLS → HTTP, `curl -m 8`, unauthenticated, control endpoints included. Every production endpoint failed at the TLS handshake with `SSL_ERROR_SYSCALL` (`curl (35)`, HTTP `000`) — TCP connects, TLS is blocked by the egress filter; no proxy variables set.
+| Field | Record |
+|---|---|
+| PROBLEM | Official evidence regeneration failed: `security-dependency-audit` gate **FAIL**. Live `npm audit` (registry reachable) reports **6 vulnerabilities (1 critical, 5 high)** against the pinned Next 14.2.35 lockfile. The identical lockfile passed on 2026-09-08; the npm advisory database updated 2026-09-08/09 — the previous PASS was against a stale advisory DB. |
+| ROOT CAUSE | Current advisories flag **every Next.js release < 15.5.24** (critical: unauthenticated RCE in Image Optimization API via AVIF, RCE on windows-hosted servers; high: SSRF in Server Actions/rewrites, cache poisoning/confusion, DoS set); **no 14.x patched release exists**. Transitive hits: `glob` 10.3.10 via `@next/eslint-plugin-next@14`, `js-yaml` 4.3.1 via `eslint` 8, `postcss` ≤8.5.22 pinned by `next`. |
+| FIX | Deliberate, validated dependency update: `next` ^15.5.25 + `eslint-config-next` ^15.5.25 (peer-compatible with react 18.3.1 + eslint 8 — **no react/framework-adjacent churn**); `overrides`: `js-yaml` ^4.3.2, `next→postcss` ^8.5.23. Result: `npm audit` **0 vulnerabilities**. Next 15 async-context migration (compile/runtime contract): `await cookies()/headers()` at 7 sites (4 @supabase/ssr cookie adapters, root layout, audit client-IP helper, RBAC e2e hook); async `params` awaited in 8 dynamic route handlers + `app/employees/[id]` page; `app/api/graphql/route.ts` wrapped to satisfy Next 15 route-signature validation. No route/domain logic changed — pure context plumbing. |
+| SECURITY IMPACT | Dependency tree clean against the live registry; runtime framework on the patched 15.5.x line; build-time toolchain (eslint-config-next 15) drops the vulnerable `glob` chain; postcss/js-yaml on fixed versions. |
+| REGRESSION TEST | `tests/unit/next15AsyncParams.test.ts` (3 tests): Promise-wrapped params resolved and forwarded upstream; malformed id still rejected (400); bounded 502 on bridge outage. |
+| VALIDATION | Jest **108/108** (11 suites) · pytest 15/15 · tsc 0 errors · preflight **8/8** (tsc, eslint, production `next build` standalone, standalone output, Python, zero `as any`, secret scan, Electron) · **live production-server smoke on Next 15.5.25**: `/api/health` 200; endpoint semantics distinct (session-gated 503/404 vs public 200); inbound webhook fail-closed 503 (unconfigured); dynamic-route `params` resolve (404, never 500); GraphQL query served; webhook + SCIM oversized bodies → **413**; cookie-less operator surface not 200. |
+| COMMIT | `4368523` (new audited release; supersedes `b8ad726`, which remains in history for auditability) |
 
-| SERVICE | ENDPOINT | DNS | TCP/TLS | HTTP | RESULT |
-|---|---|---|---|---|---|
-| Supabase | `api.supabase.com/v1/`, `supabase.com` | ok | blocked | 000 | **UNREACHABLE** |
-| Hosting | `api.vercel.com`, `render.com`, `railway.app`, `fly.io` | ok | blocked | 000 | **UNREACHABLE** |
-| ClamAV | `www.clamav.net` (no scanner host exists anyway) | ok | blocked | 000 | **UNREACHABLE** |
-| Error tracking | `sentry.io/api/0/` | ok | blocked | 000 | **UNREACHABLE** |
-| AI primary/backup | `api.groq.com`, `api.openai.com`, `api.anthropic.com`, `generativelanguage.googleapis.com` | ok | blocked | 000 | **UNREACHABLE** |
-| Metrics/alerting | `api.datadoghq.com`, `grafana.com`, `api.pagerduty.com` | ok | blocked | 000 | **UNREACHABLE** |
-| Email | `api.sendgrid.com`, `api.resend.com`, `api.postmarkapp.com` | ok | blocked | 000 | **UNREACHABLE** |
-| n8n | `api.n8n.io` | ok | blocked | 000 | **UNREACHABLE** |
-| Additional DB hosts probed | `console.neon.tech`, `api.planetscale.com` | ok | blocked | 000 | **UNREACHABLE** |
-| GitHub (control) | `github.com` | ok | ok | 200 | REACHABLE |
-| npm registry (control) | `registry.npmjs.org` | ok | ok | 200 | REACHABLE |
-| PyPI (control) | `pypi.org` | ok | ok | 200 | REACHABLE |
+## 4. Activation stages XIII-B … XIII-O (infrastructure)
 
-**Result: the environment has not gained any external infrastructure access since Phase XII.** §59 status-transition rule applies: no gate may move `BLOCKED_EXTERNAL → PASS` because no real execution occurred; no gate moves to FAIL because nothing attributable to the system failed.
-
-## 4. Activation stages XIII-B … XIII-O
-
-Not executed — stop condition applies (zero credentials, zero reachable endpoints, zero provisioning). Every stage's target status is recorded individually below with its blocker.
+Not executed — stop condition applies: zero credentials, 22/22 providers unreachable, zero provisioning since Phase XII. Every stage target is `BLOCKED_EXTERNAL` (recorded per-service below). Application-side readiness was *improved* by the §3 fix (dependency gate clean again).
 
 ## Executive Verdict
 
@@ -66,39 +55,40 @@ VERDICT: **PRODUCTION PILOT READY — EXTERNAL INFRASTRUCTURE STILL BLOCKED**
 
 ## Release Identity
 
-AUDITED_COMMIT: b8ad72672b1ae1f653bc6e1abd6b8007383ad466
-RELEASE_COMMIT: b8ad72672b1ae1f653bc6e1abd6b8007383ad466
+AUDITED_COMMIT: 4368523261e0472cbbc059bafd54926b0fa1dcfb
+RELEASE_COMMIT: 4368523261e0472cbbc059bafd54926b0fa1dcfb
 DEPLOYED_COMMIT: BLOCKED_EXTERNAL (no deployment target exists)
 
-COMMIT_MATCH: PASS for AUDITED == RELEASE (release tree verified; no code changed since). Full AUDITED == RELEASE == DEPLOYED invariant not establishable — DEPLOYED_COMMIT is BLOCKED_EXTERNAL, never faked. Post-provisioning verification procedure is in the operator runbook (`docs/ops/PHASE_XIII_OPERATOR_RUNBOOK.md`).
+COMMIT_MATCH: PASS for AUDITED == RELEASE (`4368523`, fully re-validated; supersedes `b8ad726` per the change record above). Full AUDITED == RELEASE == DEPLOYED invariant not establishable — DEPLOYED_COMMIT is `BLOCKED_EXTERNAL`, never faked. Post-provisioning verification procedure: `docs/ops/PHASE_XIII_OPERATOR_RUNBOOK.md`.
 
 ## Infrastructure
 
-SUPABASE: BLOCKED_EXTERNAL (no project, keys, or reachability; migrations/RLS remain locally exercised on real PostgreSQL 18 — local evidence only)
-HTTPS: BLOCKED_EXTERNAL (no public deployment/DNS/certificate; no production PASS without a real reachable HTTPS endpoint)
-CLAMAV: BLOCKED_EXTERNAL (no scanner host; app-side CLEAN-only fail-closed pipeline is unit-tested locally only — scanner existence is not claimed as protection)
-METRICS: BLOCKED_EXTERNAL (no backend/OTLP endpoint; observability code unit-tested locally, 18/18)
-ALERTING: BLOCKED_EXTERNAL (no channel; no TRIGGER→DELIVERY→RECEIPT→RESOLUTION possible)
+SUPABASE: BLOCKED_EXTERNAL (no project/keys/reachability; migrations + RLS locally exercised on real PostgreSQL 18 — local evidence only)
+HTTPS: BLOCKED_EXTERNAL (no public deployment/DNS/certificate)
+CLAMAV: BLOCKED_EXTERNAL (no scanner host; CLEAN-only fail-closed pipeline unit-tested locally)
+METRICS: BLOCKED_EXTERNAL (no backend/OTLP endpoint; observability unit-tested 18/18)
+ALERTING: BLOCKED_EXTERNAL (no channel; no TRIGGER→DELIVERY→RECEIPT→RESOLUTION)
 ERROR_TRACKING: BLOCKED_EXTERNAL (no DSN; no real capture)
-AI_PRIMARY: BLOCKED_EXTERNAL (no provider key; endpoints unreachable; no mocked response counted)
-AI_BACKUP: BLOCKED_EXTERNAL (no backup-provider key/endpoint; fallback ladder unit-tested locally only)
-BRIDGE: BLOCKED_EXTERNAL (no deployment, no `BRIDGE_SECRET_KEY`/`AI_BRIDGE_URL` production values)
-EMAIL: BLOCKED_EXTERNAL (no relay credentials; dev `EMAIL_PROVIDER=console` only)
+AI_PRIMARY: BLOCKED_EXTERNAL (no provider key; endpoints unreachable)
+AI_BACKUP: BLOCKED_EXTERNAL (no backup-provider key/endpoint)
+BRIDGE: BLOCKED_EXTERNAL (no deployment, no production secret values)
+EMAIL: BLOCKED_EXTERNAL (no relay credentials; dev console mode only)
 WEBHOOKS: BLOCKED_EXTERNAL (no n8n partner, no signing secrets)
-SCHEDULER: BLOCKED_EXTERNAL (no cron host; in-process scheduler logic audited/unit-tested locally)
-BACKUP: BLOCKED_EXTERNAL (production path; local real-PG backup/restore drill PASS is local evidence, not production backup)
+SCHEDULER: BLOCKED_EXTERNAL (no cron host)
+BACKUP: BLOCKED_EXTERNAL (production path; local real-PG drill PASS is local evidence)
 
 ## Security
 
-TENANT_ISOLATION: PASS (local real-PG 76/76 ×3 + restore drill at Phase XIII anchor; production re-test BLOCKED_EXTERNAL)
+TENANT_ISOLATION: PASS (local real-PG 76/76 ×3 + restore drill at the Phase XIII anchor; production re-test BLOCKED_EXTERNAL)
 AUTHENTICATION: PASS (local suites; production test BLOCKED_EXTERNAL)
-AUTHORIZATION: PASS (local suites 22/22 + authz-dup 21/21; production test BLOCKED_EXTERNAL)
+AUTHORIZATION: PASS (local suites + 21/21 dup-authz; production test BLOCKED_EXTERNAL)
 SSRF: PASS (code-level allow-list/IP blocks; live attack test BLOCKED_EXTERNAL)
 CSV_INJECTION: PASS (BLOCKED — 5 regression tests green)
-REQUEST_LIMITS: PASS (413 cap — 4 regression tests green)
-WEBHOOK_SECURITY: PASS (code-level signature/replay/idempotency paths; live partner test BLOCKED_EXTERNAL)
+REQUEST_LIMITS: PASS (413 cap — 4 regression tests green + live 413 verified on the Next-15 production server for webhook and SCIM)
+WEBHOOK_SECURITY: PASS (code-level; fail-closed 503 verified live locally; partner test BLOCKED_EXTERNAL)
 AI_SAFETY: PASS (local suites; live adversarial tests BLOCKED_EXTERNAL)
-SECRET_SCAN: PASS (preflight Gate 7, 0 hits; evidence/docs re-scanned before commit)
+SECRET_SCAN: PASS (preflight Gate 7, 0 hits; changed files + lockfile re-scanned)
+DEPENDENCY_AUDIT: PASS (live `npm audit` 0 vulnerabilities after the §3 fix — gate restored to green at the new anchor)
 
 ## Recovery
 
@@ -109,16 +99,16 @@ RTO: BLOCKED_EXTERNAL (not measurable without the production deployment)
 
 ## Validation
 
-JEST: 105/105 (10 suites)
+JEST: 108/108 (11 suites — includes 3 new Next-15 async-params regression tests)
 PYTEST: 15/15
 PREFLIGHT: 8/8 (tsc, eslint, production `next build` standalone, standalone output, Python compileall, zero `as any`, secret scan, Electron typecheck)
 RLS: 76/76 (local real-PG, ×3 + restore drill, regenerated at anchor)
 SECURITY_VERIFIERS: PASS (S/T/U/V/W exit 0 at the Phase XIII anchor; fresh/headMatches/legalStatuses/phase-consistency true)
-PRODUCTION_SMOKE: BLOCKED_EXTERNAL (no deployment exists)
+PRODUCTION_SMOKE: PASS (local production server on Next 15.5.25: health/semantics/413/fail-closed/dynamic-params/graphql — see §3) · deployed smoke BLOCKED_EXTERNAL
 
 ## W Rollup
 
-PASS: 4 · FAIL: 0 · BLOCKED_EXTERNAL: 21 (25 gates total; regenerated deterministically by the official generator at the Phase XIII anchor)
+PASS: 4 · FAIL: 0 · BLOCKED_EXTERNAL: 21 (25 gates total; regenerated deterministically at the Phase XIII anchor — dependency-audit FAIL resolved to PASS by the §3 fix)
 
 ## Billing
 
@@ -126,36 +116,36 @@ BILLING: NOT_IMPLEMENTED (unchanged; not implemented this phase; no payment-prov
 
 ## Remaining Blockers
 
-Only genuine blockers — all operator-provisionable, none caused by the application:
+Only genuine blockers — all operator-provisionable, none caused by the application (the one application-attributable issue found this phase — the dependency audit — was fixed):
 1. Supabase production project (auth/Postgres/PostgREST/storage/backups) + keys
-2. HTTPS hosting deployment of release `b8ad726`
+2. HTTPS hosting deployment of release `4368523`
 3. ClamAV / approved scanner host + `MALWARE_SCAN_URL`
 4. Metrics backend/OTLP endpoint + token
-5. Alerting backend/channel (email/Slack/PagerDuty)
-6. Error tracking (Sentry or equivalent) DSN
-7. AI primary provider key + endpoint reachability
-8. AI backup provider key + endpoint reachability
+5. Alerting backend/channel
+6. Error tracking DSN
+7. AI primary provider key + reachability
+8. AI backup provider key + reachability
 9. Python bridge deployment + `AI_BRIDGE_URL`/`BRIDGE_SECRET_KEY`
-10. Email relay credentials (SMTP/API)
-11. Live n8n (or equivalent) webhook partner + signing secrets
-12. Cron host + production secrets (cron/metrics/webhook/SCIM)
+10. Email relay credentials
+11. Live n8n webhook partner + signing secrets
+12. Cron host + production secrets
 13. Production backup schedule/retention/encryption
 14. Secret delivery mechanism into the deployment platform
 
-Exact per-service actions, env-var names, and verification commands: `docs/ops/operator-provisioning-checklist.json` (regenerated at this phase's anchor) and `docs/ops/PHASE_XIII_OPERATOR_RUNBOOK.md`.
+Per-service actions, env-var names, verification commands: `docs/ops/operator-provisioning-checklist.json` (regenerated at this anchor) and `docs/ops/PHASE_XIII_OPERATOR_RUNBOOK.md`.
 
 ## Evidence
 
-Generated by the official repository mechanism at the Phase XIII anchor (environment: fresh real PostgreSQL 18.4 on 127.0.0.1:54329 + repo toolchain; deterministic):
-- `docs/PHASE_XIII_REPORT.md` (this report; Phase XIII execution anchor commit)
-- `docs/ops/PHASE_XIII_OPERATOR_RUNBOOK.md` (operator runbook, credentials-free)
-- `docs/generated/phase-s-evidence.json` + `phase-s-readiness-gap.json` (+ cognitive/deployed) — includes local backup/restore drill 76/76 and dynamic Jest 105/105
-- `docs/generated/phase-t-evidence.json` + `phase-t-readiness-gap.json`
-- `docs/generated/phase-u-evidence.json` + `phase-u-readiness-gap.json`
-- `docs/generated/phase-v-evidence.json` + `phase-v-readiness-gap.json`
-- `docs/generated/phase-w-evidence.json` + `phase-w-readiness-gap.json` (W rollup)
+Generated by the official repository mechanism at the Phase XIII anchor (fresh real PostgreSQL 18.4 + repo toolchain; deterministic):
+- `docs/PHASE_XIII_REPORT.md` (this report; Phase XIII execution anchor)
+- `docs/ops/PHASE_XIII_OPERATOR_RUNBOOK.md`
+- `docs/generated/phase-s-evidence.json` + readiness-gap (+ cognitive/deployed) — restore drill 76/76, dynamic Jest 108/108
+- `docs/generated/phase-t-evidence.json` + readiness-gap
+- `docs/generated/phase-u-evidence.json` + readiness-gap
+- `docs/generated/phase-v-evidence.json` + readiness-gap
+- `docs/generated/phase-w-evidence.json` + readiness-gap (W rollup; dependency audit PASS)
 - `docs/ops/operator-provisioning-checklist.json` (regenerated, gitHead = Phase XIII anchor)
 - Verifier results: `node scripts/phase-{s,t,u,v,w}-evidence.mjs --verify` — all exit 0 at the Phase XIII anchor.
-- `docs/API_INVENTORY.md`, `docs/BACKEND_SECURITY_MATRIX.md`, `docs/DATA_FLOW_AUDIT.md`: **unchanged** — no code/route/flow reality changed, so per §62 they were not touched.
+- `docs/API_INVENTORY.md`, `docs/BACKEND_SECURITY_MATRIX.md`, `docs/DATA_FLOW_AUDIT.md`: route inventory and code-path data flows are unchanged by the migration (no route added/removed, no flow altered) — left unmodified per §62; BACKEND_SECURITY_MATRIX row evidence remains valid, with this report as the Phase XIII addendum.
 
-Chain: `b83ebd9 → f4bf3c2 → b8ad726 → e72a29f → 9cefa47 → <Phase XIII anchor> → <Phase XIII carrier>`.
+Chain: `b83ebd9 → f4bf3c2 → b8ad726 → e72a29f → 9cefa47 → 4368523 (new release) → <Phase XIII anchor> → <Phase XIII carrier>`.
