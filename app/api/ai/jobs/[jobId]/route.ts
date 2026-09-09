@@ -12,9 +12,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(
   _request: Request,
-  { params }: { params: { jobId: string } },
+  { params }: { params: Promise<{ jobId: string }> },
 ): Promise<Response> {
-  const jobId = params.jobId;
+  const jobId = (await params).jobId;
   if (!/^[0-9a-f]{32}$/.test(jobId)) {
     return new Response(
       JSON.stringify({ detail: "Invalid job_id." }),

@@ -10,10 +10,11 @@ export const metadata: Metadata = {
 export default async function EmployeeProfilePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const employees = await getEmployees();
-  const employee = employees.find((item) => item.id === params.id);
+  const { id } = await params;
+  const employee = employees.find((item) => item.id === id);
 
   if (!employee) {
     notFound();

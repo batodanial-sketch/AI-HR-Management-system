@@ -6,7 +6,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Mints a short-lived signed URL after an authorization check. Never a public URL. */
-export async function GET(request: Request, { params }: { params: { id: string } }): Promise<Response> {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
+  const { id } = await params;
   return withHttpMetrics(request, async () => {
     let ctx;
     try {
@@ -14,9 +18,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
     } catch (error) {
       return rbacErrorResponse(error) ?? Response.json({ ok: false, error: "Unauthorized." }, { status: 401 });
     }
-    if (!/^[0-9a-f-]{36}$/i.test(params.id)) return Response.json({ ok: false, code: "NOT_FOUND", error: "Document not found." }, { status: 404 });
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return Response.json({ ok: false, code: "NOT_FOUND", error: "Document not found." }, { status: 404 });
     try {
-      const { url, expiresInSeconds } = await documentDownloadUrl(ctx, params.id, new URL(request.url).origin);
+      const { url, expiresInSeconds } = await documentDownloadUrl(ctx, id, new URL(request.url).origin);
       return Response.json({ ok: true, data: { url, expiresInSeconds } }, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
       if (error instanceof DocumentError) return Response.json({ ok: false, code: error.code, error: error.message }, { status: error.status });

@@ -11,7 +11,11 @@ export const dynamic = "force-dynamic";
  * its own signed URLs). Requires BOTH a valid session in the same tenant AND
  * a valid, unexpired HMAC signature — the URL alone is never sufficient.
  */
-export async function GET(request: Request, { params }: { params: { id: string } }): Promise<Response> {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
+  const { id } = await params;
   return withHttpMetrics(request, async () => {
     if (storageProviderName() !== "local") return Response.json({ ok: false, error: "Not found." }, { status: 404 });
     let ctx;
@@ -23,7 +27,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const url = new URL(request.url);
     const exp = Number(url.searchParams.get("exp"));
     const sig = url.searchParams.get("sig") ?? "";
-    const record = await getDocument(ctx, params.id);
+    const record = await getDocument(ctx, id);
     if (!record || record.status !== "clean") return Response.json({ ok: false, error: "Not found." }, { status: 404 });
     if (!verifyLocalAccess(record.storageKey, exp, sig)) return Response.json({ ok: false, error: "Link expired or invalid." }, { status: 403 });
     const bytes = await readDocumentBytes(ctx.organizationId, record.storageKey);

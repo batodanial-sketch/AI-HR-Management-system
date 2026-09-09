@@ -108,7 +108,7 @@ async function resolveEmployeeLinkage(
  * under-privileged roles. The hook is inert unless the server is started
  * with `E2E_ROLE_OVERRIDE_ENABLED=1` and NEVER active in production builds.
  */
-function e2eRoleOverride(): RbRole | null {
+async function e2eRoleOverride(): Promise<RbRole | null> {
   if (
     process.env.E2E_ROLE_OVERRIDE_ENABLED !== "1" ||
     process.env.NODE_ENV === "production"
@@ -116,7 +116,7 @@ function e2eRoleOverride(): RbRole | null {
     return null;
   }
   try {
-    const value = headers().get("x-fluxentiq-e2e-role");
+    const value = (await headers()).get("x-fluxentiq-e2e-role");
     if (!value) return null;
     const normalized = value.trim().toUpperCase();
     return (RB_ROLES as string[]).includes(normalized) ? (normalized as RbRole) : null;
@@ -133,7 +133,7 @@ function e2eRoleOverride(): RbRole | null {
  * 401/403 via {@link rbacErrorResponse}.
  */
 export const getRbacContext = cache(async (): Promise<RbacContext> => {
-  const override = e2eRoleOverride();
+  const override = await e2eRoleOverride();
 
   // Demo/preview (Supabase unconfigured): the demo admin identity drives
   // access. The E2E override may still simulate an under-privileged role.

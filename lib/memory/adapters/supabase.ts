@@ -26,8 +26,8 @@ export class SupabaseAdapter implements MemoryAdapter {
       supabasePublishableKey() || supabaseSecretKey(),
       {
         cookies: {
-          getAll() {
-            return cookies().getAll();
+          async getAll() {
+            return (await cookies()).getAll();
           },
           setAll() {
             // Read-only adapter path; token refresh is handled by middleware.

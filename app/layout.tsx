@@ -66,7 +66,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = headers().get("x-pathname") ?? "";
+  const pathname = (await headers()).get("x-pathname") ?? "";
   const settings = await readSettings();
 
   // Public surfaces (marketing + auth) don't render authenticated chrome, so

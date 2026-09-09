@@ -11,16 +11,18 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(
   request: Request,
-  { params }: { params: { path: string[] } },
+  { params }: { params: Promise<{ path: string[] }> },
 ): Promise<Response> {
-  const pathname = `/api/engine/${params.path.join("/")}`;
+  const { path } = await params;
+  const pathname = `/api/engine/${path.join("/")}`;
   return proxyToBridge(request, pathname);
 }
 
 export async function GET(
   request: Request,
-  { params }: { params: { path: string[] } },
+  { params }: { params: Promise<{ path: string[] }> },
 ): Promise<Response> {
-  const pathname = `/api/engine/${params.path.join("/")}`;
+  const { path } = await params;
+  const pathname = `/api/engine/${path.join("/")}`;
   return proxyToBridge(request, pathname);
 }

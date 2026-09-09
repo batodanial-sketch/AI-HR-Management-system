@@ -7,9 +7,10 @@ export const dynamic = "force-dynamic";
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  await deleteWebhook(params.id);
-  await recordAudit({ action: "webhook.delete", entity: "webhook", entityId: params.id });
+  const { id } = await params;
+  await deleteWebhook(id);
+  await recordAudit({ action: "webhook.delete", entity: "webhook", entityId: id });
   return NextResponse.json({ ok: true });
 }

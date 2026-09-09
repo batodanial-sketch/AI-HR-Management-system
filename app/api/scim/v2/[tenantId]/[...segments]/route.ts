@@ -72,18 +72,19 @@ function requireBearer(request: NextRequest, tenantId: string): Response | null 
 }
 
 interface RouteParams {
-  params: { tenantId: string; segments: string[] };
+  params: Promise<{ tenantId: string; segments: string[] }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams): Promise<Response> {
-  const denied = requireBearer(request, params.tenantId);
+  const { tenantId, segments } = await params;
+  const denied = requireBearer(request, tenantId);
   if (denied) return denied;
 
   try {
-    const resource = params.segments[0] ?? "";
-    const id = params.segments[1];
+    const resource = segments[0] ?? "";
+    const id = segments[1];
     if (resource === "Groups" && !id) {
-      const groups = await scimListGroups(params.tenantId);
+      const groups = await scimListGroups(tenantId);
       return scimResponse(200, {
         schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         totalResults: groups.length,
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
       });
     }
     if (resource === "Users" && !id) {
-      const users = await scimListUsers(params.tenantId);
+      const users = await scimListUsers(tenantId);
       return scimResponse(200, {
         schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
         totalResults: users.length,
@@ -105,7 +106,8 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<Response> {
-  const denied = requireBearer(request, params.tenantId);
+  const { tenantId, segments } = await params;
+  const denied = requireBearer(request, tenantId);
   if (denied) return denied;
 
   try {
@@ -114,9 +116,9 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
       return scimResponse(400, scimErrorBody(400, "Request body must be a JSON object.", "invalidValue"));
     }
 
-    const resource = params.segments[0] ?? "";
+    const resource = segments[0] ?? "";
     if (resource === "Groups") {
-      const group = await scimSyncGroup(params.tenantId, {
+      const group = await scimSyncGroup(tenantId, {
         id: body.id,
         displayName: body.displayName,
         members: body.members,
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
       body.role ??
       body["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"]?.department ??
       "employee";
-    const user = await scimProvisionUser(params.tenantId, {
+    const user = await scimProvisionUser(tenantId, {
       userName: body.userName,
       displayName: body.displayName,
       active: body.active !== false,
@@ -148,12 +150,13 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams): Promise<Response> {
-  const denied = requireBearer(request, params.tenantId);
+  const { tenantId, segments } = await params;
+  const denied = requireBearer(request, tenantId);
   if (denied) return denied;
 
   try {
-    const resource = params.segments[0] ?? "";
-    const userId = params.segments[1];
+    const resource = segments[0] ?? "";
+    const userId = segments[1];
     if (resource !== "Users" || !userId) {
       return scimResponse(400, scimErrorBody(400, "Missing user id in path.", "invalidValue"));
     }
@@ -181,7 +184,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
       if (direct?.role) patch.role = direct.role;
     }
 
-    const user = await scimUpdateUser(params.tenantId, userId, patch);
+    const user = await scimUpdateUser(tenantId, userId, patch);
     if (!user) {
       return scimResponse(404, scimErrorBody(404, "User not found in this tenant.", "invalidValue"));
     }
@@ -192,16 +195,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams): Prom
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams): Promise<Response> {
-  const denied = requireBearer(request, params.tenantId);
+  const { tenantId, segments } = await params;
+  const denied = requireBearer(request, tenantId);
   if (denied) return denied;
 
   try {
-    const resource = params.segments[0] ?? "";
-    const userId = params.segments[1];
+    const resource = segments[0] ?? "";
+    const userId = segments[1];
     if (resource !== "Users" || !userId) {
       return scimResponse(400, scimErrorBody(400, "Missing user id in path.", "invalidValue"));
     }
-    await scimDeprovisionUser(params.tenantId, userId);
+    await scimDeprovisionUser(tenantId, userId);
     // SCIM DELETE returns 204 No Content on success.
     return new Response(null, { status: 204 });
   } catch (error) {

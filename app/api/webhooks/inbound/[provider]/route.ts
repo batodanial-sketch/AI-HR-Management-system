@@ -134,11 +134,12 @@ function failClosedUnlessDev(verification: VerificationResult): Response | null 
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { provider: string } },
+  { params }: { params: Promise<{ provider: string }> },
 ): Promise<Response> {
-  const provider = params.provider.toLowerCase();
+  const { provider: rawProvider } = await params;
+  const provider = rawProvider.toLowerCase();
   if (!INBOUND_PROVIDERS.includes(provider as InboundProvider)) {
-    return jsonError(`Unknown provider: ${params.provider}.`, "UNKNOWN_PROVIDER", 404);
+    return jsonError(`Unknown provider: ${rawProvider}.`, "UNKNOWN_PROVIDER", 404);
   }
   // n8n webhook nodes probe endpoints with GET when testing the connection.
   return Response.json({
@@ -150,11 +151,12 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { provider: string } },
+  { params }: { params: Promise<{ provider: string }> },
 ): Promise<Response> {
-  const provider = params.provider.toLowerCase();
+  const { provider: rawProvider } = await params;
+  const provider = rawProvider.toLowerCase();
   if (!INBOUND_PROVIDERS.includes(provider as InboundProvider)) {
-    return jsonError(`Unknown provider: ${params.provider}.`, "UNKNOWN_PROVIDER", 404);
+    return jsonError(`Unknown provider: ${rawProvider}.`, "UNKNOWN_PROVIDER", 404);
   }
 
   const rawBody = await request.text();

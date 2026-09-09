@@ -12,13 +12,14 @@ export async function POST(): Promise<NextResponse> {
   if (url && anonKey) {
     const supabase = createServerClient(url, anonKey, {
       cookies: {
-        getAll() {
-          return cookies().getAll();
+        async getAll() {
+          return (await cookies()).getAll();
         },
-        setAll(cookiesToSet) {
+        async setAll(cookiesToSet) {
           try {
+            const store = await cookies();
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookies().set(name, value, options),
+              store.set(name, value, options),
             );
           } catch {
             // Response already started; cookie handling delegated to middleware.

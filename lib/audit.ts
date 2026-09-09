@@ -238,9 +238,9 @@ function governanceVerbFor(action: string): AuditVerb {
 }
 
 /** Best-effort client IP from standard proxy headers. */
-export function auditClientIp(): string | null {
+export async function auditClientIp(): Promise<string | null> {
   try {
-    const requestHeaders = headers();
+    const requestHeaders = await headers();
     const forwarded = requestHeaders.get("x-forwarded-for");
     if (forwarded) return forwarded.split(",")[0]?.trim() || null;
     return requestHeaders.get("x-real-ip");
@@ -298,7 +298,7 @@ export async function recordAuditLog(
     target_module: entry.targetModule,
     changes: changes as Json,
     metadata: metadata as Json,
-    ip_address: auditClientIp(),
+    ip_address: await auditClientIp(),
   };
 
   try {
