@@ -35,14 +35,23 @@ export interface BudgetEvent {
   fallbackProvider?: string | null;
 }
 
+export interface AgentRouteEvent {
+  agent: string;
+  confidence: number;
+  reasons: string[];
+}
+
 export interface AiStreamEvent {
-  type: "delta" | "done" | "error" | "tool_result" | "tool_call" | "budget";
+  type: "delta" | "done" | "error" | "tool_result" | "tool_call" | "budget" | "route";
   content?: string;
   result?: unknown;
   message?: string;
   code?: string;
   call?: ToolCallEvent;
   budget?: BudgetEvent;
+  agent?: string;
+  confidence?: number;
+  reasons?: string[];
 }
 
 export interface StreamHandlers<TResult> {
@@ -52,6 +61,7 @@ export interface StreamHandlers<TResult> {
   onToolResult?: (result: ToolResultEvent) => void;
   onToolCall?: (call: ToolCallEvent) => void;
   onBudget?: (budget: BudgetEvent) => void;
+  onRoute?: (route: AgentRouteEvent) => void;
 }
 
 /**
@@ -198,6 +208,12 @@ function handleSseChunk<TResult>(
       handlers.onToolCall?.(event.call);
     } else if (event.type === "budget" && event.budget) {
       handlers.onBudget?.(event.budget);
+    } else if (event.type === "route" && typeof event.agent === "string") {
+      handlers.onRoute?.({
+        agent: event.agent,
+        confidence: typeof event.confidence === "number" ? event.confidence : 0,
+        reasons: Array.isArray(event.reasons) ? event.reasons.filter((r): r is string => typeof r === "string") : [],
+      });
     } else if (event.type === "error" && typeof event.message === "string") {
       handlers.onError?.(event.message);
     }

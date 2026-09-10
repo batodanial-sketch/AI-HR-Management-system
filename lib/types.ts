@@ -61,6 +61,10 @@ export interface Candidate {
   matchScore: number;
   source: string;
   resumeUrl: string | null;
+  /** Skill/pool tags (SCHEMA: candidates.tags). Optional: seeds predate it. */
+  tags?: string[];
+  /** Free-text location (SCHEMA: candidates.location). */
+  location?: string | null;
 }
 
 export type Recommendation = "advance" | "hold" | "reject";

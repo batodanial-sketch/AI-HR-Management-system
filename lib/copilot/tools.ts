@@ -30,6 +30,8 @@ interface ToolDefinition {
   argSchema: z.ZodTypeAny;
   /** Maps validated args to the request body (undefined = no body). */
   toBody?: (args: Record<string, unknown>) => Record<string, unknown>;
+  /** Maps validated args to GET query params (GET tools only). */
+  toQuery?: (args: Record<string, unknown>) => Record<string, string | number | boolean>;
 }
 
 const EMPTY_ARGS = z.object({}).default({});
@@ -123,6 +125,44 @@ const DEFINITIONS: ToolDefinition[] = [
     toBody: (args) => ({ ...args }),
   },
   { spec: byName("fetch_team_capacity"), method: "GET", path: "/api/team/capacity", argSchema: EMPTY_ARGS },
+  {
+    spec: byName("search_candidates"),
+    method: "GET",
+    path: "/api/candidates",
+    argSchema: z
+      .object({
+        query: z.string().max(200).optional(),
+        stage: z
+          .enum(["applied", "screening", "shortlisted", "interview", "offer", "hired", "rejected", "withdrawn"])
+          .optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+      .default({}),
+    toQuery: (args) => {
+      const query: Record<string, string | number | boolean> = {};
+      if (typeof args["query"] === "string" && args["query"].length > 0) query["query"] = args["query"];
+      if (typeof args["stage"] === "string") query["stage"] = args["stage"];
+      if (typeof args["limit"] === "number") query["limit"] = args["limit"];
+      return query;
+    },
+  },
+  { spec: byName("get_workforce_insights"), method: "GET", path: "/api/intelligence/insights", argSchema: EMPTY_ARGS },
+  { spec: byName("get_hr_briefing"), method: "GET", path: "/api/intelligence/briefing", argSchema: EMPTY_ARGS },
+  {
+    spec: byName("search_knowledge"),
+    method: "GET",
+    path: "/api/knowledge/search",
+    argSchema: z.object({
+      query: z.string().min(2).max(500),
+      limit: z.number().int().min(1).max(25).optional(),
+    }),
+    toQuery: (args) => {
+      const query: Record<string, string | number | boolean> = {};
+      if (typeof args["query"] === "string") query["q"] = args["query"];
+      if (typeof args["limit"] === "number") query["limit"] = args["limit"];
+      return query;
+    },
+  },
 ];
 
 function byName(name: string): CopilotToolSpec {
@@ -154,6 +194,10 @@ export const COPILOT_TOOL_MODULES: Record<string, string> = {
   fetch_documents: "documents",
   screen_candidate: "screening",
   fetch_team_capacity: "team",
+  search_candidates: "recruitment",
+  get_workforce_insights: "intelligence",
+  get_hr_briefing: "intelligence",
+  search_knowledge: "knowledge",
 };
 
 export function findCopilotTool(name: string): ToolDefinition | null {
@@ -201,6 +245,15 @@ export async function executeCopilotTool(
   const headers: Record<string, string> = {};
   if (context.cookie) headers.cookie = context.cookie;
   let body: string | undefined;
+  let path = definition.path;
+  if (definition.method === "GET" && definition.toQuery) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(definition.toQuery(args))) {
+      params.set(key, String(value));
+    }
+    const query = params.toString();
+    if (query) path = `${path}?${query}`;
+  }
   if (definition.method !== "GET") {
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(definition.toBody ? definition.toBody(args as never) : {});
@@ -208,7 +261,7 @@ export async function executeCopilotTool(
 
   let response: Response;
   try {
-    response = await fetch(`${context.origin}${definition.path}`, {
+    response = await fetch(`${context.origin}${path}`, {
       method: definition.method,
       headers,
       body,

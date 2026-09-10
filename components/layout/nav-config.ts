@@ -28,6 +28,7 @@ import {
   ScrollText,
   ScanSearch,
   Bell,
+  Radar,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -40,6 +41,7 @@ export interface NavItem {
 
 export const primaryNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Command Center", href: "/command-center", icon: Radar },
   { label: "AI Copilot", href: "/copilot", icon: Bot },
   { label: "Employees", href: "/employees", icon: Users },
   { label: "Recruitment", href: "/recruitment", icon: KanbanSquare },

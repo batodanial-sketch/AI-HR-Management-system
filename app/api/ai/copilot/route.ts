@@ -30,6 +30,8 @@ import {
   ProposalError,
   type ProposalActor,
 } from "@/lib/copilot/proposals";
+import { routeConversation, type AgentId } from "@/lib/agents/router";
+import { AGENT_POLICIES, resolveAgentTools } from "@/lib/agents/policies";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +41,12 @@ export const dynamic = "force-dynamic";
  *
  * Request shapes:
  *   { messages, context }                    → classic streaming proxy
- *   { messages, context, tools: ["..."] }    → agentic loop:
+ *   { messages, context, tools: ["..."] }    → agentic loop
+ *   { ..., agent: "intelligence" | "recruitment" | "general" | "auto" }
+ *                                            → agentic loop narrowed to the
+ *                                              agent policy (+ planner hint);
+ *                                              "auto" classifies intent
+ *                                              deterministically (lib/agents)
  *       1. the Python bridge plans (LLM) and returns tool_calls in `done`
  *       2. READ tools execute immediately against the RBAC-guarded CRUD
  *          routes (session cookie forwarded — the agent inherits the
@@ -70,6 +77,8 @@ const copilotRequestSchema = z.object({
     .object({ organization_id: z.string().uuid().nullable().optional() })
     .optional(),
   tools: z.array(z.string().min(1).max(80)).max(12).optional(),
+  /** Named agent (intelligence | recruitment | general) or auto-routing. Narrows tools to the agent policy. */
+  agent: z.enum(["intelligence", "recruitment", "general", "auto"]).optional(),
   /** Legacy client-supplied confirmation — rejected (see proposal flow). */
   confirmToolCall: z.unknown().optional(),
   approveProposal: z.string().uuid().optional(),
@@ -109,6 +118,7 @@ async function planWithBridge(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   toolNames: string[],
   organizationId: string | null,
+  agentContext?: { agent: AgentId; hint: string } | null,
 ): Promise<{ events: BridgeEvent[]; done: BridgeEvent["result"] | null; usage: BridgeUsage }> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const secret = bridgeSecret();
@@ -123,7 +133,10 @@ async function planWithBridge(
       headers,
       body: JSON.stringify({
         messages,
-        context: { organization_id: organizationId },
+        context: {
+          organization_id: organizationId,
+          ...(agentContext ? { agent: agentContext.agent, agent_hint: agentContext.hint } : {}),
+        },
         tools: toolSpecsForBridge(toolNames),
         execute_tools: false,
       }),
@@ -228,7 +241,7 @@ async function handleCopilot(request: Request): Promise<Response> {
   }
 
   // ── Agentic mode ───────────────────────────────────────────────────────
-  const toolNames = (parsed.data.tools ?? [])
+  let toolNames = (parsed.data.tools ?? [])
     .map((name) => name.trim())
     .filter((name) => COPILOT_TOOL_NAMES.includes(name));
   const unknownTools = (parsed.data.tools ?? []).filter(
@@ -237,6 +250,32 @@ async function handleCopilot(request: Request): Promise<Response> {
   if (unknownTools.length > 0) {
     return invalid(`Unknown tools: ${unknownTools.join(", ")}.`);
   }
+
+  // ── Agent routing (additive; default behavior unchanged when unset) ─────
+  // An explicit agent (or "auto" classification) NARROWS the tool surface to
+  // the agent policy and forwards the planner hint via the bridge context
+  // block. Enforcement still lives here + RBAC + proposals, never in the hint.
+  const requestedAgent = parsed.data.agent ?? null;
+  let activeAgent: AgentId | null = null;
+  let routeReasons: string[] = [];
+  let routeConfidence = 0;
+  if (requestedAgent) {
+    if (requestedAgent === "auto") {
+      const decision = routeConversation(
+        parsed.data.messages.map((message) => ({ role: message.role, content: message.content })),
+      );
+      activeAgent = decision.agent;
+      routeReasons = decision.reasons;
+      routeConfidence = decision.confidence;
+    } else {
+      activeAgent = requestedAgent;
+    }
+    toolNames = resolveAgentTools(activeAgent, toolNames);
+    if ((parsed.data.tools ?? []).length > 0 && toolNames.length === 0) {
+      return invalid(`None of the requested tools are available to the '${activeAgent}' agent.`);
+    }
+  }
+  const agentContext = activeAgent ? { agent: activeAgent, hint: AGENT_POLICIES[activeAgent].systemHint } : null;
 
   // Caller RBAC — resolved ONCE from the canonical membership resolver and
   // fixed for the whole agentic run. The tenant and actor used for tool
@@ -298,7 +337,7 @@ async function handleCopilot(request: Request): Promise<Response> {
       actorType: "COPILOT_AGENT",
       action: `copilot.tool.${name}`,
       targetModule: COPILOT_TOOL_MODULES[name] ?? "copilot",
-      changes: { arguments: args, ok, message, requestId },
+      changes: { arguments: args, ok, message, requestId, agent: activeAgent },
       organizationId,
     });
   };
@@ -339,6 +378,10 @@ async function handleCopilot(request: Request): Promise<Response> {
 
   const pump = async () => {
     try {
+      // -1) Agent transparency — clients may surface which agent is active.
+      if (activeAgent) {
+        emit({ type: "route", agent: activeAgent, confidence: routeConfidence, reasons: routeReasons });
+      }
       // 0) Budget governance — block before any spend when the org's monthly
       // cap is exhausted; attach a fallback hint when it approaches.
       if (organizationId) {
@@ -446,7 +489,7 @@ async function handleCopilot(request: Request): Promise<Response> {
       // 2) Plan → execute loop (read tools execute; write tools need approval).
       const MAX_TOOL_ROUNDS = maxToolRounds();
       for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-        const planned = await planWithBridge(conversation, toolNames, organizationId);
+        const planned = await planWithBridge(conversation, toolNames, organizationId, agentContext);
         meterPlan(planned.usage);
         const toolCalls = planned.done?.tool_calls ?? [];
         if (toolCalls.length === 0) {
@@ -523,7 +566,7 @@ async function handleCopilot(request: Request): Promise<Response> {
       }
 
       // 3) Loop exhausted — force a final plain answer.
-      const forced = await planWithBridge(conversation, [], organizationId);
+      const forced = await planWithBridge(conversation, [], organizationId, agentContext);
       meterPlan(forced.usage);
       for (const event of forced.events) {
         if (event.type === "delta" && typeof event.content === "string") {

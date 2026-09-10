@@ -107,6 +107,8 @@ export async function getCandidates(): Promise<Candidate[]> {
     matchScore: num(row.match_score),
     source: text(row.source, "Direct"),
     resumeUrl: typeof row.resume_url === "string" ? row.resume_url : null,
+    tags: Array.isArray(row.tags) ? row.tags.filter((t): t is string => typeof t === "string") : [],
+    location: typeof row.location === "string" ? row.location : null,
   }));
 }
 

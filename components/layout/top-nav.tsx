@@ -7,7 +7,6 @@ import {
   Bell,
   Check,
   Moon,
-  Search,
   Sparkles,
   Sun,
 } from "lucide-react";
@@ -25,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { CommandPalette } from "@/components/search/command-palette";
 import { notifications } from "@/lib/data";
 import { supportedCurrencies } from "@/lib/data";
 import type { CurrencyCode } from "@/lib/types";
@@ -53,15 +52,8 @@ export function TopNav() {
       {/* Frameless window controls (Electron only — no-op in browser) */}
       <WindowControls />
 
-      {/* Search */}
-      <div className="relative hidden w-full max-w-sm sm:block electron-no-drag">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          data-testid="topnav-search"
-          placeholder="Search employees, candidates…"
-          className="h-9 bg-card/60 pl-9"
-        />
-      </div>
+      {/* Global command palette (searches employees, candidates, documents, knowledge) */}
+      <CommandPalette />
 
       {/* Empty titlebar spacer — doubles as the Electron drag region */}
       <div className="flex-1 electron-drag" data-testid="titlebar-drag" />

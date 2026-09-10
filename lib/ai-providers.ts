@@ -316,6 +316,49 @@ export const COPILOT_TOOL_CATALOG: CopilotToolSpec[] = [
     kind: "read",
     parameters: { type: "object", properties: {}, required: [] },
   },
+  {
+    name: "search_candidates",
+    description:
+      "Search candidates by name, tags, stage, location or source. Returns a minimal projection (no contact or document fields).",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Free-text query (matches name, tags, stage, location, source)" },
+        stage: { type: "string", description: "Exact pipeline stage filter" },
+        limit: { type: "number", description: "Max results, 1–50 (default 20)" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_workforce_insights",
+    description:
+      "Load the current ranked workforce insight set (attendance, leave, recruitment, headcount, performance, engagement, offboarding, documents, workflows) with evidence, confidence and recommended actions.",
+    kind: "read",
+    parameters: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "get_hr_briefing",
+    description:
+      "Load the Daily HR Briefing: attention-required findings, positive signals, recommended actions and explicit data gaps.",
+    kind: "read",
+    parameters: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "search_knowledge",
+    description:
+      "Search the organization's company-knowledge entries (handbook, policies, FAQs). Returns ranked hits with relevance plus a grounded KNOWN/UNKNOWN answer envelope.",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Question or keywords (min 2 characters)" },
+        limit: { type: "number", description: "Max hits, 1–25 (default 10)" },
+      },
+      required: ["query"],
+    },
+  },
 ];
 
 export const COPILOT_TOOL_NAMES = COPILOT_TOOL_CATALOG.map((tool) => tool.name);
