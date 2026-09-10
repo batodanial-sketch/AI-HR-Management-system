@@ -359,6 +359,85 @@ export const COPILOT_TOOL_CATALOG: CopilotToolSpec[] = [
       required: ["query"],
     },
   },
+  {
+    name: "fetch_workflows",
+    description: "List the organization's workflow definitions (optionally filtered by status).",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "Filter: active, draft or archived" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "fetch_workflow_runs",
+    description: "List workflow runs (optionally filtered by status: queued, running, waiting_approval, succeeded, failed, cancelled).",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "Filter by run status" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "fetch_workflow_approvals",
+    description:
+      "List workflow approval requests awaiting human decision (managers and HR admins only). The copilot can summarize them but can never approve or deny — decisions happen in the Approval Center.",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "Filter: pending, approved, rejected or expired (default pending)" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "start_workflow_run",
+    description:
+      "Start a run of an active workflow (requires user confirmation). Steps that change state or send messages still pause for human approval inside the run.",
+    kind: "write",
+    parameters: {
+      type: "object",
+      properties: {
+        workflowId: { type: "string", description: "UUID of the workflow definition to run" },
+        idempotencyKey: { type: "string", description: "Optional client key; repeats with the same key return the existing run" },
+      },
+      required: ["workflowId"],
+    },
+  },
+  {
+    name: "get_workflow",
+    description: "Load one workflow definition with its latest executable steps.",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        workflowId: { type: "string", description: "UUID of the workflow definition" },
+      },
+      required: ["workflowId"],
+    },
+  },
+  {
+    name: "propose_workflow",
+    description:
+      "Draft a NEW workflow definition from a template (new_hire_welcome, leave_request_review, payroll_completion_digest) or from explicit steps. Always creates an inert DRAFT: drafts cannot run and only a human HR admin can activate them. HR admins only.",
+    kind: "read",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Draft name (defaults to the template name)" },
+        templateId: { type: "string", description: "Template id: new_hire_welcome | leave_request_review | payroll_completion_digest" },
+        templateParams: { type: "object", description: "Template params, e.g. { notifyUserIds: [uuid…], title, message }" },
+        steps: { type: "array", description: "Explicit steps (alternative to templateId); validated against the step vocabulary" },
+      },
+      required: [],
+    },
+  },
 ];
 
 export const COPILOT_TOOL_NAMES = COPILOT_TOOL_CATALOG.map((tool) => tool.name);

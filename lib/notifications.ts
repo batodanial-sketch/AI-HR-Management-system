@@ -24,16 +24,20 @@ export async function createNotification(input: {
   kind: NotificationKind;
   title: string;
   description?: string;
+  /** Internal app path (must start with `/`); ignored otherwise. */
+  link?: string;
 }): Promise<void> {
   const user = await getCurrentUser();
 
   if (hasSupabaseEnv() && user.organizationId) {
+    const link = typeof input.link === "string" && input.link.startsWith("/") && !input.link.startsWith("//") ? input.link : null;
     const { error } = await serverClient().from("notifications").insert({
       organization_id: user.organizationId,
       user_id: input.userId ?? user.id,
       kind: input.kind,
       title: input.title,
       description: input.description ?? null,
+      link,
     });
     if (error) {
       console.error("[notifications] create failed:", error.message);

@@ -56,6 +56,15 @@ export const TOOL_ACTION_CATEGORIES: Record<string, ActionCategory> = {
   fetch_team_capacity: "READ",
   search_candidates: "READ",
   search_knowledge: "READ",
+  fetch_workflows: "READ",
+  fetch_workflow_runs: "READ",
+  fetch_workflow_approvals: "READ",
+  get_workflow: "READ",
+  // First PROPOSE tool: auto-executes but creates only INERT drafts —
+  // drafts cannot run; activation is human-only (PATCH, no tool). The
+  // catalog marks it kind:"read" deliberately so the runtime takes the
+  // auto-execute path; the route hard-forces status=draft.
+  propose_workflow: "PROPOSE",
   // Analyses — advisory, evidence-cited, auto-execute.
   get_workforce_insights: "ANALYZE",
   get_hr_briefing: "ANALYZE",
@@ -65,6 +74,7 @@ export const TOOL_ACTION_CATEGORIES: Record<string, ActionCategory> = {
   create_scenario: "WRITE",
   create_contractor: "WRITE",
   create_asset: "WRITE",
+  start_workflow_run: "WRITE",
   // Consequential — proposal-gated + privileged approver.
   approve_offboarding: "CONSEQUENT",
   screen_candidate: "CONSEQUENT",

@@ -7,6 +7,8 @@ import type { Database, Json } from "@/lib/database.types";
 import type { ActionResponse } from "./types";
 import { actionFailure, actionSuccess } from "./types";
 import { requireOrganizationContext, revalidateWorkspacePaths, uuidSchema, validationFailure } from "./_shared";
+import { roleAtLeast } from "@/lib/authz/model";
+import { assertTaskTransition } from "@/lib/workflows/machine";
 import { toJson } from "@/lib/utils";
 import { enqueuePythonJob } from "@/src/lib/pythonBridge";
 import {
@@ -493,6 +495,31 @@ export async function updateTaskStatusAction(
 
     if (fetchError || !existing) {
       return actionFailure(fetchError?.message ?? "Task not found or not in your organization.");
+    }
+
+    // Phase F item 12: invalid transitions rejected server-side (terminal
+    // states are sticky; failed/cancelled/skipped may only reopen).
+    try {
+      assertTaskTransition(existing.status, parsed.data.status);
+    } catch (error) {
+      return actionFailure(error instanceof Error ? error.message : "Invalid task transition.");
+    }
+
+    // Phase F item 12: owner-or-privileged. HR admins may move any task;
+    // everyone else may only move their own (resolved via employees.user_id).
+    // Manager team-scope is honestly deferred — managers follow the owner
+    // rule in v1 rather than a half-enforced team check.
+    if (!roleAtLeast(auth.data.role, "HR_ADMIN")) {
+      const { data: callerEmployee } = await supabase
+        .from("employees")
+        .select("id")
+        .eq("organization_id", auth.data.organizationId)
+        .eq("user_id", auth.data.userId)
+        .maybeSingle();
+      const callerEmployeeId = (callerEmployee as { id?: unknown } | null)?.id;
+      if (typeof callerEmployeeId !== "string" || callerEmployeeId !== existing.employee_id) {
+        return actionFailure("You can only update your own tasks. Team-scope updates for managers are not enabled yet — ask an HR administrator.");
+      }
     }
 
     const updates: Database["public"]["Tables"]["daily_employee_tasks"]["Update"] = {

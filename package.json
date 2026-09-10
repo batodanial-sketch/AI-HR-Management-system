@@ -74,6 +74,8 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.25",
     "jest": "^30.4.2",
+    "pg-mem": "^3.0.14",
+    "pgsql-parser": "^18.2.6",
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.19",
     "ts-jest": "^29.4.12",

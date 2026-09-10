@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Bot, KanbanSquare, ShieldAlert, Users, Workflow } from "lucide-react";
+import { ArrowRight, Bot, KanbanSquare, ShieldAlert, ShieldCheck, Users, Workflow } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,9 @@ import { getInsightSet } from "@/lib/intelligence/aggregator";
 import { composeBriefing, type HrBriefing } from "@/lib/intelligence/briefing";
 import { requireIntelligenceRole } from "@/lib/intelligence/handler";
 import type { Insight, InsightSeverity } from "@/lib/intelligence/types";
+import { getRbacContext } from "@/lib/rbac";
+import { roleAtLeast } from "@/lib/authz/model";
+import { supabaseWorkflowStore } from "@/lib/workflows/store";
 
 export const metadata: Metadata = {
   title: "Command Center",
@@ -55,6 +58,39 @@ export default async function CommandCenterPage() {
       .sort((a, b) => b.count - a.count);
   } catch {
     stageCounts = null;
+  }
+
+  // Workflows snapshot: runs for members, pending-approval count for MANAGER+.
+  let workflowSnapshot: {
+    pendingApprovals: number | null;
+    activeRuns: number;
+    failedRuns: number;
+    recent: { id: string; status: string; workflowName: string | null }[];
+  } | null = null;
+  try {
+    const ctx = await getRbacContext();
+    const store = supabaseWorkflowStore();
+    const [pending, active, failed, recent] = await Promise.all([
+      roleAtLeast(ctx.role, "MANAGER") ? store.listApprovals(ctx.organizationId, { status: "pending", limit: 1 }) : Promise.resolve(null),
+      store.listRuns(ctx.organizationId, { status: "running", limit: 1 }),
+      store.listRuns(ctx.organizationId, { status: "failed", limit: 1 }),
+      store.listRuns(ctx.organizationId, { limit: 5 }),
+    ]);
+    const names = new Map<string, string>();
+    for (const run of recent.rows) {
+      if (!names.has(run.workflowId)) {
+        const workflow = await store.getWorkflow(ctx.organizationId, run.workflowId);
+        if (workflow) names.set(run.workflowId, workflow.name);
+      }
+    }
+    workflowSnapshot = {
+      pendingApprovals: pending ? pending.total : null,
+      activeRuns: active.total,
+      failedRuns: failed.total,
+      recent: recent.rows.map((run) => ({ id: run.id, status: run.status, workflowName: names.get(run.workflowId) ?? null })),
+    };
+  } catch {
+    workflowSnapshot = null;
   }
 
   return (
@@ -139,11 +175,55 @@ export default async function CommandCenterPage() {
               <ActionLink href="/copilot" icon={<Bot className="h-4 w-4" />} label="Ask AI Copilot" />
               <ActionLink href="/recruitment" icon={<KanbanSquare className="h-4 w-4" />} label="Review candidates" />
               <ActionLink href="/employees" icon={<Users className="h-4 w-4" />} label="Employee directory" />
+              <ActionLink href="/approvals" icon={<ShieldCheck className="h-4 w-4" />} label="Approval Center" />
               <ActionLink href="/workflows/builder" icon={<Workflow className="h-4 w-4" />} label="Build a workflow" />
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Card data-testid="command-center-workflows">
+        <CardHeader>
+          <CardTitle>Workflows</CardTitle>
+          <CardDescription>
+            {workflowSnapshot === null
+              ? "Workflow data is unavailable — sign in to load your organization's runs."
+              : workflowSnapshot.pendingApprovals === null
+                ? "Recent runs. Approval counts are visible to managers and HR administrators."
+                : `${workflowSnapshot.pendingApprovals} request${workflowSnapshot.pendingApprovals === 1 ? "" : "s"} awaiting decision · ${workflowSnapshot.activeRuns} active · ${workflowSnapshot.failedRuns} failed.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {workflowSnapshot === null && (
+            <p className="text-sm text-muted-foreground">Sign in to see workflow activity.</p>
+          )}
+          {workflowSnapshot !== null && (
+            <div className="flex flex-wrap items-center gap-2">
+              {workflowSnapshot.pendingApprovals !== null && (
+                <Link href="/approvals">
+                  <Badge variant={workflowSnapshot.pendingApprovals > 0 ? "secondary" : "outline"} className="cursor-pointer">
+                    {workflowSnapshot.pendingApprovals} pending approval{workflowSnapshot.pendingApprovals === 1 ? "" : "s"}
+                  </Badge>
+                </Link>
+              )}
+              <Badge variant="outline">{workflowSnapshot.activeRuns} active runs</Badge>
+              <Badge variant={workflowSnapshot.failedRuns > 0 ? "destructive" : "outline"}>{workflowSnapshot.failedRuns} failed</Badge>
+            </div>
+          )}
+          {workflowSnapshot !== null && workflowSnapshot.recent.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {workflowSnapshot.recent.map((run) => (
+                <li key={run.id} className="flex items-center justify-between gap-2 text-sm">
+                  <Link href={`/workflows/runs/${run.id}`} className="text-primary hover:underline">
+                    {run.workflowName ?? "Workflow"} <span className="font-mono text-xs text-muted-foreground">{run.id.slice(0, 8)}</span>
+                  </Link>
+                  <Badge variant="outline">{run.status}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

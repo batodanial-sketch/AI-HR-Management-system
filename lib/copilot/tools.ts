@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { COPILOT_TOOL_CATALOG, type CopilotToolSpec } from "@/lib/ai-providers";
+import { workflowStepsSchema } from "@/lib/workflows/steps";
 
 /**
  * Copilot tool registry + executor (server-only).
@@ -32,6 +33,13 @@ interface ToolDefinition {
   toBody?: (args: Record<string, unknown>) => Record<string, unknown>;
   /** Maps validated args to GET query params (GET tools only). */
   toQuery?: (args: Record<string, unknown>) => Record<string, string | number | boolean>;
+  /**
+   * Builds a dynamic path from validated args (for routes with path params,
+   * e.g. `/api/workflows/{id}/run`). Takes precedence over `path` — which
+   * remains as the documented base route. Args MUST be zod-validated before
+   * this runs (see validateToolArguments); values are still encoded.
+   */
+  toPath?: (args: Record<string, unknown>) => string;
 }
 
 const EMPTY_ARGS = z.object({}).default({});
@@ -163,6 +171,82 @@ const DEFINITIONS: ToolDefinition[] = [
       return query;
     },
   },
+  {
+    spec: byName("fetch_workflows"),
+    method: "GET",
+    path: "/api/workflows",
+    argSchema: z.object({ status: z.string().max(40).optional() }).default({}),
+    toQuery: (args) => {
+      const query: Record<string, string | number | boolean> = {};
+      if (typeof args["status"] === "string") query["status"] = args["status"];
+      return query;
+    },
+  },
+  {
+    spec: byName("fetch_workflow_runs"),
+    method: "GET",
+    path: "/api/workflows/runs",
+    argSchema: z.object({ status: z.string().max(40).optional() }).default({}),
+    toQuery: (args) => {
+      const query: Record<string, string | number | boolean> = {};
+      if (typeof args["status"] === "string") query["status"] = args["status"];
+      return query;
+    },
+  },
+  {
+    spec: byName("fetch_workflow_approvals"),
+    method: "GET",
+    path: "/api/workflows/approvals",
+    argSchema: z.object({ status: z.enum(["pending", "approved", "rejected", "expired"]).optional() }).default({}),
+    toQuery: (args) => {
+      const query: Record<string, string | number | boolean> = {};
+      if (typeof args["status"] === "string") query["status"] = args["status"];
+      return query;
+    },
+  },
+  {
+    spec: byName("start_workflow_run"),
+    method: "POST",
+    path: "/api/workflows",
+    argSchema: z.object({
+      workflowId: uuid,
+      idempotencyKey: z.string().trim().min(1).max(400).refine((value) => !value.includes("|"), "must not contain '|'").optional(),
+    }),
+    toPath: (args) => `/api/workflows/${encodeURIComponent(String(args["workflowId"]))}/run`,
+    toBody: (args) => (typeof args["idempotencyKey"] === "string" ? { idempotencyKey: args["idempotencyKey"] } : {}),
+  },
+  {
+    spec: byName("get_workflow"),
+    method: "GET",
+    path: "/api/workflows",
+    argSchema: z.object({ workflowId: uuid }),
+    toPath: (args) => `/api/workflows/${encodeURIComponent(String(args["workflowId"]))}`,
+  },
+  {
+    spec: byName("propose_workflow"),
+    method: "POST",
+    path: "/api/workflows",
+    argSchema: z.object({
+      name: z.string().trim().min(1).max(200).optional(),
+      description: z.string().trim().max(2000).optional(),
+      templateId: z.enum(["new_hire_welcome", "leave_request_review", "payroll_completion_digest"]).optional(),
+      templateParams: z.record(z.string(), z.unknown()).optional(),
+      steps: workflowStepsSchema.optional(),
+    }),
+    toBody: (args) => {
+      const body: Record<string, unknown> = {};
+      if (typeof args["name"] === "string") body["name"] = args["name"];
+      if (typeof args["description"] === "string") body["description"] = args["description"];
+      if (typeof args["templateId"] === "string") {
+        body["fromTemplate"] = {
+          templateId: args["templateId"],
+          params: (args["templateParams"] as Record<string, unknown> | undefined) ?? {},
+        };
+      }
+      if (args["steps"] !== undefined) body["steps"] = args["steps"];
+      return body;
+    },
+  },
 ];
 
 function byName(name: string): CopilotToolSpec {
@@ -198,6 +282,12 @@ export const COPILOT_TOOL_MODULES: Record<string, string> = {
   get_workforce_insights: "intelligence",
   get_hr_briefing: "intelligence",
   search_knowledge: "knowledge",
+  fetch_workflows: "workflows",
+  fetch_workflow_runs: "workflows",
+  fetch_workflow_approvals: "workflows",
+  start_workflow_run: "workflows",
+  get_workflow: "workflows",
+  propose_workflow: "workflows",
 };
 
 export function findCopilotTool(name: string): ToolDefinition | null {
@@ -245,7 +335,7 @@ export async function executeCopilotTool(
   const headers: Record<string, string> = {};
   if (context.cookie) headers.cookie = context.cookie;
   let body: string | undefined;
-  let path = definition.path;
+  let path = typeof definition.toPath === "function" ? definition.toPath(args) : definition.path;
   if (definition.method === "GET" && definition.toQuery) {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(definition.toQuery(args))) {
